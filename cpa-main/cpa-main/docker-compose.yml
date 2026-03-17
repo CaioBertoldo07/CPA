@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: backend-cpa
+    restart: always
+    ports:
+      - "3034:3034"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-cpa
+    restart: always
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    ports:
+      - "3050:3050"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16
+    container_name: db-cpa
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: cpa
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5940:5432"
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+
+networks:
+  app-network:

@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id    Int    @id @default(autoincrement())
+  nome  String @db.VarChar(100)
+  email String @unique @db.VarChar(100)
+}
+
+model Eixos {
+  numero    Int         @id
+  nome      String      @db.VarChar(100)
+  dimensoes Dimensoes[]
+}
+
+model Dimensoes {
+  numero       Int        @id
+  nome         String     @db.VarChar(100)
+  numero_eixos Int?
+  data_criacao DateTime?  @db.Date
+  eixos        Eixos?     @relation(fields: [numero_eixos], references: [numero], onDelete: NoAction, onUpdate: NoAction)
+  questoes     Questoes[]
+}
+
+// Tabela para armazenar os tipos de questão
+model Questoes_tipo {
+  id        Int       @id @default(autoincrement())
+  descricao String    @db.VarChar(100)
+  questoes  Questoes[]
+}
+
+model Questoes {
+  id                    Int                     @id @default(autoincrement())
+  descricao             String                  @db.VarChar(200)
+  basica                Boolean                 @db.Boolean
+  id_padrao_resposta    Int                     @db.Integer
+  id_questoes_tipo      Int?
+  padrao_resposta       Padrao_resposta?        @relation(fields: [id_padrao_resposta], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  numero_dimensoes      Int                     @db.Integer
+  questoes_adicionais   QuestoesAdicionais[]
+  dimensoes             Dimensoes?              @relation(fields: [numero_dimensoes], references: [numero], onDelete: Cascade, onUpdate: Cascade)
+  Questoes_categorias   Questoes_categorias[]
+  questoes_modalidades  Questoes_modalidades[]
+  avaliacao_questoes    Avaliacao_questoes[]
+  avaliacao             Avaliacao[]
+  avaliacao_avaliadores Avaliacao_avaliadores[] @ignore
+  questoes_alternativas Questoes_alternativas[] @ignore
+  questoes_avaliadores  Questoes_avaliadores[] @ignore
+  tipo_questao          Questoes_tipo?          @relation(fields: [id_questoes_tipo], references: [id])
+
+}
+
+model  QuestoesAdicionais {
+  id        Int      @id @default(autoincrement())
+  descricao String   @db.VarChar(255)
+  questaoId Int
+  questao   Questoes @relation(fields: [questaoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Padrao_resposta {
+  id           Int             @id @default(autoincrement())
+  sigla        String          @db.VarChar(10)
+  alternativas Alternativas[]
+  Questoes     Questoes[]
+}
+
+model Alternativas {
+  id                    Int                     @id @default(autoincrement())
+  descricao             String                  @db.VarChar(200)
+  id_padrao_resp        Int                     @db.Integer
+  padrao_resp           Padrao_resposta?        @relation(fields: [id_padrao_resp], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Questoes_alternativas Questoes_alternativas[] @ignore
+}
+
+model Modalidades {
+  id           Int      @id @default(autoincrement())
+  mod_ensino   String   @unique @db.VarChar(100)
+  mod_oferta   String?  @db.VarChar(50)
+  data_criacao DateTime @default(now()) @db.Date
+  num_questoes Int      @db.Integer
+
+  avaliacao            Avaliacao[]            @relation("AvaliacaoModalidades")
+  Questoes_modalidades Questoes_modalidades[]
+}
+
+model Questoes_modalidades {
+  id_modalidade_questao Int          @id @default(autoincrement())
+  id_questoes           Int?
+  id_modalidades        Int?
+  modalidades           Modalidades? @relation(fields: [id_modalidades], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  questoes              Questoes?    @relation(fields: [id_questoes], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Categorias {
+  id                  Int                   @id @default(autoincrement())
+  nome                String                @db.VarChar(50)
+  data_criacao        DateTime              @default(now()) @db.Date
+  Questoes_categorias Questoes_categorias[]
+  avaliacao           Avaliacao[]
+}
+
+model Questoes_categorias {
+  id_questoes_categorias Int         @id @default(autoincrement())
+  id_questoes            Int?
+  id_categorias          Int?
+  questoes               Questoes?   @relation(fields: [id_questoes], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  categorias             Categorias? @relation(fields: [id_categorias], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Unidades {
+  id                Int         @id @default(autoincrement())
+  nome              String      @db.VarChar(100)
+  sigla             String      @unique @db.Char(10)
+  municipio_vinculo String      @db.VarChar(50)
+  cursos            Cursos[]
+  avaliacao         Avaliacao[]
+}
+
+model Cursos {
+  id                       Int                     @id @default(autoincrement())
+  identificador_api_lyceum String                  @unique @db.VarChar(30)
+  nome                     String                  @db.VarChar(500)
+  nivel                    String?                 @db.Char(10)
+  municipio_sede           Int
+  id_unidades              Int?
+  avaliacao                Avaliacao[]
+  avaliacao_avaliadores    Avaliacao_avaliadores[] @ignore
+  avaliadores              Avaliadores[]
+  unidades                 Unidades?               @relation(fields: [id_unidades], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  municipio                Municipios              @relation(fields: [municipio_sede], references: [id])
+  modalidade               String?
+  modalidade_api           String?
+}
+
+model Municipios {
+  id   Int    @id @default(autoincrement())
+  nome String @unique @db.VarChar(100)
+  UF   String @db.Char(5)
+  cursos Cursos[]
+}
+
+model Avaliadores {
+  matricula             String                  @id @db.Char(10)
+  nome                  String                  @db.VarChar(100)
+  cpf                   String                  @db.Char(11)
+  email                 String                  @db.Char(100)
+  senha                 String                  @db.Char(50)
+  id_cursos             Int?
+  id_avaliadores        Int?                    @unique
+  avaliacao_avaliadores Avaliacao_avaliadores[] @ignore
+  cursos                Cursos?                 @relation(fields: [id_cursos], references: [id], onDelete: NoAction, onUpdate: NoAction) @ignore
+  avaliadores           Avaliadores?            @relation("avaliadoresToavaliadores", fields: [id_avaliadores], references: [id_avaliadores], onDelete: NoAction, onUpdate: NoAction)
+  other_avaliadores     Avaliadores?            @relation("avaliadoresToavaliadores")
+  questoes_avaliadores  Questoes_avaliadores[]  @ignore
+}
+
+model Avaliacao {
+  id             Int      @unique@id @default(autoincrement())
+  ano            String   @db.Char(4)
+  periodo_letivo String   @db.Char(6)
+  data_inicio    DateTime @db.Date
+  data_fim       DateTime @db.Date
+  status         Int
+
+  unidade     Unidades []
+  cursos      Cursos[] // Relacionamento de muitos para muitos com Cursos
+  categorias  Categorias[] // Relacionamento com Categorias
+  questoes    Questoes[] // Relacionamento com Questoes
+  modalidades Modalidades[] @relation("AvaliacaoModalidades") // Relacionamento com Modalidades
+
+  avaliacao_questoes Avaliacao_questoes[] // Relacionamento com Avaliacao_questoes
+}
+
+model Avaliacao_questoes {
+  id           Int         @id @default(autoincrement())
+  id_questoes  Int?
+  id_avaliacao Int?
+  questoes     Questoes?   @relation(fields: [id_questoes], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  avaliacao    Avaliacao?  @relation(fields: [id_avaliacao], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  respostas    Respostas[]
+  // Novo relacionamento para respostas de questões grade
+  respostasGrade RespostasGrade[]
+}
+
+model Respostas {
+  id                    Int      @id @default(autoincrement())
+  id_avaliacao_questoes Int
+  resposta              String   @db.VarChar(500)
+  data_resposta         DateTime @db.Date
+  avaliador_matricula   String   @db.VarChar(10)
+  avaliacao_questao     Avaliacao_questoes @relation(fields: [id_avaliacao_questoes], references: [id])
+}
+
+model RespostasGrade {
+  id                    Int                 @id @default(autoincrement())
+  id_avaliacao_questoes Int
+  adicionalId           Int
+  resposta              String              @db.VarChar(500)
+  data_resposta         DateTime            @default(now()) @db.Date
+  avaliador_matricula   String              @db.VarChar(10)
+  avaliacao_questao     Avaliacao_questoes  @relation(fields: [id_avaliacao_questoes], references: [id], onDelete: Cascade)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Avaliacao_avaliadores {
+  id_questoes           Int?
+  id_cursos             Int?
+  matricula_avaliadores String?      @db.Char(10)
+  data_resposta         DateTime     @db.Date
+  resposta              String       @db.VarChar(200)
+  cursos                Cursos?      @relation(fields: [id_cursos], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  questoes              Questoes?    @relation(fields: [id_questoes], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  avaliadores           Avaliadores? @relation(fields: [matricula_avaliadores], references: [matricula], onDelete: NoAction, onUpdate: NoAction)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Questoes_alternativas {
+  id_questao_alternativa Int           @id @default(autoincrement())
+  id_alternativas        Int?
+  id_questoes            Int?
+  alternativas           Alternativas? @relation(fields: [id_alternativas], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  questoes               Questoes?     @relation(fields: [id_questoes], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Questoes_avaliadores {
+  id_questoes           Int?
+  matricula_avaliadores String?      @db.VarChar(10)
+  questoes              Questoes?    @relation(fields: [id_questoes], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  avaliadores           Avaliadores? @relation(fields: [matricula_avaliadores], references: [matricula], onDelete: NoAction, onUpdate: NoAction)
+
+  @@ignore
+}

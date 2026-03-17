@@ -1,0 +1,14 @@
+
+
+.p-toast-message {
+    backdrop-filter: blur(10px);
+    background: rgba(228, 248, 240);
+    border: solid #1ea97c;
+    
+    border-width: 0 0 0 6px;
+    color: #1ea97c;
+    filter: blur(0px)
+}
+
+
+

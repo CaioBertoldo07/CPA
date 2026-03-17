@@ -1,0 +1,10 @@
+/* modalStyles.css */
+
+.input-field {
+  border: 1px solid #ccc; /* Borda fina */
+  border-radius: 4px; /* Bordas arredondadas */
+  padding: 8px; /* Espaçamento interno */
+  box-sizing: border-box; /* Inclui borda e padding no tamanho total do input */
+  margin: 5px 0; /* Espaçamento vertical */
+  
+}

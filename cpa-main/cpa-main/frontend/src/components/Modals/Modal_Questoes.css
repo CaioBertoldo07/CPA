@@ -1,0 +1,84 @@
+.question-container {
+    padding: 20px;
+}
+
+
+.input-question {
+    width: 100%;
+    height: 100px; /* Ajusta a altura inicial do textarea */
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    resize: vertical; /* Permite redimensionar o textarea apenas na vertical */
+}
+
+
+.input-question2 {
+    display: flex;
+    justify-content: space-between;
+}
+
+
+.input-question3 {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.input-question3:last-child {
+    margin-right: 0;
+}
+
+
+.input-question3 h6 {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+
+.input-checkbox {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.input-checkbox .form-check {
+    margin-bottom: 10px;
+}
+
+
+.error-message {
+    color: red;
+    margin-top: 10px;
+}
+
+.questao-adicional {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.questao-adicional textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.questao-adicional button {
+    margin-right: 10px;
+}
+

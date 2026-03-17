@@ -1,0 +1,8 @@
+# Modules
+node_modules/
+# Migrations
+migrations/
+# Environment
+.env
+# package-lock.json
+package-lock.json

@@ -1,0 +1,66 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@headlessui/react": "^2.1.1",
+    "@mui/icons-material": "^6.1.0",
+    "@mui/lab": "^6.0.0-beta.9",
+    "@mui/material": "^6.1.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^12.1.2",
+    "@testing-library/user-event": "^13.5.0",
+    "apexcharts": "^4.3.0",
+    "axios": "^1.7.2",
+    "bootstrap": "^5.3.3",
+    "jwt-decode": "^4.0.0",
+    "primeicons": "^7.0.0",
+    "primereact": "^10.7.0",
+    "react": "^18.3.1",
+    "react-apexcharts": "^1.7.0",
+    "react-bootstrap": "^2.10.5",
+    "react-bootstrap-table-next": "^4.0.3",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.3.0",
+    "react-router-dom": "^6.23.0",
+    "react-scripts": "^5.0.1",
+    "react-select": "^5.8.2",
+    "react-table": "^7.8.0",
+    "react-toggle-slider": "^0.4.0",
+    "reactjs-popup": "^2.0.6",
+    "styled-components": "^6.1.12",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "dev": "concurrently \"npm run start\" \"cd .. && node server.js\""
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

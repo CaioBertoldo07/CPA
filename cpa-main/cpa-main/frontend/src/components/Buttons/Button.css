@@ -1,0 +1,100 @@
+.button {
+    background-color: #1D5E24;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    /* margin-bottom: 80px; */
+}
+
+.buttonOptions {
+
+    color: black;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+.buttonCancelar {
+    background-color: #FF2525;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    /* margin-bottom: 80px; */
+}
+
+.buttonCadastrar {
+    background-color: #00C300;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    /* margin-bottom: 80px; */
+}
+
+.ButtonSalvar {
+    background-color: #1fd60f;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 95px;
+    /* margin-bottom: 80px; */
+}
+
+.ButtonTodos {
+    background-color: #cccf05;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 130px;
+    margin: 0;
+    /* margin-bottom: 80px; */
+}
+
+.ButtonApenasNesse {
+    background-color: #1fd60f;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 130px;
+}
+
+.button-add-item{
+    background-color: #1D5E24;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;  /* Para torná-lo circular */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 5px;
+    font-size: 25px;
+}

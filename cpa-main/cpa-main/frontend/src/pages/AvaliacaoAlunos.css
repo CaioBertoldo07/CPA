@@ -1,0 +1,275 @@
+:root {
+    --primary: #1D5E24;
+    --secondary: #95DA95;
+    --background: #F8F9FA;
+    --text: #2C3E50;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.avaliacao-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--background);
+    font-family: 'Segoe UI', system-ui;
+}
+
+.avaliacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary), #2E8540);
+    color: white;
+    height: 80px;
+}
+
+.logo {
+    width: 120px;
+    height: auto;
+    transition: transform 0.2s;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+.progress-container {
+    width: 280px;
+}
+
+.progress-bar {
+    background: rgba(255,255,255,0.2);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: white;
+    transition: width 0.3s ease;
+}
+
+.avaliacao-main {
+    flex: 1;
+    max-width: 800px;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem;
+}
+
+.avaliacao-info {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.avaliacao-info h1 {
+    color: var(--text);
+    margin: 0 0 0.3rem 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.periodo {
+    color: #666;
+    font-size: 1rem;
+}
+
+.secoes {
+    margin: 1.5rem 0;
+}
+
+.eixo-card {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.eixo-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.eixo-header:hover {
+    background: #f8f9fa;
+}
+
+.eixo-title h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.status {
+    font-size: 0.85rem;
+    color: #666;
+    margin-left: 0.8rem;
+}
+
+.dimensoes-container {
+    width: 100%;
+    padding: 0 1.5rem 1rem;
+}
+
+.dimensao-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 0.8rem;
+}
+
+.dimensao-header {
+    padding: 0.8rem 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dimensao-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.questoes-list {
+    padding: 1rem;
+}
+
+.questao-item {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: white;
+    border-left: 3px solid var(--secondary);
+    border-radius: 4px;
+}
+
+/* Novos estilos para alternativas */
+.alternativas-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.alternativa {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.2rem;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex: 1;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.emoji-container {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.8rem;
+}
+
+.emoji-container img {
+    width: 24px;
+    height: 24px;
+}
+
+.alternativa:hover {
+    border-color: var(--secondary);
+    transform: translateY(-2px);
+}
+
+.alternativa input {
+    margin: 0 0.5rem 0 0;
+}
+
+.alternativa span {
+    flex-grow: 1;
+    font-size: 0.95rem;
+}
+
+/* Ajustes para subquestões */
+.grade-question {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: 8px;
+}
+
+.grade-question .alternativas-grid {
+    margin-left: 30px;
+}
+
+.subquestao {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.sub-enunciado {
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.submit-btn {
+    display: block;
+    width: 240px;
+    padding: 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 2rem auto;
+}
+
+.submit-btn:hover {
+    background: #16481c;
+    transform: translateY(-1px);
+}
+
+.loading {
+    text-align: center;
+    padding: 4rem;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .alternativas-grid {
+        gap: 0.5rem;
+    }
+    
+    .alternativa {
+        min-width: 100px;
+        padding: 0.6rem;
+    }
+    
+    .eixo-header {
+        padding: 1rem;
+    }
+    
+    .dimensao-header {
+        padding: 0.8rem;
+    }
+}

@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16
+    container_name: "db"
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5940:5432"
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+  backend:
+    build: .
+    container_name: backend
+    restart: always
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3034:3034"
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+    # networks:
+    #   - default
+
+    # networks:
+    #   - default
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: web

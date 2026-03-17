@@ -1,0 +1,13 @@
+/* ModalAddDimensao.css */
+
+.modal-body-custom {
+    margin: "20px";
+}    
+
+.form-group {
+    margin-bottom: 15px; /* Espaçamento entre os grupos de formulário */
+}
+/* Sobrescreve o estilo de background para inputs */
+.form-control-dimensao {
+    background-image: none !important;
+}

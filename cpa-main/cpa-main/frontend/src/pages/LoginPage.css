@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
+    height: 90vh;
+    background-color: white;
+}
+
+.formLogin {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); 
+    border-style: ridge;
+    border-width: 0.5px;
+    gap: 5px;
+    width: 430px;
+    height: 385px;
+    /* heightpx; */
+}
+
+.areaLogin img { 
+    width: 420px;
+}
+
+
+.login-container p {
+    display: inline-block;
+    font-size: 14px;
+    margin-bottom: 25px;
+    font-weight: 600;
+    margin-top:2%;
+    color: #1D5E24
+}
+
+.formLogin input {
+    padding: 15px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+    margin-top: 5px;
+    border-radius: 8px;
+    transition: all linear 160ms;
+    outline: none;
+    width: 100%;
+
+}
+
+
+.formLogin input:focus {
+    border: 1px solid #1ac13b;
+}
+
+.formLogin label {
+    font-size: 14px;
+    font-weight: 600;
+    
+}
+
+.formLogin a {
+    display: inline-block;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #1D5E24;
+    transition: all linear 160ms;
+}
+
+.formLogin a:hover {
+    color: #1ac13b;
+}
+
+
+.button:hover {
+    transform: scale(1.05);
+    background-color: #1ac13b;
+
+}
+
+.login-logo{
+    margin-left: -25px;
+    height:98px;
+    width: 200px;
+}
+
+
+
+
+
+
+
+/* Ajuste adicional para os botões no modal */
+.modal-body Button {
+  margin-right: 10px; 
+}
