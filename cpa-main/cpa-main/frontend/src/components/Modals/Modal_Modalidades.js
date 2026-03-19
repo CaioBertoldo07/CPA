@@ -1,87 +1,121 @@
+// src/components/Modals/Modal_Modalidades.js
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 import Modal from 'react-bootstrap/Modal';
 import React, { useState } from 'react';
 import { cadastrarModalidades } from '../../services/modalidadesService';
 
-
-
-function Modal_Modalidades(props) {
+function Modal_Modalidades({ show, onHide, onSuccess }) {
     const [modEnsino, setModEnsino] = useState('');
     const [modOferta, setModOferta] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const resetForm = () => {
+        setModEnsino('');
+        setModOferta('');
+        setError('');
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onHide();
+    };
 
     const handleCadastrarModalidade = async () => {
-        try {
-            const modalidadeData = {
-                mod_ensino: modEnsino,
-                mod_oferta: modOferta
-    
-            };
+        if (!modEnsino.trim()) {
+            setError('O campo "Modalidade de ensino" é obrigatório.');
+            return;
+        }
 
-            const response = await cadastrarModalidades(modalidadeData);
-            setSuccess('Modalidade cadastrada com sucesso!');
-            setError('');
-            props.onHide();
-            
-        } catch (error) {
-            console.error('Erro ao cadastrar modalidade:', error);
-            setSuccess('');
-            if (error.response && error.response.data && error.response.data.error) {
-                setError(error.response.data.error);
-            } else {
-                setError('Erro ao cadastrar modalidade');
-            }
+        setLoading(true);
+        setError('');
+
+        try {
+            await cadastrarModalidades({
+                mod_ensino: modEnsino.trim(),
+                mod_oferta: modOferta.trim()
+            });
+
+            resetForm();
+            onHide();
+
+            // Notifica o pai para atualizar a lista e exibir toast
+            if (onSuccess) onSuccess('Modalidade cadastrada com sucesso!');
+        } catch (err) {
+            console.error('Erro ao cadastrar modalidade:', err);
+            const msg = err?.response?.data?.error || 'Erro ao cadastrar modalidade.';
+            setError(msg);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <Modal
-            {...props}
+            show={show}
+            onHide={handleClose}
             size="lg"
-            aria-labelledby="contained-modal-title-vcenter"
+            aria-labelledby="modal-modalidade-title"
             centered
         >
             <Modal.Header closeButton>
-                <Modal.Title id="contained-modal-title-vcenter">
-                    Nova modalidade
+                <Modal.Title id="modal-modalidade-title">
+                    Nova Modalidade
                 </Modal.Title>
             </Modal.Header>
+
             <Modal.Body style={{ marginLeft: '20px' }}>
-                <h6>Ensino</h6>
+                <h6>Ensino <span style={{ color: 'red' }}>*</span></h6>
                 <input
                     type="text"
                     value={modEnsino}
                     onChange={(e) => setModEnsino(e.target.value)}
+                    placeholder="Ex: REGULAR"
                     style={{
                         border: '1px solid #ccc',
                         borderRadius: '4px',
                         padding: '8px',
                         boxSizing: 'border-box',
-                        margin: '5px 0'
+                        margin: '5px 0',
+                        width: '100%',
+                        maxWidth: '300px'
                     }}
                 />
-                <p> </p>
+
+                <p style={{ margin: '8px 0' }}></p>
+
                 <h6>Oferta</h6>
                 <input
                     type="text"
                     value={modOferta}
+                    placeholder="Ex: PRESENCIAL"
                     style={{
                         border: '1px solid #ccc',
                         borderRadius: '4px',
                         padding: '8px',
                         boxSizing: 'border-box',
-                        margin: '5px 0'
+                        margin: '5px 0',
+                        width: '100%',
+                        maxWidth: '300px'
                     }}
                     onChange={(e) => setModOferta(e.target.value)}
                 />
-                {error && <div style={{ color: 'red' }}>{error}</div>}
-                {success && <div style={{ color: 'green' }}>{success}</div>}
+
+                {error && (
+                    <div className="alert alert-danger mt-3" role="alert">
+                        {error}
+                    </div>
+                )}
             </Modal.Body>
+
             <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarModalidade}>Cadastrar</ButtonCadastrar>
+                <ButtonCancelar onClick={handleClose} disabled={loading}>
+                    Cancelar
+                </ButtonCancelar>
+                <ButtonCadastrar onClick={handleCadastrarModalidade} disabled={loading}>
+                    {loading ? 'Cadastrando...' : 'Cadastrar'}
+                </ButtonCadastrar>
             </Modal.Footer>
         </Modal>
     );

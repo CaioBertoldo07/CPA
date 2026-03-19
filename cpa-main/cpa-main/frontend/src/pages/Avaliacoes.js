@@ -1,18 +1,27 @@
-// DEPOIS — estado de filtro conecta ButtonGroup com Table_Avaliacao
+// src/pages/Avaliacoes.js
 import React, { useState } from 'react';
 import Button from '../components/Buttons/Button';
 import NavigationBar from '../components/utils/NavBar';
-import Table_Avaliacao from '../components/Tables/Table_Avaliacao';
+import TableAvaliacao from '../components/Tables/Table_Avaliacao';
 import './Eixos.css';
 import { Row, Col } from 'react-bootstrap';
 import '../components/Tables/Table.css';
 import ButtonGroup from '../components/Buttons/Button_Group';
 import SearchBar from '../components/utils/SearchBar';
-import Modal_Avaliacoes from '../components/Modals/Modal_Avaliacoes';
+import ModalAvaliacoes from '../components/Modals/Modal_Avaliacoes';
 
 const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
-    const [filtroStatus, setFiltroStatus] = useState(null); // ADICIONADO: estado do filtro
+    const [filtroStatus, setFiltroStatus] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    // ← NOVO: toggle que força refetch na Table_Avaliacao
+    const [refreshTable, setRefreshTable] = useState(false);
+
+    const handleAvaliacaoCriada = () => {
+        setModalShow(false);
+        // Alterna o flag → Table_Avaliacao re-busca a lista
+        setRefreshTable(prev => !prev);
+    };
 
     return (
         <div>
@@ -25,13 +34,17 @@ const Avaliacoes = () => {
                     <div>
                         <Row>
                             <Col xs={12}>
-                                <SearchBar />
+                                {/* SearchBar agora controlado */}
+                                <SearchBar
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder="    Pesquisar avaliações..."
+                                />
                             </Col>
                         </Row>
                         <Row>
                             <Col xs={12} className='text-center'>
                                 <div className='Button_Group'>
-                                    {/* ADICIONADO: passa callback para receber o filtro selecionado */}
                                     <ButtonGroup onFiltroChange={setFiltroStatus} />
                                 </div>
                             </Col>
@@ -43,16 +56,21 @@ const Avaliacoes = () => {
                                         + Nova avaliação
                                     </Button>
                                 </div>
-                                <Modal_Avaliacoes
+                                <ModalAvaliacoes
                                     show={modalShow}
                                     onHide={() => setModalShow(false)}
-                                    onClose={() => setModalShow(false)}
+                                    // ← chama callback que fecha modal E dispara refetch
+                                    onClose={handleAvaliacaoCriada}
                                 />
                             </Col>
                         </Row>
 
-                        {/* ADICIONADO: passa filtroStatus para a tabela */}
-                        <Table_Avaliacao filtroStatus={filtroStatus} />
+                        <TableAvaliacao
+                            filtroStatus={filtroStatus}
+                            searchQuery={searchQuery}
+                            // ← passa o flag de refresh
+                            refreshTable={refreshTable}
+                        />
                     </div>
                 </div>
             </div>

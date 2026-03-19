@@ -1,3 +1,4 @@
+// src/components/Tables/Table_Avaliacao.js
 import React, { useState, useEffect, useRef } from 'react';
 import { Table, Modal, Form, Button, Spinner, Badge, Pagination } from 'react-bootstrap';
 import { TfiMore } from 'react-icons/tfi';
@@ -14,18 +15,17 @@ import {
     prorrogarAvaliacaoById
 } from '../../services/avaliacoesService';
 
-const TableContainer = styled.div`
-  margin: 20px;
-`;
+// ── styled-components ────────────────────────────
+const TableContainer = styled.div`margin: 20px;`;
 
 const OptionsMenu = styled.div`
   position: absolute;
-  width: 135px;
+  width: 145px;
   background-color: white;
   border: 1px solid #ccc;
   padding: 5px;
   display: ${({ visible }) => (visible ? 'block' : 'none')};
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
   z-index: 1;
 `;
 
@@ -41,6 +41,7 @@ const Option = styled.div`
   }
 `;
 
+// ── constantes ───────────────────────────────────
 const STATUS_CONFIG = {
     1: { label: 'Rascunho',  bg: 'secondary' },
     2: { label: 'Enviada',   bg: 'primary'   },
@@ -49,17 +50,59 @@ const STATUS_CONFIG = {
 
 const ITENS_POR_PAGINA = 10;
 
-const Table_Avaliacao = ({ filtroStatus }) => {
+// ────────────────────────────────────────────────
+// Modal genérico de confirmação
+// ────────────────────────────────────────────────
+function ConfirmModal({ show, onConfirm, onCancel, title, body, confirmLabel = 'Confirmar', confirmVariant = 'primary', loading }) {
+    return (
+        <Modal show={show} onHide={onCancel} centered>
+            <Modal.Header closeButton>
+                <Modal.Title>{title}</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>{body}</Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onCancel} disabled={loading}>
+                    Cancelar
+                </Button>
+                <Button
+                    variant={confirmVariant}
+                    onClick={onConfirm}
+                    disabled={loading}
+                    style={{ minWidth: 110 }}
+                >
+                    {loading
+                        ? <><Spinner size="sm" animation="border" className="me-2" />Aguarde...</>
+                        : confirmLabel
+                    }
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    );
+}
+
+// ────────────────────────────────────────────────
+// Componente principal
+// ────────────────────────────────────────────────
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
     const [avaliacoes, setAvaliacoes] = useState([]);
-    const [menuVisible, setMenuVisible] = useState(null); // armazena item.id
+    const [menuVisible, setMenuVisible] = useState(null);
     const [loading, setLoading] = useState(false);
     const [paginaAtual, setPaginaAtual] = useState(1);
 
-    // loading por ID — null significa nenhuma linha em loading
-    const [loadingEnviarId, setLoadingEnviarId] = useState(null);
-    const [loadingExcluirId, setLoadingExcluirId] = useState(null);
+    // loading por ID
+    const [loadingEnviarId, setLoadingEnviarId]     = useState(null);
+    const [loadingExcluirId, setLoadingExcluirId]   = useState(null);
     const [loadingProrrogarId, setLoadingProrrogarId] = useState(null);
 
+    // modal de confirmação de envio
+    const [showEnviarModal, setShowEnviarModal] = useState(false);
+    const [avaliacaoParaEnviar, setAvaliacaoParaEnviar] = useState(null);
+
+    // modal de confirmação de exclusão
+    const [showExcluirModal, setShowExcluirModal] = useState(false);
+    const [avaliacaoParaExcluir, setAvaliacaoParaExcluir] = useState(null);
+
+    // modal de prorrogação
     const [showProrrogar, setShowProrrogar] = useState(false);
     const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
@@ -67,6 +110,7 @@ const Table_Avaliacao = ({ filtroStatus }) => {
     const toast = useRef(null);
     const navigate = useNavigate();
 
+    // ── busca ─────────────────────────────────────
     const fetchAvaliacoes = async () => {
         setLoading(true);
         try {
@@ -80,20 +124,18 @@ const Table_Avaliacao = ({ filtroStatus }) => {
         }
     };
 
+    // Re-busca quando refreshTable muda (avaliação criada no modal)
     useEffect(() => {
         fetchAvaliacoes();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refreshTable]);
 
-    // volta para página 1 ao trocar filtro
-    useEffect(() => {
-        setPaginaAtual(1);
-    }, [filtroStatus]);
+    // Volta p/ pág 1 ao mudar filtro ou busca
+    useEffect(() => { setPaginaAtual(1); }, [filtroStatus, searchQuery]);
 
-    // scroll ao topo ao trocar página
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, [paginaAtual]);
+    useEffect(() => { window.scrollTo(0, 0); }, [paginaAtual]);
 
+    // ── helpers ───────────────────────────────────
     const showToast = (severity, message) => {
         toast.current?.show({
             severity,
@@ -103,19 +145,29 @@ const Table_Avaliacao = ({ filtroStatus }) => {
         });
     };
 
-    // lógica de paginação
-    const avaliacoesFiltradas = filtroStatus
-        ? avaliacoes.filter(a => a.status === filtroStatus)
-        : avaliacoes;
+    // ── filtros: status + busca ───────────────────
+    const avaliacoesFiltradas = avaliacoes
+        .filter(a => filtroStatus ? a.status === filtroStatus : true)
+        .filter(a => {
+            if (!searchQuery) return true;
+            const q = searchQuery.toLowerCase();
+            return (
+                String(a.id).includes(q) ||
+                (a.periodo_letivo || '').toLowerCase().includes(q) ||
+                (a.ano || '').toLowerCase().includes(q) ||
+                (a.modalidades || []).some(m =>
+                    (m.mod_ensino || '').toLowerCase().includes(q)
+                )
+            );
+        });
 
     const totalPaginas = Math.ceil(avaliacoesFiltradas.length / ITENS_POR_PAGINA);
-
     const avaliacoesPaginadas = avaliacoesFiltradas.slice(
         (paginaAtual - 1) * ITENS_POR_PAGINA,
         paginaAtual * ITENS_POR_PAGINA
     );
 
-    // menu controlado por item.id
+    // ── handlers de menu ─────────────────────────
     const handleMoreClick = (id) => {
         setMenuVisible(menuVisible === id ? null : id);
     };
@@ -125,14 +177,21 @@ const Table_Avaliacao = ({ filtroStatus }) => {
         navigate(`/relatorio/${avaliacao.id}`);
     };
 
-    const handleEnviar = async (avaliacao) => {
-        if (loadingEnviarId === avaliacao.id) return; // guard: evita múltiplos cliques
-        if (!window.confirm(`Deseja enviar a avaliação do período ${avaliacao.periodo_letivo}?`)) return;
+    // ── ENVIAR: abre modal de confirmação ────────
+    const handleEnviarRequest = (avaliacao) => {
         setMenuVisible(null);
-        setLoadingEnviarId(avaliacao.id); // apenas esta linha entra em loading
+        setAvaliacaoParaEnviar(avaliacao);
+        setShowEnviarModal(true);
+    };
+
+    const handleEnviarConfirm = async () => {
+        if (!avaliacaoParaEnviar) return;
+        setLoadingEnviarId(avaliacaoParaEnviar.id);
         try {
-            await enviarAvaliacao(avaliacao.id);
+            await enviarAvaliacao(avaliacaoParaEnviar.id);
             showToast('success', 'Avaliação enviada com sucesso.');
+            setShowEnviarModal(false);
+            setAvaliacaoParaEnviar(null);
             fetchAvaliacoes();
         } catch (err) {
             const mensagem = err.detalhes
@@ -140,26 +199,34 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                 : err.error || 'Erro ao enviar avaliação.';
             showToast('error', mensagem);
         } finally {
-            setLoadingEnviarId(null); // reset após operação
+            setLoadingEnviarId(null);
         }
     };
 
-    const handleExcluir = async (avaliacao) => {
-        if (loadingExcluirId === avaliacao.id) return; // guard: evita múltiplos cliques
-        if (!window.confirm(`Deseja excluir a avaliação do período ${avaliacao.periodo_letivo}?`)) return;
+    // ── EXCLUIR: abre modal de confirmação ───────
+    const handleExcluirRequest = (avaliacao) => {
         setMenuVisible(null);
-        setLoadingExcluirId(avaliacao.id); // apenas esta linha entra em loading
+        setAvaliacaoParaExcluir(avaliacao);
+        setShowExcluirModal(true);
+    };
+
+    const handleExcluirConfirm = async () => {
+        if (!avaliacaoParaExcluir) return;
+        setLoadingExcluirId(avaliacaoParaExcluir.id);
         try {
-            await deletarAvaliacaoById(avaliacao.id);
+            await deletarAvaliacaoById(avaliacaoParaExcluir.id);
             showToast('success', 'Avaliação excluída com sucesso.');
+            setShowExcluirModal(false);
+            setAvaliacaoParaExcluir(null);
             fetchAvaliacoes();
         } catch (err) {
             showToast('error', err.error || 'Erro ao excluir avaliação.');
         } finally {
-            setLoadingExcluirId(null); // reset após operação
+            setLoadingExcluirId(null);
         }
     };
 
+    // ── PRORROGAR ─────────────────────────────────
     const handleAbrirProrrogar = (avaliacao) => {
         setMenuVisible(null);
         setAvaliacaoSelecionada(avaliacao);
@@ -168,12 +235,12 @@ const Table_Avaliacao = ({ filtroStatus }) => {
     };
 
     const handleConfirmarProrrogar = async () => {
-        if (loadingProrrogarId === avaliacaoSelecionada?.id) return; // guard: evita múltiplos cliques
+        if (loadingProrrogarId === avaliacaoSelecionada?.id) return;
         if (!novaDataFim) {
             showToast('error', 'Informe a nova data de encerramento.');
             return;
         }
-        setLoadingProrrogarId(avaliacaoSelecionada.id); // apenas esta avaliação entra em loading
+        setLoadingProrrogarId(avaliacaoSelecionada.id);
         try {
             await prorrogarAvaliacaoById(avaliacaoSelecionada.id, novaDataFim);
             showToast('success', 'Avaliação prorrogada com sucesso.');
@@ -182,13 +249,13 @@ const Table_Avaliacao = ({ filtroStatus }) => {
         } catch (err) {
             showToast('error', err.error || 'Erro ao prorrogar avaliação.');
         } finally {
-            setLoadingProrrogarId(null); // reset após operação
+            setLoadingProrrogarId(null);
         }
     };
 
-    // variável local para o modal — calculada fora do map
     const estaProrrogando = loadingProrrogarId === avaliacaoSelecionada?.id;
 
+    // ── render ────────────────────────────────────
     return (
         <TableContainer>
             <Toast ref={toast} />
@@ -217,13 +284,14 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                             {avaliacoesPaginadas.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="text-center text-muted py-4">
-                                        Nenhuma avaliação encontrada.
+                                        {searchQuery
+                                            ? `Nenhuma avaliação encontrada para "${searchQuery}".`
+                                            : 'Nenhuma avaliação encontrada.'}
                                     </td>
                                 </tr>
                             ) : (
                                 avaliacoesPaginadas.map((item) => {
-                                    // variáveis locais por linha — não afetam outras linhas
-                                    const estaEnviando = loadingEnviarId === item.id;
+                                    const estaEnviando  = loadingEnviarId  === item.id;
                                     const estaExcluindo = loadingExcluirId === item.id;
                                     const estaCarregando = estaEnviando || estaExcluindo;
 
@@ -234,7 +302,8 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                                 {item.modalidades?.length > 0
                                                     ? item.modalidades.map((m, idx) => (
                                                         <span key={idx}>
-                                                            {m.mod_ensino}{idx < item.modalidades.length - 1 ? ', ' : ''}
+                                                            {m.mod_ensino}
+                                                            {idx < item.modalidades.length - 1 ? ', ' : ''}
                                                         </span>
                                                     ))
                                                     : 'N/A'}
@@ -242,14 +311,13 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                             <td>{item.periodo_letivo || 'N/A'}</td>
                                             <td>{item.ano || 'N/A'}</td>
                                             <td>{item.data_inicio ? new Date(item.data_inicio).toLocaleDateString() : 'N/A'}</td>
-                                            <td>{item.data_fim ? new Date(item.data_fim).toLocaleDateString() : 'N/A'}</td>
+                                            <td>{item.data_fim   ? new Date(item.data_fim).toLocaleDateString()   : 'N/A'}</td>
                                             <td>
                                                 <Badge bg={STATUS_CONFIG[item.status]?.bg || 'dark'}>
                                                     {STATUS_CONFIG[item.status]?.label || 'Desconhecido'}
                                                 </Badge>
                                             </td>
                                             <td style={{ position: 'relative' }}>
-                                                {/* spinner apenas na linha afetada */}
                                                 {estaCarregando ? (
                                                     <Spinner animation="border" size="sm" variant="secondary" />
                                                 ) : (
@@ -259,9 +327,7 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                                     />
                                                 )}
 
-                                                {/* menu controlado por item.id */}
                                                 <OptionsMenu visible={menuVisible === item.id}>
-
                                                     <Option onClick={() => handleVisualizar(item)}>
                                                         Visualizar <IoEyeOutline className='ms-2' />
                                                     </Option>
@@ -269,7 +335,7 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                                     {item.status === 1 && (
                                                         <Option
                                                             disabled={estaEnviando}
-                                                            onClick={() => !estaEnviando && handleEnviar(item)}
+                                                            onClick={() => !estaEnviando && handleEnviarRequest(item)}
                                                         >
                                                             {estaEnviando
                                                                 ? <><Spinner size="sm" animation="border" /> Enviando...</>
@@ -287,7 +353,7 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                                     {item.status === 1 && (
                                                         <Option
                                                             disabled={estaExcluindo}
-                                                            onClick={() => !estaExcluindo && handleExcluir(item)}
+                                                            onClick={() => !estaExcluindo && handleExcluirRequest(item)}
                                                         >
                                                             {estaExcluindo
                                                                 ? <><Spinner size="sm" animation="border" /> Excluindo...</>
@@ -295,7 +361,6 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                                                             }
                                                         </Option>
                                                     )}
-
                                                 </OptionsMenu>
                                             </td>
                                         </tr>
@@ -305,11 +370,13 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                         </tbody>
                     </Table>
 
-                    {/* controles de paginação */}
+                    {/* Paginação */}
                     {totalPaginas > 1 && (
                         <div className="d-flex justify-content-between align-items-center mt-2">
                             <small className="text-muted">
-                                Exibindo {((paginaAtual - 1) * ITENS_POR_PAGINA) + 1}–{Math.min(paginaAtual * ITENS_POR_PAGINA, avaliacoesFiltradas.length)} de {avaliacoesFiltradas.length} avaliações
+                                Exibindo {((paginaAtual - 1) * ITENS_POR_PAGINA) + 1}–
+                                {Math.min(paginaAtual * ITENS_POR_PAGINA, avaliacoesFiltradas.length)} de{' '}
+                                {avaliacoesFiltradas.length} avaliações
                             </small>
                             <Pagination size="sm" className="mb-0">
                                 <Pagination.Prev
@@ -335,7 +402,47 @@ const Table_Avaliacao = ({ filtroStatus }) => {
                 </>
             )}
 
-            {/* modal de prorrogação */}
+            {/* ── Modal: confirmar ENVIO ─────────────── */}
+            <ConfirmModal
+                show={showEnviarModal}
+                onConfirm={handleEnviarConfirm}
+                onCancel={() => { setShowEnviarModal(false); setAvaliacaoParaEnviar(null); }}
+                title="Enviar Avaliação"
+                body={
+                    <p>
+                        Deseja enviar a avaliação do período{' '}
+                        <strong>{avaliacaoParaEnviar?.periodo_letivo}</strong>?
+                        <br />
+                        <span className="text-muted small">
+                            Após enviada, a avaliação não poderá ser editada ou excluída.
+                        </span>
+                    </p>
+                }
+                confirmLabel="Enviar"
+                confirmVariant="success"
+                loading={loadingEnviarId === avaliacaoParaEnviar?.id}
+            />
+
+            {/* ── Modal: confirmar EXCLUSÃO ──────────── */}
+            <ConfirmModal
+                show={showExcluirModal}
+                onConfirm={handleExcluirConfirm}
+                onCancel={() => { setShowExcluirModal(false); setAvaliacaoParaExcluir(null); }}
+                title="Excluir Avaliação"
+                body={
+                    <p>
+                        Tem certeza que deseja excluir a avaliação do período{' '}
+                        <strong>{avaliacaoParaExcluir?.periodo_letivo}</strong>?
+                        <br />
+                        <span className="text-muted small">Esta ação não pode ser desfeita.</span>
+                    </p>
+                }
+                confirmLabel="Excluir"
+                confirmVariant="danger"
+                loading={loadingExcluirId === avaliacaoParaExcluir?.id}
+            />
+
+            {/* ── Modal: PRORROGAR ───────────────────── */}
             <Modal
                 show={showProrrogar}
                 onHide={() => !estaProrrogando && setShowProrrogar(false)}

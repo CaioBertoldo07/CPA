@@ -1,92 +1,194 @@
+// src/components/Tables/TableAdmins.js
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, Dropdown } from 'react-bootstrap';
-import { TfiMore } from 'react-icons/tfi';
+import { Table, Modal, Button, Spinner } from 'react-bootstrap';
 import { Toast } from 'primereact/toast';
-import Modal_Admin from '../Modals/Modal_Admin';  // Modal para editar/criar admins
-import { getAdmins, deleteAdmin } from '../../services/adminService';  // Serviços de admin
+import ModalAdmin from '../Modals/Modal_Admin';
+import { getAdmins, deleteAdmin } from '../../services/adminService';
+import { FaRegEdit } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
 
-const TableAdmins = ({ updateTable }) => {
+// ── modal de confirmação ──────────────────────────
+function ConfirmDeleteModal({ show, onConfirm, onCancel, admin, loading }) {
+    return (
+        <Modal show={show} onHide={onCancel} centered>
+            <Modal.Header closeButton>
+                <Modal.Title>Excluir Administrador</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <p>
+                    Tem certeza que deseja remover o administrador{' '}
+                    <strong>{admin?.email}</strong>?
+                </p>
+                <p className="text-muted small">Esta ação não pode ser desfeita.</p>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onCancel} disabled={loading}>
+                    Cancelar
+                </Button>
+                <Button variant="danger" onClick={onConfirm} disabled={loading} style={{ minWidth: 100 }}>
+                    {loading
+                        ? <><Spinner size="sm" animation="border" className="me-2" />Removendo...</>
+                        : 'Remover'}
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    );
+}
+
+const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
     const [admins, setAdmins] = useState([]);
+    const [loadingTable, setLoadingTable] = useState(false);
+
+    // edição
     const [modalShow, setModalShow] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState(null);
+
+    // exclusão
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletingAdmin, setDeletingAdmin] = useState(null);
+    const [deletingLoading, setDeletingLoading] = useState(false);
+
     const toast = useRef(null);
 
-    useEffect(() => {
-        const fetchAdmins = async () => {
-            try {
-                const data = await getAdmins();  // Chama o serviço para buscar admins
-                setAdmins(data || []);
-            } catch (error) {
-                console.error("Erro ao buscar admins", error);
-            }
-        };
-        fetchAdmins();
-    }, [updateTable]);
+    const showToast = (severity, detail) => {
+        toast.current?.show({
+            severity,
+            summary: severity === 'error' ? 'Erro' : 'Sucesso',
+            detail,
+            life: 3000,
+        });
+    };
 
-    const handleDeleteAdmin = async (admin) => {
+    const fetchAdmins = async () => {
+        setLoadingTable(true);
         try {
-            await deleteAdmin(admin.id);  // Deleta o admin
-            setAdmins(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));  // Remove da tabela
-            toast.current.show({ severity: 'success', summary: 'Sucesso', detail: 'Admin deletado com sucesso', life: 3000 });
+            const data = await getAdmins();
+            setAdmins(data || []);
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao deletar admin', life: 3000 });
+            showToast('error', 'Erro ao carregar administradores.');
+        } finally {
+            setLoadingTable(false);
         }
     };
 
-    const handleUpdateAdmin = (admin) => {
-        setSelectedAdmin(admin);
-        setModalShow(true);  // Abre o modal com o admin selecionado
+    useEffect(() => {
+        fetchAdmins();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [updateTable]);
+
+    // ── filtro ─────────────────────────────────────
+    const filtered = admins.filter(a => {
+        const q = searchQuery.toLowerCase();
+        return (
+            (a.email || '').toLowerCase().includes(q) ||
+            (a.nome  || '').toLowerCase().includes(q)
+        );
+    });
+
+    // ── exclusão ───────────────────────────────────
+    const handleDeleteRequest = (admin) => {
+        setDeletingAdmin(admin);
+        setShowDeleteModal(true);
     };
 
-    const handleAdminUpdated = (id, updatedAdmin) => {
-        setAdmins(prevAdmins => prevAdmins.map(admin =>
-            admin.id === id ? { ...admin, ...updatedAdmin } : admin
-        ));
-        setModalShow(false);  // Fecha o modal após atualizar
+    const handleDeleteConfirm = async () => {
+        if (!deletingAdmin) return;
+        setDeletingLoading(true);
+        try {
+            await deleteAdmin(deletingAdmin.id);
+            setAdmins(prev => prev.filter(a => a.id !== deletingAdmin.id));
+            showToast('success', `Admin "${deletingAdmin.email}" removido com sucesso!`);
+            if (onSuccess) onSuccess('Admin removido com sucesso!');
+        } catch (error) {
+            showToast('error', 'Erro ao remover admin. Tente novamente.');
+        } finally {
+            setDeletingLoading(false);
+            setShowDeleteModal(false);
+            setDeletingAdmin(null);
+        }
+    };
+
+    // ── edição ─────────────────────────────────────
+    const handleUpdateAdmin = (admin) => {
+        setSelectedAdmin(admin);
+        setModalShow(true);
+    };
+
+    const handleAdminSaved = (message) => {
+        setModalShow(false);
+        fetchAdmins();
+        showToast('success', message || 'Admin salvo com sucesso!');
+        if (onSuccess) onSuccess(message);
     };
 
     return (
         <div>
             <Toast ref={toast} />
-            <Table striped>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Email</th>
-                    <th>Opções</th>
-                </tr>
-                </thead>
-                <tbody>
-                {Array.isArray(admins) && admins.length > 0 ? (
-                    admins.map(admin => (
-                        <tr key={admin.id}>
-                            <td>{admin.id}</td>
-                            <td>{admin.email}</td>
-                            <td>
-                                <Dropdown>
-                                    <Dropdown.Toggle as={TfiMore} id="dropdown-custom-components" style={{ cursor: 'pointer' }} />
-                                    <Dropdown.Menu>
-                                        <Dropdown.Item onClick={() => handleUpdateAdmin(admin)}>Editar Admin</Dropdown.Item>
-                                        <Dropdown.Item onClick={() => handleDeleteAdmin(admin)}>Deletar Admin</Dropdown.Item>
-                                    </Dropdown.Menu>
-                                </Dropdown>
-                            </td>
-                        </tr>
-                    ))
-                ) : (
-                    <tr>
-                        <td colSpan="3">Nenhum admin cadastrado</td>
-                    </tr>
-                )}
-                </tbody>
-            </Table>
 
-            <Modal_Admin
+            {loadingTable ? (
+                <div className="text-center py-4">
+                    <Spinner animation="border" variant="success" />
+                    <p className="mt-2 text-muted">Carregando administradores...</p>
+                </div>
+            ) : (
+                <Table striped>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.length > 0 ? (
+                            filtered.map(admin => (
+                                <tr key={admin.id}>
+                                    <td>{admin.id}</td>
+                                    <td>{admin.nome}</td>
+                                    <td>{admin.email}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: 8, cursor: 'pointer' }}>
+                                            <FaRegEdit
+                                                style={{ width: '24px', height: '24px' }}
+                                                title="Editar"
+                                                onClick={() => handleUpdateAdmin(admin)}
+                                            />
+                                            <IoTrashOutline
+                                                style={{ width: '24px', height: '24px' }}
+                                                title="Remover"
+                                                onClick={() => handleDeleteRequest(admin)}
+                                            />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" className="text-center text-muted py-3">
+                                    {searchQuery
+                                        ? `Nenhum admin encontrado para "${searchQuery}".`
+                                        : 'Nenhum admin cadastrado.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Table>
+            )}
+
+            <ModalAdmin
                 show={modalShow}
                 onHide={() => setModalShow(false)}
                 admin={selectedAdmin}
-                onUpdateAdmin={handleAdminUpdated}
-                onSuccess={updateTable}  // Atualiza a tabela após sucesso
+                onSuccess={handleAdminSaved}
+            />
+
+            <ConfirmDeleteModal
+                show={showDeleteModal}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => { setShowDeleteModal(false); setDeletingAdmin(null); }}
+                admin={deletingAdmin}
+                loading={deletingLoading}
             />
         </div>
     );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import { Row, Col, Form, Button } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
 import Modal from "react-bootstrap/Modal";
 import "./Modal_Questoes.css";
 import { getEixos } from "../../services/eixosService";
@@ -150,17 +150,15 @@ function Modal_Questoes(props) {
             return;
         }
         try {
-            // Converte o array de strings para array de objetos
             const formattedQuestoesAdicionais = questoesAdicionais.map(item => ({ descricao: item }));
 
             const questaoData = {
-                questao, // Descrição da questão principal
+                questao,
                 dimensaoNumero: dimensaoSelecionada,
                 padraoRespostaId: padraorespostaselecionado,
                 basica,
                 tipo_questao: tipoQuestao,
                 categorias: Object.keys(categorias).filter(key => categorias[key]),
-
                 modalidades: modalidadeSelecionada,
                 questoesAdicionais: formattedQuestoesAdicionais,
             };
@@ -170,11 +168,16 @@ function Modal_Questoes(props) {
             } else {
                 await cadastrarQuestoes(questaoData);
             }
-            setSuccess('Questão salva com sucesso!');
-            props.onHide();
+
+            resetFormState();
+
+            // ← NÃO chama props.onHide() aqui — deixa o pai fechar via onSuccess
+            // O pai (Questoes.js) já faz setModalShow(false) dentro do handleSuccess
+            if (props.onSuccess) props.onSuccess('Questão salva com sucesso!');
+            if (props.onUpdateQuestion) props.onUpdateQuestion('Questão salva com sucesso!');
+
         } catch (error) {
-            setSuccess('');
-            if (error.response && error.response.data && error.response.data.error) {
+            if (error.response?.data?.error) {
                 setError(error.response.data.error);
             } else {
                 setError('Falha ao salvar a questão');

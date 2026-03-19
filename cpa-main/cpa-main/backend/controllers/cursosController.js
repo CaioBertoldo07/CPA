@@ -76,11 +76,9 @@ exports.getCursosByUnidadesIds = async (req, res) => {
             },
         });
 
-        if (cursos.length > 0) {
-            res.status(200).json(cursos);
-        } else {
-            res.status(404).json({ message: 'Nenhum curso encontrado para as unidades fornecidas' });
-        }
+        // ← ANTES: retornava 404 quando vazio — axios jogava no catch
+        // ← AGORA: sempre retorna 200 com array (vazio ou não)
+        res.status(200).json(cursos);
     } catch (error) {
         console.error("Erro ao buscar cursos:", error);
         res.status(500).json({ error: "Erro ao carregar cursos" });
@@ -101,11 +99,8 @@ exports.getTodosCursos = async (req, res) => {
             },
         });
 
-        if (cursos.length > 0) {
-            res.status(200).json(cursos);
-        } else {
-            res.status(404).json({ message: 'Nenhum curso encontrado' });
-        }
+        // ← mesmo fix
+        res.status(200).json(cursos);
     } catch (error) {
         console.error("Erro ao buscar todos os cursos:", error);
         res.status(500).json({ error: "Erro ao carregar todos os cursos" });
