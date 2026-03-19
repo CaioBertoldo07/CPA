@@ -1,16 +1,17 @@
-// src/pages/LoginPage.js
 import React, { useEffect, useState } from 'react';
 import './LoginPage.css';
 import Button from '../components/Buttons/Button';
 import Modal from 'react-bootstrap/Modal';
 import logo from '../assets/imgs/cpa_logo.svg';
 import { login } from '../services/authService';
+import { useNavigate } from 'react-router-dom'; // adicione
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showAdminOptions, setShowAdminOptions] = useState(false);
+  const navigate = useNavigate(); // adicione
 
   useEffect(() => {
     document.title = 'CPA - UEA';
@@ -18,16 +19,13 @@ const LoginPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     try {
       const { token, isAdmin } = await login(email, senha);
       localStorage.setItem('authToken', token);
-
-      // Se o usuário for admin, exibe as opções em um modal
       if (isAdmin) {
         setShowAdminOptions(true);
       } else {
-        window.location.href = '/alunos';
+        navigate('/alunos'); // troque window.location.href
       }
     } catch (err) {
       console.log(err);
@@ -36,7 +34,7 @@ const LoginPage = () => {
   };
 
   const handleAreaSelection = (path) => {
-    window.location.href = path;
+    navigate(path); // troque window.location.href
   };
 
   return (
@@ -61,17 +59,11 @@ const LoginPage = () => {
           onChange={e => setSenha(e.target.value)}
         />
         <a href="/">Esqueci minha senha</a>
-
         <Button>Realizar Login</Button>
         {errorMessage && <p className="error-message">{errorMessage}</p>}
       </form>
 
-      {/* Modal para escolha da área de acesso */}
-      <Modal
-        show={showAdminOptions}
-        onHide={() => setShowAdminOptions(false)}
-        centered
-      >
+      <Modal show={showAdminOptions} onHide={() => setShowAdminOptions(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Escolha a área de acesso</Modal.Title>
         </Modal.Header>

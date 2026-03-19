@@ -4,6 +4,46 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const loginDev = async (req, res) => {
+  const { email, senha } = req.body;
+  // Aceita qualquer email e senha para desenvolvimento, mas atribui permissões de admin apenas para um email específico
+  if (!email || !senha) {
+    return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
+  }
+
+  // Verficia se o email é o do admin para atribuir permissões
+  const admin = await prisma.admin.findUnique({ where: { email } });
+  const isAdmin = !!admin;
+
+  const user = {
+    email,
+    permissions: isAdmin
+      ? ['read:eixos', 'read:dimensoes', 'write:eixos', 'write:dimensoes', 'admin']
+      : ['read:eixos', 'read:dimensoes', 'read:modalidades'],
+    isAdmin,
+    curso: 'CURSO_TESTE',
+    unidade: 'UNIDADE_TESTE',
+    matricula: '2021000001',
+    oberonPerfilNome: isAdmin ? 'ADMIN' : 'DISCENTENTE',
+    usuarioNome: email.split('@')[0],
+    universityToken: 'fake-token-dev', // Token falso para desenvolvimento
+  }
+
+  const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: '24h' });
+
+  return res.json({
+    token,
+    universityToken: 'fake-token-dev',
+    usuario: email,
+    isAdmin,
+    curso: user.curso,
+    unidade: user.unidade,
+    matricula: user.matricula,
+    oberonPerfilNome: user.oberonPerfilNome,
+    usuarioNome: user.usuarioNome,
+  })
+}
+
 // Definição de permissões por tipo de usuário
 const PERMISSIONS = {
   admin: ['read:eixos', 'read:dimensoes', 'write:eixos', 'write:dimensoes', 'admin'],
@@ -117,4 +157,4 @@ const register = async (req, res) => {
   res.status(501).json({ message: 'Registro não implementado.' });
 };
 
-module.exports = { login, register };
+module.exports = { login, loginDev, register };

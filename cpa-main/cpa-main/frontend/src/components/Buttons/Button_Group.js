@@ -1,46 +1,42 @@
+// recebe callback onFiltroChange e comunica o status selecionado
 import React, { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
-function ButtonGroup_Eixos() {
-  const [activeButton, setActiveButton] = useState(0); // Inicializa com 0 para "Rascunho" pré-selecionado
+// ADICIONADO: mapeamento de índice para valor de status
+// null = todos, 1 = rascunho, 2 = enviada, 3 = encerrada
+const FILTROS = [
+    { label: 'Todos',      status: null },
+    { label: 'Rascunho',   status: 1    },
+    { label: 'Enviadas',   status: 2    },
+    { label: 'Encerradas', status: 3    },
+];
 
-  const handleButtonClick = (index) => {
-    setActiveButton(index);
-  };
+function ButtonGroup_Eixos({ onFiltroChange }) { // ADICIONADO: prop onFiltroChange
+    const [activeButton, setActiveButton] = useState(0);
 
-  return (
-    <ButtonGroup aria-label="Basic example">
-      <Button
-        variant={activeButton === 0 ? "success" : "light"}
-        onClick={() => handleButtonClick(0)}
-        style={{ color: activeButton === 0 ? "black" : "black" }}
-      >
-        Rascunho
-      </Button>
-      <Button
-        variant={activeButton === 1 ? "success" : "light"}
-        onClick={() => handleButtonClick(1)}
-        style={{ color: activeButton === 1 ? "black" : "black" }}
-      >
-        Configuradas
-      </Button>
-      <Button
-        variant={activeButton === 2 ? "success" : "light"}
-        onClick={() => handleButtonClick(2)}
-        style={{ color: activeButton === 2 ? "black" : "black" }}
-      >
-        Enviadas
-      </Button>
-      <Button
-        variant={activeButton === 3 ? "success" : "light"}
-        onClick={() => handleButtonClick(3)}
-        style={{ color: activeButton === 3 ? "black" : "black" }}
-      >
-        Encerradas
-      </Button>
-    </ButtonGroup>
-  );
+    const handleButtonClick = (index) => {
+        setActiveButton(index);
+        // ADICIONADO: comunica o status selecionado para o componente pai
+        if (onFiltroChange) {
+            onFiltroChange(FILTROS[index].status);
+        }
+    };
+
+    return (
+        <ButtonGroup aria-label="Filtro de avaliações">
+            {FILTROS.map((filtro, index) => (
+                <Button
+                    key={index}
+                    variant={activeButton === index ? 'success' : 'light'}
+                    onClick={() => handleButtonClick(index)}
+                    style={{ color: 'black' }}
+                >
+                    {filtro.label}
+                </Button>
+            ))}
+        </ButtonGroup>
+    );
 }
 
 export default ButtonGroup_Eixos;

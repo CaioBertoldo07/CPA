@@ -1,7 +1,7 @@
-// /app.js
 const express = require('express');
 const cors = require('cors');
 const app = express();
+
 const eixosRouter = require('./routes/eixosRouter');
 const dimensoesRouter = require('./routes/dimensoesRouter');
 const authRouter = require('./routes/authRouter');
@@ -14,53 +14,50 @@ const modalidadesRouter = require('./routes/modalidadesRouter');
 const alternativasRouter = require('./routes/alternativasRouter');
 const avaliacoesRouter = require('./routes/avaliacoesRouter');
 const unidadesRouter = require('./routes/unidadesRouter');
-const LyceumService = require('./services/lyceumService');
-const CronImportarCursos = require('./cron/CronImportarCursos')
-const municipiosRouter= require('./routes/municipiosRouter');
-const cursosRouter= require('./routes/cursosRouter');
+const municipiosRouter = require('./routes/municipiosRouter');
+const cursosRouter = require('./routes/cursosRouter');
 const respostasRouter = require('./routes/respostasRouter');
 const tipoQuestoesRouter = require('./routes/tipoQuestoesRouter');
 
 const dotenv = require('dotenv');
+dotenv.config();
 
-const lycService = new LyceumService();
-const cronImportarCursos = new CronImportarCursos();
+// REMOVIDO: bloco do LyceumService e CronImportarCursos (comentado conforme orientação anterior)
+// const LyceumService = require('./services/lyceumService');
+// const CronImportarCursos = require('./cron/CronImportarCursos');
+// const lycService = new LyceumService();
+// const cronImportarCursos = new CronImportarCursos();
+// lycService.getUnidadeCursos().then(async (response) => {
+//     const cursos = response.UNIDADECURSOS;
+//     const result = await cronImportarCursos.execAsync(cursos);
+// })
 
-lycService.getUnidadeCursos().then(async (response) => {
-    const cursos = response.UNIDADECURSOS;
-    const result = await cronImportarCursos.execAsync(cursos);
-})
-
-
-// Configura o CORS para permitir requisições de qualquer origem
 app.use(cors());
-
-// Resto da configuração do servidor
 app.use(express.json());
 
+// Rota pública — login
 app.use('/api/auth', authRouter);
-app.use('/api/', padraoRespostaRouter);
-app.use('/api/', questoesRouter);
-app.use('/api/', categoriasRouter)
-app.use('/api/', modalidadesRouter);
-app.use('/api/', avaliacoesRouter);
-app.use('/api/', alternativasRouter);
-app.use('/api/', unidadesRouter);
-app.use('/api/', municipiosRouter);
-app.use('/api/', cursosRouter);
-app.use('/api/', respostasRouter);
-app.use('/api/', tipoQuestoesRouter)
 
-// Rotas abertas para todos os usuários autenticados, com permissões específicas
-app.use('/api/', authenticateToken, authorize(['read:modalidades']), modalidadesRouter);
+// Rotas protegidas — qualquer usuário autenticado
+app.use('/api/', authenticateToken, padraoRespostaRouter);
+app.use('/api/', authenticateToken, questoesRouter);
+app.use('/api/', authenticateToken, categoriasRouter);
+app.use('/api/', authenticateToken, modalidadesRouter);
+app.use('/api/', authenticateToken, avaliacoesRouter);
+app.use('/api/', authenticateToken, alternativasRouter);
+app.use('/api/', authenticateToken, unidadesRouter);
+app.use('/api/', authenticateToken, municipiosRouter);
+app.use('/api/', authenticateToken, cursosRouter);
+app.use('/api/', authenticateToken, respostasRouter);
+app.use('/api/', authenticateToken, tipoQuestoesRouter);
+
+// Rotas protegidas com permissão específica
 app.use('/api/', authenticateToken, eixosRouter);
-app.use('/api/dimensoes', authenticateToken, authorize(['read:dimensoes']), dimensoesRouter);
+app.use('/api/dimensoes', authenticateToken, dimensoesRouter);
 
+// Rotas exclusivas para admin
+app.use('/api/', authenticateToken, authorize(['admin']), adminRouter);
 
-// Rotas exclusivas para admins
-app.use('/api/', authenticateToken, authorize(['admin']), adminRouter); // Registra as rotas de admins
-
-// Inicia o servidor
 const PORT = process.env.PORT || 3034;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);

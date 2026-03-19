@@ -87,5 +87,35 @@ export const verificarSeUsuarioRespondeu = async (idAvaliacao, token) => {
     }
 };
 
+// ADICIONADO: chamar endpoint de envio de avaliação
+export const enviarAvaliacao = async (id) => {
+    try {
+        const response = await api.put(`/avaliacoes/${id}/enviar`);
+        return response.data;
+    } catch (error) {
+        // Repassa o erro com a mensagem do backend para exibir no frontend
+        throw error.response?.data || { error: 'Erro ao enviar avaliação.' };
+    }
+};
 
+// ADICIONADO: chamar endpoint de exclusão de avaliação
+export const deletarAvaliacaoById = async (id) => {
+    try {
+        const response = await api.delete(`/avaliacoes/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { error: 'Erro ao excluir avaliação.' };
+    }
+};
 
+// ADICIONADO: chamar endpoint de prorrogação de avaliação
+export const prorrogarAvaliacaoById = async (id, novaDataFim) => {
+    try {
+        const response = await api.put(`/avaliacoes/${id}/prorrogar`, {
+            data_fim: novaDataFim
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { error: 'Erro ao prorrogar avaliação.' };
+    }
+};
