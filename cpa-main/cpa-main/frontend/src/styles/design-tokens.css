@@ -1,0 +1,140 @@
+/* ============================================================
+   CPA Design Tokens — cores, espaçamento, tipografia, sombras
+   Importe este arquivo no index.css ou App.css
+   ============================================================ */
+
+:root {
+    /* ── Paleta principal (verde institucional) ── */
+    --color-primary-50: #e8f5e9;
+    --color-primary-100: #c8e6c9;
+    --color-primary-200: #a5d6a7;
+    --color-primary-300: #81c784;
+    --color-primary-400: #4caf50;
+    --color-primary-500: #2e7d32;
+    /* base */
+    --color-primary-600: #256428;
+    --color-primary-700: #1b4d1e;
+    --color-primary-800: #1D5E24;
+    /* brand dark */
+    --color-primary-900: #113d16;
+
+    /* ── Superfícies ── */
+    --color-bg: #f4f6f8;
+    --color-surface: #ffffff;
+    --color-surface-2: #f9fafb;
+    --color-border: #e2e8f0;
+    --color-border-dark: #cbd5e1;
+
+    /* ── Texto ── */
+    --color-text-primary: #1a202c;
+    --color-text-secondary: #4a5568;
+    --color-text-muted: #718096;
+    --color-text-inverse: #ffffff;
+
+    /* ── Status ── */
+    --color-draft-bg: #f1f5f9;
+    --color-draft-text: #64748b;
+    --color-draft-ring: #94a3b8;
+
+    --color-sent-bg: #dbeafe;
+    --color-sent-text: #1d4ed8;
+    --color-sent-ring: #3b82f6;
+
+    --color-closed-bg: #fce7f3;
+    --color-closed-text: #9d174d;
+    --color-closed-ring: #ec4899;
+
+    --color-success-bg: #dcfce7;
+    --color-success-text: #166534;
+
+    --color-warning-bg: #fef9c3;
+    --color-warning-text: #854d0e;
+
+    /* ── Raios de borda ── */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+
+    /* ── Sombras ── */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.07);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.09);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.11);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.13);
+
+    /* ── Espaçamento ── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* ── Transições ── */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 400ms ease;
+
+    /* ── Tipografia ── */
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 28px;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+}
+
+/* ── Utilitários globais ── */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background: var(--color-bg);
+    line-height: var(--line-height-normal);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Animação de fade-in para cards */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes skeletonPulse {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp var(--transition-slow) both;
+}

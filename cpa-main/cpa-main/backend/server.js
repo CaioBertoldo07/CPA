@@ -22,7 +22,7 @@ const tipoQuestoesRouter = require('./routes/tipoQuestoesRouter');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// REMOVIDO: bloco do LyceumService e CronImportarCursos (comentado conforme orientação anterior)
+// REMOVIDO: bloco do LyceumService e CronImportarCursos (comentado para evitar execuções acidentais durante desenvolvimento, mas pode ser reativado para importação inicial de dados)
 // const LyceumService = require('./services/lyceumService');
 // const CronImportarCursos = require('./cron/CronImportarCursos');
 // const lycService = new LyceumService();

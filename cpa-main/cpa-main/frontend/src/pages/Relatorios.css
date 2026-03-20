@@ -1,0 +1,21 @@
+/* Relatorios.css */
+
+/* Linha da tabela com hover suave */
+.relatorio-row {
+    cursor: default;
+}
+
+.relatorio-row:hover td {
+    background: var(--color-surface-2);
+}
+
+/* Transição no botão Ver */
+.relatorio-row .cpa-btn-primary {
+    opacity: 0.85;
+    transition: opacity var(--transition-fast), transform var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.relatorio-row:hover .cpa-btn-primary {
+    opacity: 1;
+}

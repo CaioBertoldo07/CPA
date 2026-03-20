@@ -1,0 +1,42 @@
+/* RelatorioAvaliacao.css */
+
+/* ── Breadcrumb ── */
+.relatorio-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-6);
+}
+
+.relatorio-breadcrumb-sep {
+    color: var(--color-border-dark);
+}
+
+/* ── Card de questão ── */
+.questao-card {
+    border-left: 3px solid var(--color-primary-400) !important;
+    transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.questao-card:hover {
+    box-shadow: var(--shadow-md) !important;
+}
+
+.questao-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.questao-descricao {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+    line-height: var(--line-height-normal);
+    /* Evita texto cortado */
+    overflow-wrap: break-word;
+    word-break: break-word;
+}

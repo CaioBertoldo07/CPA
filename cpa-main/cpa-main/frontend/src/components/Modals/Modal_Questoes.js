@@ -170,11 +170,9 @@ function Modal_Questoes(props) {
             }
 
             resetFormState();
+            props.onHide();  // ← fecha o modal ANTES de notificar o pai
 
-            // ← NÃO chama props.onHide() aqui — deixa o pai fechar via onSuccess
-            // O pai (Questoes.js) já faz setModalShow(false) dentro do handleSuccess
             if (props.onSuccess) props.onSuccess('Questão salva com sucesso!');
-            if (props.onUpdateQuestion) props.onUpdateQuestion('Questão salva com sucesso!');
 
         } catch (error) {
             if (error.response?.data?.error) {

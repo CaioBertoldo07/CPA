@@ -1,498 +1,472 @@
-// src/components/Tables/Table_Avaliacao.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Table, Modal, Form, Button, Spinner, Badge, Pagination } from 'react-bootstrap';
-import { TfiMore } from 'react-icons/tfi';
-import styled from 'styled-components';
-import { FaTrash } from "react-icons/fa6";
-import { IoEyeOutline } from "react-icons/io5";
-import { BsUpload } from "react-icons/bs";
+import { Modal, Form, Button, Spinner } from 'react-bootstrap';
+import { FaTrash } from 'react-icons/fa6';
+import { IoEyeOutline } from 'react-icons/io5';
+import { BsUpload } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import { Toast } from 'primereact/toast';
 import {
-    getAvaliacoes,
-    enviarAvaliacao,
-    deletarAvaliacaoById,
-    prorrogarAvaliacaoById
+    getAvaliacoes, enviarAvaliacao,
+    deletarAvaliacaoById, prorrogarAvaliacaoById,
 } from '../../services/avaliacoesService';
 
-// ── styled-components ────────────────────────────
-const TableContainer = styled.div`margin: 20px;`;
-
-const OptionsMenu = styled.div`
-  position: absolute;
-  width: 145px;
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 5px;
-  display: ${({ visible }) => (visible ? 'block' : 'none')};
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-  z-index: 1;
-`;
-
-const Option = styled.div`
-  padding: 5px 0;
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  &:hover {
-    background-color: ${({ disabled }) => disabled ? 'transparent' : '#f5f5f5'};
-  }
-`;
-
-// ── constantes ───────────────────────────────────
-const STATUS_CONFIG = {
-    1: { label: 'Rascunho',  bg: 'secondary' },
-    2: { label: 'Enviada',   bg: 'primary'   },
-    3: { label: 'Encerrada', bg: 'danger'    },
+const STATUS_MAP = {
+    1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+    2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
+    3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
 };
 
-const ITENS_POR_PAGINA = 10;
-
-// ────────────────────────────────────────────────
-// Modal genérico de confirmação
-// ────────────────────────────────────────────────
-function ConfirmModal({ show, onConfirm, onCancel, title, body, confirmLabel = 'Confirmar', confirmVariant = 'primary', loading }) {
+const StatusBadge = ({ status }) => {
+    const s = STATUS_MAP[status] || STATUS_MAP[1];
     return (
-        <Modal show={show} onHide={onCancel} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>{title}</Modal.Title>
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 10px', borderRadius: 9999,
+            background: s.bg, color: s.color,
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.4px',
+            textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
+            {s.label}
+        </span>
+    );
+};
+
+const SkeletonRow = () => (
+    <tr>
+        {[50, 120, 70, 55, 80, 80, 90, 200].map((w, i) => (
+            <td key={i} style={{ padding: '15px 16px' }}>
+                <div style={{
+                    height: 13, width: w, borderRadius: 6,
+                    background: 'linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)',
+                    backgroundSize: '400% 100%',
+                    animation: 'skeletonPulse 1.4s ease infinite',
+                }} />
+            </td>
+        ))}
+    </tr>
+);
+
+function ConfirmModal({ show, onConfirm, onCancel, title, body, confirmLabel, confirmVariant = 'primary', loading }) {
+    return (
+        <Modal show={show} onHide={onCancel} centered size="sm">
+            <Modal.Header closeButton style={{ borderBottom: '1px solid #e2e8f0', padding: '14px 20px' }}>
+                <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>{title}</Modal.Title>
             </Modal.Header>
-            <Modal.Body>{body}</Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>
-                    Cancelar
-                </Button>
-                <Button
-                    variant={confirmVariant}
-                    onClick={onConfirm}
-                    disabled={loading}
-                    style={{ minWidth: 110 }}
-                >
+            <Modal.Body style={{ fontSize: 13, color: '#4a5568', padding: '16px 20px' }}>{body}</Modal.Body>
+            <Modal.Footer style={{ borderTop: '1px solid #e2e8f0', gap: 8, padding: '12px 20px' }}>
+                <Button variant="light" onClick={onCancel} disabled={loading} size="sm">Cancelar</Button>
+                <Button variant={confirmVariant} onClick={onConfirm} disabled={loading} size="sm" style={{ minWidth: 90 }}>
                     {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Aguarde...</>
-                        : confirmLabel
-                    }
+                        ? <><Spinner size="sm" animation="border" className="me-1" />Aguarde...</>
+                        : confirmLabel}
                 </Button>
             </Modal.Footer>
         </Modal>
     );
 }
 
-// ────────────────────────────────────────────────
-// Componente principal
-// ────────────────────────────────────────────────
+const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+
+const thStyle = {
+    padding: '11px 16px', fontSize: 11, fontWeight: 600,
+    color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px',
+    textAlign: 'left', whiteSpace: 'nowrap',
+    background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+};
+const tdStyle = { padding: '14px 16px', color: '#1a202c', verticalAlign: 'middle', fontSize: 13 };
+
+const pagBtn = {
+    width: 30, height: 30, borderRadius: 7,
+    border: '1px solid #e2e8f0', background: 'transparent',
+    color: '#4a5568', fontSize: 13, cursor: 'pointer',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'all 150ms',
+};
+
+const ITEMS_PER_PAGE = 10;
+
 const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
     const [avaliacoes, setAvaliacoes] = useState([]);
-    const [menuVisible, setMenuVisible] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [paginaAtual, setPaginaAtual] = useState(1);
-
-    // loading por ID
-    const [loadingEnviarId, setLoadingEnviarId]     = useState(null);
-    const [loadingExcluirId, setLoadingExcluirId]   = useState(null);
-    const [loadingProrrogarId, setLoadingProrrogarId] = useState(null);
-
-    // modal de confirmação de envio
-    const [showEnviarModal, setShowEnviarModal] = useState(false);
-    const [avaliacaoParaEnviar, setAvaliacaoParaEnviar] = useState(null);
-
-    // modal de confirmação de exclusão
-    const [showExcluirModal, setShowExcluirModal] = useState(false);
-    const [avaliacaoParaExcluir, setAvaliacaoParaExcluir] = useState(null);
-
-    // modal de prorrogação
+    const [pagina, setPagina] = useState(1);
+    const [loadingEnviarId, setLoadingEnviarId] = useState(null);
+    const [loadingExcluirId, setLoadingExcluirId] = useState(null);
+    const [showEnviar, setShowEnviar] = useState(false);
+    const [showExcluir, setShowExcluir] = useState(false);
     const [showProrrogar, setShowProrrogar] = useState(false);
-    const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState(null);
+    const [avaliacaoAlvo, setAvaliacaoAlvo] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
-
+    const [loadingProrrogar, setLoadingProrrogar] = useState(false);
     const toast = useRef(null);
     const navigate = useNavigate();
 
-    // ── busca ─────────────────────────────────────
     const fetchAvaliacoes = async () => {
         setLoading(true);
         try {
-            const data = await getAvaliacoes();
-            setAvaliacoes(data || []);
-            setPaginaAtual(1);
-        } catch (error) {
-            showToast('error', 'Erro ao carregar avaliações.');
+            setAvaliacoes((await getAvaliacoes()) || []);
+            setPagina(1);
+        } catch {
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao carregar avaliações.', life: 4000 });
         } finally {
             setLoading(false);
         }
     };
 
-    // Re-busca quando refreshTable muda (avaliação criada no modal)
-    useEffect(() => {
-        fetchAvaliacoes();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refreshTable]);
+    useEffect(() => { fetchAvaliacoes(); }, [refreshTable]);
+    useEffect(() => { setPagina(1); }, [filtroStatus, searchQuery]);
 
-    // Volta p/ pág 1 ao mudar filtro ou busca
-    useEffect(() => { setPaginaAtual(1); }, [filtroStatus, searchQuery]);
+    const showToast = (sev, msg) =>
+        toast.current?.show({ severity: sev, summary: sev === 'error' ? 'Erro' : 'Sucesso', detail: msg, life: 4000 });
 
-    useEffect(() => { window.scrollTo(0, 0); }, [paginaAtual]);
-
-    // ── helpers ───────────────────────────────────
-    const showToast = (severity, message) => {
-        toast.current?.show({
-            severity,
-            summary: severity === 'error' ? 'Erro' : 'Sucesso',
-            detail: message,
-            life: 4000
-        });
-    };
-
-    // ── filtros: status + busca ───────────────────
-    const avaliacoesFiltradas = avaliacoes
+    const filtered = avaliacoes
         .filter(a => filtroStatus ? a.status === filtroStatus : true)
         .filter(a => {
             if (!searchQuery) return true;
             const q = searchQuery.toLowerCase();
-            return (
-                String(a.id).includes(q) ||
-                (a.periodo_letivo || '').toLowerCase().includes(q) ||
-                (a.ano || '').toLowerCase().includes(q) ||
-                (a.modalidades || []).some(m =>
-                    (m.mod_ensino || '').toLowerCase().includes(q)
-                )
-            );
+            return String(a.id).includes(q)
+                || (a.periodo_letivo || '').toLowerCase().includes(q)
+                || (a.ano || '').toLowerCase().includes(q)
+                || (a.modalidades || []).some(m => (m.mod_ensino || '').toLowerCase().includes(q));
         });
 
-    const totalPaginas = Math.ceil(avaliacoesFiltradas.length / ITENS_POR_PAGINA);
-    const avaliacoesPaginadas = avaliacoesFiltradas.slice(
-        (paginaAtual - 1) * ITENS_POR_PAGINA,
-        paginaAtual * ITENS_POR_PAGINA
-    );
-
-    // ── handlers de menu ─────────────────────────
-    const handleMoreClick = (id) => {
-        setMenuVisible(menuVisible === id ? null : id);
-    };
-
-    const handleVisualizar = (avaliacao) => {
-        setMenuVisible(null);
-        navigate(`/relatorio/${avaliacao.id}`);
-    };
-
-    // ── ENVIAR: abre modal de confirmação ────────
-    const handleEnviarRequest = (avaliacao) => {
-        setMenuVisible(null);
-        setAvaliacaoParaEnviar(avaliacao);
-        setShowEnviarModal(true);
-    };
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginated = filtered.slice((pagina - 1) * ITEMS_PER_PAGE, pagina * ITEMS_PER_PAGE);
 
     const handleEnviarConfirm = async () => {
-        if (!avaliacaoParaEnviar) return;
-        setLoadingEnviarId(avaliacaoParaEnviar.id);
+        setLoadingEnviarId(avaliacaoAlvo.id);
         try {
-            await enviarAvaliacao(avaliacaoParaEnviar.id);
+            await enviarAvaliacao(avaliacaoAlvo.id);
             showToast('success', 'Avaliação enviada com sucesso.');
-            setShowEnviarModal(false);
-            setAvaliacaoParaEnviar(null);
+            setShowEnviar(false);
             fetchAvaliacoes();
-        } catch (err) {
-            const mensagem = err.detalhes
-                ? `${err.error} ${err.detalhes.join(' | ')}`
-                : err.error || 'Erro ao enviar avaliação.';
-            showToast('error', mensagem);
+        } catch (e) {
+            showToast('error', e.error || 'Erro ao enviar.');
         } finally {
             setLoadingEnviarId(null);
         }
     };
 
-    // ── EXCLUIR: abre modal de confirmação ───────
-    const handleExcluirRequest = (avaliacao) => {
-        setMenuVisible(null);
-        setAvaliacaoParaExcluir(avaliacao);
-        setShowExcluirModal(true);
-    };
-
     const handleExcluirConfirm = async () => {
-        if (!avaliacaoParaExcluir) return;
-        setLoadingExcluirId(avaliacaoParaExcluir.id);
+        setLoadingExcluirId(avaliacaoAlvo.id);
         try {
-            await deletarAvaliacaoById(avaliacaoParaExcluir.id);
-            showToast('success', 'Avaliação excluída com sucesso.');
-            setShowExcluirModal(false);
-            setAvaliacaoParaExcluir(null);
+            await deletarAvaliacaoById(avaliacaoAlvo.id);
+            showToast('success', 'Avaliação excluída.');
+            setShowExcluir(false);
             fetchAvaliacoes();
-        } catch (err) {
-            showToast('error', err.error || 'Erro ao excluir avaliação.');
+        } catch (e) {
+            showToast('error', e.error || 'Erro ao excluir.');
         } finally {
             setLoadingExcluirId(null);
         }
     };
 
-    // ── PRORROGAR ─────────────────────────────────
-    const handleAbrirProrrogar = (avaliacao) => {
-        setMenuVisible(null);
-        setAvaliacaoSelecionada(avaliacao);
-        setNovaDataFim('');
-        setShowProrrogar(true);
-    };
-
-    const handleConfirmarProrrogar = async () => {
-        if (loadingProrrogarId === avaliacaoSelecionada?.id) return;
-        if (!novaDataFim) {
-            showToast('error', 'Informe a nova data de encerramento.');
-            return;
-        }
-        setLoadingProrrogarId(avaliacaoSelecionada.id);
+    const handleProrrogarConfirm = async () => {
+        if (!novaDataFim) { showToast('error', 'Informe a nova data.'); return; }
+        setLoadingProrrogar(true);
         try {
-            await prorrogarAvaliacaoById(avaliacaoSelecionada.id, novaDataFim);
-            showToast('success', 'Avaliação prorrogada com sucesso.');
+            await prorrogarAvaliacaoById(avaliacaoAlvo.id, novaDataFim);
+            showToast('success', 'Avaliação prorrogada.');
             setShowProrrogar(false);
             fetchAvaliacoes();
-        } catch (err) {
-            showToast('error', err.error || 'Erro ao prorrogar avaliação.');
+        } catch (e) {
+            showToast('error', e.error || 'Erro ao prorrogar.');
         } finally {
-            setLoadingProrrogarId(null);
+            setLoadingProrrogar(false);
         }
     };
 
-    const estaProrrogando = loadingProrrogarId === avaliacaoSelecionada?.id;
+    const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            title={title}
+            style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                gap: 4, padding: '5px 10px',
+                fontSize: 11, fontWeight: 600,
+                background: 'transparent', color,
+                border: `1.5px solid ${color}33`,
+                borderRadius: 7, cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.5 : 1,
+                transition: 'all 150ms', whiteSpace: 'nowrap',
+                width: '100%',   // ocupa toda a célula do grid
+            }}
+            onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = hoverBg; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+        >
+            {children}
+        </button>
+    );
 
-    // ── render ────────────────────────────────────
     return (
-        <TableContainer>
+        <>
+            <style>{`
+                @keyframes skeletonPulse { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+                .av-row:hover td { background:#f8fafc !important; }
+            `}</style>
             <Toast ref={toast} />
 
-            {loading ? (
-                <div className="text-center py-5">
-                    <Spinner animation="border" variant="success" />
-                    <p className="mt-2 text-muted">Carregando avaliações...</p>
-                </div>
-            ) : (
-                <>
-                    <Table striped>
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Modalidades</th>
-                                <th>Período letivo</th>
-                                <th>Ano</th>
-                                <th>Início</th>
-                                <th>Fim</th>
-                                <th>Status</th>
-                                <th>Opções</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {avaliacoesPaginadas.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="text-center text-muted py-4">
-                                        {searchQuery
-                                            ? `Nenhuma avaliação encontrada para "${searchQuery}".`
-                                            : 'Nenhuma avaliação encontrada.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                avaliacoesPaginadas.map((item) => {
-                                    const estaEnviando  = loadingEnviarId  === item.id;
-                                    const estaExcluindo = loadingExcluirId === item.id;
-                                    const estaCarregando = estaEnviando || estaExcluindo;
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                    <tr>
+                        {[
+                            ['Código', 'left'],
+                            ['Modalidades', 'left'],
+                            ['Período', 'left'],
+                            ['Ano', 'left'],
+                            ['Início', 'left'],
+                            ['Fim', 'left'],
+                            ['Status', 'left'],
+                            ['Ações', 'right'],
+                        ].map(([h, a]) => (
+                            <th key={h} style={{ ...thStyle, textAlign: a }}>{h}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {loading ? (
+                        [1, 2, 3, 4, 5].map(i => <SkeletonRow key={i} />)
+                    ) : paginated.length === 0 ? (
+                        <tr>
+                            <td colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#718096', fontSize: 14 }}>
+                                <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+                                {searchQuery
+                                    ? `Nenhuma avaliação para "${searchQuery}".`
+                                    : 'Nenhuma avaliação encontrada.'}
+                            </td>
+                        </tr>
+                    ) : paginated.map(item => (
+                        <tr
+                            key={item.id}
+                            className="av-row"
+                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}
+                        >
+                            {/* Código */}
+                            <td style={tdStyle}>
+                                <span style={{
+                                    fontFamily: 'monospace', fontSize: 11,
+                                    background: '#f1f5f9', color: '#64748b',
+                                    padding: '2px 7px', borderRadius: 5,
+                                    border: '1px solid #e2e8f0', fontWeight: 600,
+                                }}>
+                                    #{item.id}
+                                </span>
+                            </td>
 
-                                    return (
-                                        <tr key={item.id}>
-                                            <td>{item.id}</td>
-                                            <td>
-                                                {item.modalidades?.length > 0
-                                                    ? item.modalidades.map((m, idx) => (
-                                                        <span key={idx}>
-                                                            {m.mod_ensino}
-                                                            {idx < item.modalidades.length - 1 ? ', ' : ''}
-                                                        </span>
-                                                    ))
-                                                    : 'N/A'}
-                                            </td>
-                                            <td>{item.periodo_letivo || 'N/A'}</td>
-                                            <td>{item.ano || 'N/A'}</td>
-                                            <td>{item.data_inicio ? new Date(item.data_inicio).toLocaleDateString() : 'N/A'}</td>
-                                            <td>{item.data_fim   ? new Date(item.data_fim).toLocaleDateString()   : 'N/A'}</td>
-                                            <td>
-                                                <Badge bg={STATUS_CONFIG[item.status]?.bg || 'dark'}>
-                                                    {STATUS_CONFIG[item.status]?.label || 'Desconhecido'}
-                                                </Badge>
-                                            </td>
-                                            <td style={{ position: 'relative' }}>
-                                                {estaCarregando ? (
-                                                    <Spinner animation="border" size="sm" variant="secondary" />
-                                                ) : (
-                                                    <TfiMore
-                                                        onClick={() => handleMoreClick(item.id)}
-                                                        style={{ cursor: 'pointer' }}
-                                                    />
-                                                )}
+                            {/* Modalidades */}
+                            <td style={tdStyle}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {(item.modalidades || []).map((m, i) => (
+                                        <span key={i} style={{
+                                            padding: '2px 8px',
+                                            background: '#f1f5f9', color: '#4a5568',
+                                            borderRadius: 9999, fontSize: 11, fontWeight: 500,
+                                            border: '1px solid #e2e8f0',
+                                        }}>
+                                            {m.mod_ensino}
+                                        </span>
+                                    ))}
+                                    {(!item.modalidades || item.modalidades.length === 0) && (
+                                        <span style={{ color: '#94a3b8' }}>—</span>
+                                    )}
+                                </div>
+                            </td>
 
-                                                <OptionsMenu visible={menuVisible === item.id}>
-                                                    <Option onClick={() => handleVisualizar(item)}>
-                                                        Visualizar <IoEyeOutline className='ms-2' />
-                                                    </Option>
+                            {/* Período */}
+                            <td style={{ ...tdStyle, fontWeight: 600 }}>{item.periodo_letivo || '—'}</td>
 
-                                                    {item.status === 1 && (
-                                                        <Option
-                                                            disabled={estaEnviando}
-                                                            onClick={() => !estaEnviando && handleEnviarRequest(item)}
-                                                        >
-                                                            {estaEnviando
-                                                                ? <><Spinner size="sm" animation="border" /> Enviando...</>
-                                                                : <>Enviar <BsUpload className='ms-2' /></>
-                                                            }
-                                                        </Option>
-                                                    )}
+                            {/* Ano */}
+                            <td style={tdStyle}>{item.ano || '—'}</td>
 
-                                                    {item.status === 2 && (
-                                                        <Option onClick={() => handleAbrirProrrogar(item)}>
-                                                            Prorrogar <BsUpload className='ms-2' />
-                                                        </Option>
-                                                    )}
+                            {/* Início */}
+                            <td style={{ ...tdStyle, color: '#718096' }}>{fmt(item.data_inicio)}</td>
 
-                                                    {item.status === 1 && (
-                                                        <Option
-                                                            disabled={estaExcluindo}
-                                                            onClick={() => !estaExcluindo && handleExcluirRequest(item)}
-                                                        >
-                                                            {estaExcluindo
-                                                                ? <><Spinner size="sm" animation="border" /> Excluindo...</>
-                                                                : <>Excluir <FaTrash className='ms-2' /></>
-                                                            }
-                                                        </Option>
-                                                    )}
-                                                </OptionsMenu>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </Table>
+                            {/* Fim */}
+                            <td style={{ ...tdStyle, color: '#718096' }}>{fmt(item.data_fim)}</td>
 
-                    {/* Paginação */}
-                    {totalPaginas > 1 && (
-                        <div className="d-flex justify-content-between align-items-center mt-2">
-                            <small className="text-muted">
-                                Exibindo {((paginaAtual - 1) * ITENS_POR_PAGINA) + 1}–
-                                {Math.min(paginaAtual * ITENS_POR_PAGINA, avaliacoesFiltradas.length)} de{' '}
-                                {avaliacoesFiltradas.length} avaliações
-                            </small>
-                            <Pagination size="sm" className="mb-0">
-                                <Pagination.Prev
-                                    disabled={paginaAtual === 1}
-                                    onClick={() => setPaginaAtual(p => p - 1)}
-                                />
-                                {Array.from({ length: totalPaginas }, (_, i) => (
-                                    <Pagination.Item
-                                        key={i + 1}
-                                        active={paginaAtual === i + 1}
-                                        onClick={() => setPaginaAtual(i + 1)}
+                            {/* Status */}
+                            <td style={tdStyle}>
+                                <StatusBadge status={item.status} />
+                            </td>
+
+                            {/* Ações — grid de 3 colunas fixas para alinhar todas as linhas */}
+                            <td style={{ ...tdStyle, width: 230, minWidth: 230 }}>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '68px 100px 36px',
+                                    gap: 5,
+                                    alignItems: 'center',
+                                }}>
+                                    {/* Col 1: Ver — sempre presente */}
+                                    <ActionBtn
+                                        onClick={() => navigate(`/relatorio/${item.id}`)}
+                                        color="#1D5E24"
+                                        hoverBg="#e8f5e9"
+                                        title="Ver relatório"
                                     >
-                                        {i + 1}
-                                    </Pagination.Item>
-                                ))}
-                                <Pagination.Next
-                                    disabled={paginaAtual === totalPaginas}
-                                    onClick={() => setPaginaAtual(p => p + 1)}
-                                />
-                            </Pagination>
-                        </div>
-                    )}
-                </>
+                                        <IoEyeOutline size={12} /> Ver
+                                    </ActionBtn>
+
+                                    {/* Col 2: Enviar | Prorrogar | placeholder */}
+                                    {item.status === 1 ? (
+                                        <ActionBtn
+                                            onClick={() => { setAvaliacaoAlvo(item); setShowEnviar(true); }}
+                                            color="#2563eb"
+                                            hoverBg="#dbeafe"
+                                            disabled={loadingEnviarId === item.id}
+                                        >
+                                            <BsUpload size={11} /> Enviar
+                                        </ActionBtn>
+                                    ) : item.status === 2 ? (
+                                        <ActionBtn
+                                            onClick={() => { setAvaliacaoAlvo(item); setNovaDataFim(''); setShowProrrogar(true); }}
+                                            color="#7c3aed"
+                                            hoverBg="#ede9fe"
+                                        >
+                                            <BsUpload size={11} /> Prorrogar
+                                        </ActionBtn>
+                                    ) : (
+                                        <span /> // placeholder — mantém o grid alinhado
+                                    )}
+
+                                    {/* Col 3: Lixeira | placeholder */}
+                                    {item.status === 1 ? (
+                                        <ActionBtn
+                                            onClick={() => { setAvaliacaoAlvo(item); setShowExcluir(true); }}
+                                            color="#ef4444"
+                                            hoverBg="#fee2e2"
+                                            disabled={loadingExcluirId === item.id}
+                                        >
+                                            <FaTrash size={11} />
+                                        </ActionBtn>
+                                    ) : (
+                                        <span /> // placeholder
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {/* Paginação */}
+            {totalPages > 1 && (
+                <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 16px', borderTop: '1px solid #f1f5f9',
+                }}>
+                    <span style={{ fontSize: 12, color: '#718096' }}>
+                        {((pagina - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(pagina * ITEMS_PER_PAGE, filtered.length)} de {filtered.length}
+                    </span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                            onClick={() => setPagina(p => p - 1)}
+                            disabled={pagina === 1}
+                            style={{ ...pagBtn, opacity: pagina === 1 ? 0.4 : 1 }}
+                        >‹</button>
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setPagina(i + 1)}
+                                style={{
+                                    ...pagBtn,
+                                    background: pagina === i + 1 ? '#1D5E24' : 'transparent',
+                                    color: pagina === i + 1 ? '#fff' : '#4a5568',
+                                    fontWeight: pagina === i + 1 ? 700 : 400,
+                                    borderColor: pagina === i + 1 ? '#1D5E24' : '#e2e8f0',
+                                }}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                        <button
+                            onClick={() => setPagina(p => p + 1)}
+                            disabled={pagina === totalPages}
+                            style={{ ...pagBtn, opacity: pagina === totalPages ? 0.4 : 1 }}
+                        >›</button>
+                    </div>
+                </div>
             )}
 
-            {/* ── Modal: confirmar ENVIO ─────────────── */}
+            {/* Modal — Enviar */}
             <ConfirmModal
-                show={showEnviarModal}
+                show={showEnviar}
                 onConfirm={handleEnviarConfirm}
-                onCancel={() => { setShowEnviarModal(false); setAvaliacaoParaEnviar(null); }}
+                onCancel={() => setShowEnviar(false)}
                 title="Enviar Avaliação"
                 body={
-                    <p>
-                        Deseja enviar a avaliação do período{' '}
-                        <strong>{avaliacaoParaEnviar?.periodo_letivo}</strong>?
-                        <br />
-                        <span className="text-muted small">
-                            Após enviada, a avaliação não poderá ser editada ou excluída.
-                        </span>
+                    <p style={{ margin: 0 }}>
+                        Deseja enviar a avaliação <strong>#{avaliacaoAlvo?.id}</strong> ({avaliacaoAlvo?.periodo_letivo})?
+                        Após enviada, não poderá ser editada.
                     </p>
                 }
                 confirmLabel="Enviar"
                 confirmVariant="success"
-                loading={loadingEnviarId === avaliacaoParaEnviar?.id}
+                loading={loadingEnviarId === avaliacaoAlvo?.id}
             />
 
-            {/* ── Modal: confirmar EXCLUSÃO ──────────── */}
+            {/* Modal — Excluir */}
             <ConfirmModal
-                show={showExcluirModal}
+                show={showExcluir}
                 onConfirm={handleExcluirConfirm}
-                onCancel={() => { setShowExcluirModal(false); setAvaliacaoParaExcluir(null); }}
+                onCancel={() => setShowExcluir(false)}
                 title="Excluir Avaliação"
                 body={
-                    <p>
-                        Tem certeza que deseja excluir a avaliação do período{' '}
-                        <strong>{avaliacaoParaExcluir?.periodo_letivo}</strong>?
-                        <br />
-                        <span className="text-muted small">Esta ação não pode ser desfeita.</span>
+                    <p style={{ margin: 0 }}>
+                        Tem certeza que deseja excluir a avaliação <strong>#{avaliacaoAlvo?.id}</strong>?
+                        Esta ação não pode ser desfeita.
                     </p>
                 }
                 confirmLabel="Excluir"
                 confirmVariant="danger"
-                loading={loadingExcluirId === avaliacaoParaExcluir?.id}
+                loading={loadingExcluirId === avaliacaoAlvo?.id}
             />
 
-            {/* ── Modal: PRORROGAR ───────────────────── */}
+            {/* Modal — Prorrogar */}
             <Modal
                 show={showProrrogar}
-                onHide={() => !estaProrrogando && setShowProrrogar(false)}
+                onHide={() => !loadingProrrogar && setShowProrrogar(false)}
                 centered
+                size="sm"
             >
-                <Modal.Header closeButton>
-                    <Modal.Title>Prorrogar Avaliação</Modal.Title>
+                <Modal.Header closeButton style={{ borderBottom: '1px solid #e2e8f0', padding: '14px 20px' }}>
+                    <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>Prorrogar Avaliação</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <p>Avaliação: <strong>{avaliacaoSelecionada?.periodo_letivo}</strong></p>
-                    <p>
-                        Data atual de encerramento:{' '}
-                        <strong>
-                            {avaliacaoSelecionada?.data_fim
-                                ? new Date(avaliacaoSelecionada.data_fim).toLocaleDateString()
-                                : 'N/A'}
-                        </strong>
+                <Modal.Body style={{ padding: '16px 20px', fontSize: 13, color: '#4a5568' }}>
+                    <p style={{ marginBottom: 12 }}>
+                        Avaliação: <strong>#{avaliacaoAlvo?.id}</strong> · Fim atual: <strong>{fmt(avaliacaoAlvo?.data_fim)}</strong>
                     </p>
                     <Form.Group>
-                        <Form.Label>Nova data de encerramento</Form.Label>
+                        <Form.Label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                            Nova data de encerramento
+                        </Form.Label>
                         <Form.Control
                             type="date"
                             value={novaDataFim}
                             onChange={e => setNovaDataFim(e.target.value)}
-                            disabled={estaProrrogando}
+                            disabled={loadingProrrogar}
+                            size="sm"
                         />
                     </Form.Group>
                 </Modal.Body>
-                <Modal.Footer>
-                    <Button
-                        variant="secondary"
-                        onClick={() => setShowProrrogar(false)}
-                        disabled={estaProrrogando}
-                    >
+                <Modal.Footer style={{ borderTop: '1px solid #e2e8f0', gap: 8, padding: '12px 20px' }}>
+                    <Button variant="light" size="sm" onClick={() => setShowProrrogar(false)} disabled={loadingProrrogar}>
                         Cancelar
                     </Button>
                     <Button
-                        variant="primary"
-                        style={{ backgroundColor: '#1D5E24', borderColor: '#1D5E24' }}
-                        onClick={handleConfirmarProrrogar}
-                        disabled={estaProrrogando}
+                        size="sm"
+                        style={{ background: '#1D5E24', border: 'none', minWidth: 90 }}
+                        onClick={handleProrrogarConfirm}
+                        disabled={loadingProrrogar}
                     >
-                        {estaProrrogando
-                            ? <><Spinner size="sm" animation="border" className="me-2" />Salvando...</>
-                            : 'Confirmar Prorrogação'
-                        }
+                        {loadingProrrogar
+                            ? <><Spinner size="sm" animation="border" className="me-1" />Salvando...</>
+                            : 'Confirmar'}
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </TableContainer>
+        </>
     );
 };
 
