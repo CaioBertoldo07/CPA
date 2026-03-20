@@ -48,7 +48,7 @@ const NavigationBar = () => {
                         <NavLink as={Link} to="/padraoresposta">Padrão de Resposta</NavLink>
                         <Nav.Link as={Link} to="/questoes">Questões</Nav.Link>
                         <Nav.Link as={Link} to="/avaliacoes">Avaliações</Nav.Link>
-                        <Nav.Link as={Link} to="/relatorios">Relatórios</Nav.Link>
+                        <Nav.Link as={Link} to="/relatorios">Dashboard</Nav.Link>
                         <Nav.Link as={Link} to="/admin">Admins</Nav.Link>
                         <NavDropdown title={userEmail} id="user-dropdown">
                             <NavDropdown.Item onClick={handleLogout}>Sair</NavDropdown.Item>

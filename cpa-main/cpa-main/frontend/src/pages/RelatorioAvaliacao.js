@@ -297,7 +297,7 @@ const RelatorioAvaliacao = () => {
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                        Relatórios
+                        Dashboard Geral
                     </button>
                     <span style={{ color: '#cbd5e1' }}>/</span>
                     <span>Avaliação #{avaliacao?.id}</span>
@@ -307,7 +307,7 @@ const RelatorioAvaliacao = () => {
                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #e2e8f0' }}>
                     <div>
                         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a202c', margin: '0 0 4px', lineHeight: 1.25 }}>
-                            Relatório #{avaliacao?.id}
+                            Dashboard Avaliação #{avaliacao?.id}
                         </h1>
                         <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>
                             Período: {avaliacao?.periodo_letivo || '—'} · Ano: {avaliacao?.ano || '—'}

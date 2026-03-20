@@ -167,7 +167,7 @@ const Relatorios = () => {
 
                 {/* ── Cabeçalho ── */}
                 <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
-                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Relatórios</h1>
+                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Dashboard</h1>
                     <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Acompanhe o desempenho e os resultados das avaliações institucionais</p>
                 </div>
 
