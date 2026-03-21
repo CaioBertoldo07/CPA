@@ -2,8 +2,16 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`,
+    baseURL: `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:3034'}/api`,
 });
+
+
+
+
+
+
+
+
 
 // Interceptor de requisição para adicionar o token no cabeçalho
 api.interceptors.request.use(

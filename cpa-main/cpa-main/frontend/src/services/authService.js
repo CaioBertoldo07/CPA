@@ -5,7 +5,11 @@ export const login = async (email, senha) => {
   try {
     console.log('Tentando logar com:', email);
 
-    const response = await api.post('/auth/login-dev', { // trocar para '/auth/login' em produção
+    // const response = await api.post('/auth/login-dev', { // trocar para '/auth/login' em produção
+    //   email,
+    //   senha
+    // });
+    const response = await api.post('/auth/login', { // trocar para '/auth/login' em produção
       email,
       senha
     });

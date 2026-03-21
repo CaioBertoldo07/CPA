@@ -22,15 +22,14 @@ const tipoQuestoesRouter = require('./routes/tipoQuestoesRouter');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// REMOVIDO: bloco do LyceumService e CronImportarCursos (comentado para evitar execuções acidentais durante desenvolvimento, mas pode ser reativado para importação inicial de dados)
-// const LyceumService = require('./services/lyceumService');
-// const CronImportarCursos = require('./cron/CronImportarCursos');
-// const lycService = new LyceumService();
-// const cronImportarCursos = new CronImportarCursos();
-// lycService.getUnidadeCursos().then(async (response) => {
-//     const cursos = response.UNIDADECURSOS;
-//     const result = await cronImportarCursos.execAsync(cursos);
-// })
+const LyceumService = require('./services/lyceumService');
+const CronImportarCursos = require('./cron/CronImportarCursos');
+const lycService = new LyceumService();
+const cronImportarCursos = new CronImportarCursos();
+lycService.getUnidadeCursos().then(async (response) => {
+    const cursos = response.UNIDADECURSOS;
+    const result = await cronImportarCursos.execAsync(cursos);
+})
 
 app.use(cors());
 app.use(express.json());
