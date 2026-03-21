@@ -1,8 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const adminRepository = require('../repositories/adminRepository');
 
 const loginDev = async (req, res) => {
   const { email, senha } = req.body;
@@ -12,7 +11,7 @@ const loginDev = async (req, res) => {
   }
 
   // Verficia se o email é o do admin para atribuir permissões
-  const admin = await prisma.admin.findUnique({ where: { email } });
+  const admin = await adminRepository.findByEmail(email);
   const isAdmin = !!admin;
 
   const user = {
@@ -110,7 +109,7 @@ const login = async (req, res) => {
     const usuarioNome = data.APILYCEUM.usuario.UsuarioNome;
 
     // Verifica se o usuário é um administrador
-    const admin = await prisma.admin.findUnique({ where: { email } });
+    const admin = await adminRepository.findByEmail(email);
     const isAdmin = !!admin;
     const userPermissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
