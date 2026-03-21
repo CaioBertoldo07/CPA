@@ -40,8 +40,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      # - "5940:5432"
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5940}:5432"
+      # To expose Postgres on the default host port 5432 instead, set POSTGRES_PORT=5432 in your environment.
     networks:
       - app-network
 

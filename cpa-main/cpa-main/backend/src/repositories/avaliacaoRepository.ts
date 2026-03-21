@@ -172,6 +172,23 @@ const findQuestaoGradeById = (id: number) => {
 };
 
 /**
+ * Busca todas as avaliações já respondidas pelo avaliador em uma única query
+ */
+const findAvaliacoesRespondidasPeloAvaliador = (matricula: string, avaliacaoIds: number[]) => {
+    return prisma.respostas.findMany({
+        where: {
+            avaliador_matricula: matricula,
+            avaliacao_questao: { avaliacao: { id: { in: avaliacaoIds } } },
+        },
+        select: {
+            id_avaliacao_questoes: true,
+            avaliacao_questao: { select: { id_avaliacao: true } },
+        },
+        distinct: ['id_avaliacao_questoes'],
+    });
+};
+
+/**
  * Busca uma questão de avaliação com detalhes (questões adicionais)
  */
 const findAvaliacaoQuestaoWithDetails = (id: number) => {
@@ -206,4 +223,5 @@ export {
     remove,
     findQuestaoGradeById,
     findAvaliacaoQuestaoWithDetails,
+    findAvaliacoesRespondidasPeloAvaliador,
 };

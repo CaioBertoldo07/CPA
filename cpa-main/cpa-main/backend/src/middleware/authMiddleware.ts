@@ -11,7 +11,13 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
         return res.sendStatus(401); // Token ausente
     }
 
-    jwt.verify(token, (process.env.SECRET_KEY || 'secret'), (err: any, user: any) => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.error('JWT_SECRET não configurado.');
+        return res.sendStatus(500);
+    }
+
+    jwt.verify(token, secret, (err: any, user: any) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });

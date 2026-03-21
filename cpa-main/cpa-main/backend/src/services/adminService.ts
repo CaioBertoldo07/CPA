@@ -11,6 +11,12 @@ class AdminService {
         return await adminRepository.create(data) as AdminResponseDTO;
     }
 
+    async update(email: string, data: { nome: string }): Promise<AdminResponseDTO> {
+        const admin = await adminRepository.findByEmail(email);
+        if (!admin) throw new AppError('Administrador não encontrado.', 404);
+        return await adminRepository.update(admin.id, data) as AdminResponseDTO;
+    }
+
     async delete(email: string): Promise<void> {
         const admin = await adminRepository.findByEmail(email);
         if (!admin) throw new AppError('Administrador não encontrado.', 404);

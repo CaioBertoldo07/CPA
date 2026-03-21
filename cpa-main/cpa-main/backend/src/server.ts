@@ -25,12 +25,47 @@ dotenv.config();
 
 import LyceumService from './services/lyceumService';
 import { CronImportarCursos } from './cron/CronImportarCursos';
-const lycService = new LyceumService();
-const cronImportarCursos = new CronImportarCursos();
-lycService.getUnidadeCursos().then(async (response) => {
-    const cursos = response.UNIDADECURSOS;
-    const result = await cronImportarCursos.execAsync(cursos);
-})
+
+const shouldImportCursosOnStart = process.env.IMPORT_CURSOS_ON_START === 'true';
+
+if (shouldImportCursosOnStart) {
+    let lycService: LyceumService | undefined;
+    let cronImportarCursos: CronImportarCursos | undefined;
+
+    try {
+        lycService = new LyceumService();
+        cronImportarCursos = new CronImportarCursos();
+    } catch (err) {
+        console.error('Erro ao inicializar LyceumService ou CronImportarCursos:', err);
+    }
+
+    if (lycService && cronImportarCursos) {
+        const cron = cronImportarCursos;
+        lycService
+            .getUnidadeCursos()
+            .then(async (response) => {
+                const cursos =
+                    response &&
+                    Object.prototype.hasOwnProperty.call(response, 'UNIDADECURSOS') &&
+                    Array.isArray(response.UNIDADECURSOS)
+                        ? response.UNIDADECURSOS
+                        : null;
+
+                if (!cursos) {
+                    console.error(
+                        'Resposta inválida de LyceumService.getUnidadeCursos; propriedade UNIDADECURSOS ausente ou em formato inesperado.',
+                        response && (response as any).UNIDADECURSOS
+                    );
+                    return;
+                }
+
+                await cron.execAsync(cursos);
+            })
+            .catch((error) => {
+                console.error('Erro ao importar cursos a partir do LyceumService:', error);
+            });
+    }
+}
 
 app.use(cors());
 app.use(express.json());

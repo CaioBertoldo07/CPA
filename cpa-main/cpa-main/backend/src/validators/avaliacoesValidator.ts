@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 
 export const createAvaliacaoSchema = yup.object().shape({
-    ano: yup.number().required('Ano é obrigatório.'),
+    ano: yup.string().matches(/^\d{4}$/, 'Ano deve ter 4 dígitos.').required('Ano é obrigatório.'),
     periodo_letivo: yup.string().required('Período letivo é obrigatório.'),
     data_inicio: yup.date().required('Data de início é obrigatória.'),
     data_fim: yup.date().required('Data de encerramento é obrigatória.').min(

@@ -1,4 +1,3 @@
-console.log('Carregando authRouter...');
 import express from 'express';
 const router = express.Router();
 import * as authController from '../controllers/authController';

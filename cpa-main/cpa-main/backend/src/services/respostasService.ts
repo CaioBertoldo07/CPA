@@ -7,6 +7,23 @@ class RespostasService {
     async salvar(data: SalvarRespostasDTO, matricula: string): Promise<void> {
         const { respostas } = data;
 
+        // Verificar se o avaliador já respondeu esta avaliação
+        if (respostas.length > 0 && respostas[0]?.id_avaliacao_questoes != null) {
+            const idAvaliacaoQuestao = Number(respostas[0].id_avaliacao_questoes);
+            if (!isNaN(idAvaliacaoQuestao)) {
+                const questaoData = await avaliacaoRepository.findAvaliacaoQuestaoWithDetails(idAvaliacaoQuestao);
+                if (questaoData) {
+                    const jaRespondeu = await respostasRepository.findRespostaExistente(
+                        matricula,
+                        (questaoData as any).id_avaliacao
+                    );
+                    if (jaRespondeu) {
+                        throw new AppError('Você já respondeu esta avaliação.', 400);
+                    }
+                }
+            }
+        }
+
         const grouped: Record<number, RespostaInputDTO[]> = {};
         for (const r of respostas) {
             const key = Number(r.id_avaliacao_questoes);
@@ -32,7 +49,7 @@ class RespostasService {
                         avaliacao_questao: { connect: { id: idQuestao } },
                         adicionalId: Number(idAdicional),
                         avaliador_matricula: matricula,
-                        resposta: subResposta.valor ? subResposta.valor.toString() : '',
+                        resposta: subResposta.valor != null ? subResposta.valor.toString() : '',
                         data_resposta: new Date(),
                     });
                 }
@@ -41,7 +58,7 @@ class RespostasService {
                 await respostasRepository.createResposta({
                     avaliacao_questao: { connect: { id: idQuestao } },
                     avaliador_matricula: matricula,
-                    resposta: r.valor ? r.valor.toString() : '',
+                    resposta: r.valor != null ? r.valor.toString() : '',
                     data_resposta: new Date(),
                 });
             }
