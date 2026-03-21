@@ -2,12 +2,12 @@
   "name": "cpa",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "migrate": "npx prisma migrate deploy && ts-node prisma/scripts.js"
+    "migrate": "npx prisma migrate deploy"
   },
   "keywords": [],
   "author": "",
@@ -15,26 +15,17 @@
   "dependencies": {
     "@prisma/client": "^5.17.0",
     "axios": "^1.7.2",
-    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "cpa": "file:",
     "dotenv": "^16.6.1",
     "express": "^4.19.2",
-    "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "node-cron": "^3.0.3",
-    "pg": "^8.11.5",
-    "react-router-dom": "^6.23.0",
-    "socket.io": "^4.7.5",
     "yup": "^1.4.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
-    "@types/pg": "^8.20.0",
     "nodemon": "^3.1.14",
     "prisma": "^5.17.0",
     "ts-node": "^10.9.2",
