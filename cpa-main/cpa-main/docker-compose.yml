@@ -5,6 +5,9 @@ services:
     restart: always
     ports:
       - "3034:3034"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
     env_file:
       - ./backend/.env
     depends_on:
