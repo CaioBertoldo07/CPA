@@ -1,23 +1,19 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import TableCategorias from '../components/Tables/Table_Categorias';
 import ModalCategorias from '../components/Modals/Modal_Categorias';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 
 const Categorias = () => {
     const [modalShow, setModalShow] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const toast = useRef(null);
+    const showNotification = useNotification();
 
     const handleSuccess = (message) => {
-        toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: message || 'Operação realizada!', life: 3000 });
+        showNotification(message || 'Operação realizada!', 'success');
     };
 
     return (
         <>
-            <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
             <div style={{ width: '100%', maxWidth: '1600px' }}>

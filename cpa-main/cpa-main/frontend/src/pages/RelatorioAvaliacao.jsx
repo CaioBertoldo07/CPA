@@ -1,15 +1,11 @@
-// src/pages/RelatorioAvaliacao.js — VERSÃO CORRIGIDA (sem components/ui)
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Alert } from 'react-bootstrap';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQueries';
 
@@ -206,7 +202,7 @@ const StatCard = ({ icon, label, value, topColor, iconBg, loading, delay = 0 }) 
 const RelatorioAvaliacao = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const toast = useRef(null);
+    const showNotification = useNotification();
 
     const {
         data: avaliacao,
@@ -254,7 +250,6 @@ const RelatorioAvaliacao = () => {
 
     return (
         <>
-            <Toast ref={toast} />
 
             <style>{`
                 @keyframes fadeInUp {

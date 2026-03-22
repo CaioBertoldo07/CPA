@@ -1,11 +1,10 @@
 // src/components/Tables/Table_Questoes.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Table.css';
-import { Modal, Button, Spinner, Table } from 'react-bootstrap';
-import { useGetQuestoesQuery, useGetQuestaoByIdQuery } from "../../hooks/queries/useQuestaoQueries";
+import { useGetQuestoesQuery } from "../../hooks/queries/useQuestaoQueries";
 import { useDeleteQuestaoMutation } from "../../hooks/mutations/useQuestaoMutations";
 import { getQuestaoById } from "../../api/questoes";
-import { Toast } from 'primereact/toast';
+import { useNotification } from "../../context/NotificationContext";
 import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import ModalQuestoes from '../Modals/Modal_Questoes';
@@ -59,6 +58,7 @@ const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
 const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
     const { data: dataQuestoes = [], isLoading: loadingTable, isError } = useGetQuestoesQuery();
     const deleteMutation = useDeleteQuestaoMutation();
+    const showNotification = useNotification();
 
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -66,13 +66,7 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingQuestao, setDeletingQuestao] = useState(null);
 
-    const toast = useRef(null);
-
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar questões.'); }, [isError]);
-
-    const showToast = (severity, detail) => {
-        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-    };
+    useEffect(() => { if (isError) showNotification('Erro ao carregar questões.', 'error'); }, [isError, showNotification]);
 
     const filtered = dataQuestoes.filter(q => {
         const term = searchQuery.toLowerCase();
@@ -89,14 +83,13 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
             setSelectedQuestion(details);
             setShowEditModal(true);
         } catch (error) {
-            showToast('error', 'Erro ao carregar detalhes da questão.');
+            showNotification('Erro ao carregar detalhes da questão.', 'error');
         }
     };
 
     const handleEditSaved = (message) => {
         setShowEditModal(false);
         setSelectedQuestion(null);
-        showToast('success', message || 'Questão atualizada com sucesso!');
         if (onSuccess) onSuccess(message || 'Questão atualizada com sucesso!');
     };
 
@@ -109,17 +102,16 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
         if (!deletingQuestao) return;
         deleteMutation.mutate(deletingQuestao.id, {
             onSuccess: () => {
-                showToast('success', 'Questão excluída com sucesso!');
+                if (onSuccess) onSuccess('Questão excluída com sucesso!');
                 setShowDeleteModal(false);
                 setDeletingQuestao(null);
             },
-            onError: () => showToast('error', 'Erro ao excluir questão. Tente novamente.')
+            onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir questão. Tente novamente.', 'error')
         });
     };
 
     return (
         <div>
-            <Toast ref={toast} />
             <style>{`.q-row:hover td { background:#f8fafc !important; }`}</style>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

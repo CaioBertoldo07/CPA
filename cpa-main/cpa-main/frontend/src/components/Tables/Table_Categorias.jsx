@@ -1,9 +1,7 @@
-// src/components/Tables/Table_Categorias.js
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useGetCategoriasQuery } from "../../hooks/queries/useCategoriaQueries";
 import { useDeleteCategoriaMutation } from "../../hooks/mutations/useCategoriaMutations";
-import { Table, Spinner } from 'react-bootstrap';
-import { Toast } from 'primereact/toast';
+import { useNotification } from "../../context/NotificationContext";
 import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import ModalCategorias from '../Modals/Modal_Categorias';
@@ -57,6 +55,7 @@ const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
 const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
     const { data: datacategorias = [], isLoading: loadingTable, isError } = useGetCategoriasQuery();
     const deleteMutation = useDeleteCategoriaMutation();
+    const showNotification = useNotification();
 
     const [modalShow, setModalShow] = useState(false);
     const [selectedCategoria, setSelectedCategoria] = useState(null);
@@ -64,13 +63,7 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingCategoria, setDeletingCategoria] = useState(null);
 
-    const toast = useRef(null);
-
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar categorias.'); }, [isError]);
-
-    const showToast = (severity, detail) => {
-        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-    };
+    useEffect(() => { if (isError) showNotification('Erro ao carregar categorias.', 'error'); }, [isError, showNotification]);
 
     const filtered = datacategorias.filter(c =>
         (c.nome || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -85,12 +78,11 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
         if (!deletingCategoria) return;
         deleteMutation.mutate(deletingCategoria.id, {
             onSuccess: () => {
-                showToast('success', `Categoria "${deletingCategoria.nome}" excluída com sucesso!`);
-                if (onSuccess) onSuccess('Categoria excluída com sucesso!');
+                if (onSuccess) onSuccess(`Categoria "${deletingCategoria.nome}" excluída com sucesso!`);
                 setShowDeleteModal(false);
                 setDeletingCategoria(null);
             },
-            onError: () => showToast('error', 'Erro ao excluir categoria. Tente novamente.')
+            onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir categoria. Tente novamente.', 'error')
         });
     };
 
@@ -101,14 +93,12 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
 
     const handleCategoriaSaved = (message) => {
         setModalShow(false);
-        showToast('success', message || 'Categoria salva com sucesso!');
         if (onSuccess) onSuccess(message);
     };
 
     return (
         <div>
             <style>{`.cat-row:hover td { background:#f8fafc !important; }`}</style>
-            <Toast ref={toast} />
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>

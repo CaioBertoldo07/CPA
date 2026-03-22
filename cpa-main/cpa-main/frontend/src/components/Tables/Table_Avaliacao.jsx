@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Spinner } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa6';
 import { IoEyeOutline } from 'react-icons/io5';
 import { BsUpload } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
-import { Toast } from 'primereact/toast';
+import { useNotification } from '../../context/NotificationContext';
 import { useGetAvaliacoesQuery } from '../../hooks/queries/useAvaliacaoQueries';
 import {
     useDeleteAvaliacaoMutation,
@@ -83,11 +83,12 @@ const pagBtn = {
     cursor: 'pointer', transition: 'all 150ms', color: '#4a5568'
 };
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
     const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
     const prorrogarMutation = useProrrogarAvaliacaoMutation();
+    const showNotification = useNotification();
 
     const [pagina, setPagina] = useState(1);
     const [showEnviar, setShowEnviar] = useState(false);
@@ -95,14 +96,10 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
     const [showProrrogar, setShowProrrogar] = useState(false);
     const [avaliacaoAlvo, setAvaliacaoAlvo] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
-    const toast = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => { setPagina(1); }, [filtroStatus, searchQuery]);
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar avaliações.'); }, [isError]);
-
-    const showToast = (sev, msg) =>
-        toast.current?.show({ severity: sev, summary: sev === 'error' ? 'Erro' : 'Sucesso', detail: msg, life: 4000 });
+    useEffect(() => { if (isError) showNotification('Erro ao carregar avaliações.', 'error'); }, [isError, showNotification]);
 
     const filtered = avaliacoes
         .filter(a => filtroStatus ? a.status === filtroStatus : true)
@@ -121,31 +118,34 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
     const handleEnviarConfirm = async () => {
         enviarMutation.mutate(avaliacaoAlvo.id, {
             onSuccess: () => {
-                showToast('success', 'Avaliação enviada com sucesso.');
+                showNotification('Avaliação enviada com sucesso!', 'success');
+                onSuccess?.('Avaliação enviada com sucesso!');
                 setShowEnviar(false);
             },
-            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao enviar.')
+            onError: (err) => showNotification(err.response?.data?.message || err.response?.data?.error || 'Erro ao enviar.', 'error')
         });
     };
 
     const handleExcluirConfirm = async () => {
         deleteMutation.mutate(avaliacaoAlvo.id, {
             onSuccess: () => {
-                showToast('success', 'Avaliação excluída.');
+                showNotification('Avaliação excluída com sucesso!', 'success');
+                onSuccess?.('Avaliação excluída!');
                 setShowExcluir(false);
             },
-            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao excluir.')
+            onError: (err) => showNotification(err.response?.data?.message || err.response?.data?.error || 'Erro ao excluir.', 'error')
         });
     };
 
     const handleProrrogarConfirm = async () => {
-        if (!novaDataFim) { showToast('error', 'Informe a nova data.'); return; }
+        if (!novaDataFim) { showNotification('Informe a nova data.', 'warning'); return; }
         prorrogarMutation.mutate({ id: avaliacaoAlvo.id, novaDataFim }, {
             onSuccess: () => {
-                showToast('success', 'Avaliação prorrogada.');
+                showNotification('Avaliação prorrogada com sucesso!', 'success');
+                onSuccess?.('Avaliação prorrogada!');
                 setShowProrrogar(false);
             },
-            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao prorrogar.')
+            onError: (err) => showNotification(err.response?.data?.message || err.response?.data?.error || 'Erro ao prorrogar.', 'error')
         });
     };
 
@@ -163,7 +163,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 borderRadius: 7, cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1,
                 transition: 'all 150ms', whiteSpace: 'nowrap',
-                width: '100%',   // ocupa toda a célula do grid
+                width: '100%',
             }}
             onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = hoverBg; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
@@ -179,7 +179,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
                 .av-row:hover td { background:#f8fafc !important; }
             `}</style>
-            <Toast ref={toast} />
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
@@ -216,7 +215,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                             className="av-row"
                             style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms', animation: `fadeInUp 300ms ${idx * 40}ms both` }}
                         >
-                            {/* Código */}
                             <td style={tdStyle}>
                                 <span style={{
                                     fontFamily: 'monospace', fontSize: 11,
@@ -227,8 +225,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                     #{item.id}
                                 </span>
                             </td>
-
-                            {/* Modalidades */}
                             <td style={tdStyle}>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                     {(item.modalidades || []).map((m, i) => (
@@ -246,25 +242,13 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                     )}
                                 </div>
                             </td>
-
-                            {/* Período */}
                             <td style={{ ...tdStyle, fontWeight: 600 }}>{item.periodo_letivo || '—'}</td>
-
-                            {/* Ano */}
                             <td style={tdStyle}>{item.ano || '—'}</td>
-
-                            {/* Início */}
                             <td style={{ ...tdStyle, color: '#718096' }}>{fmt(item.data_inicio)}</td>
-
-                            {/* Fim */}
                             <td style={{ ...tdStyle, color: '#718096' }}>{fmt(item.data_fim)}</td>
-
-                            {/* Status */}
                             <td style={tdStyle}>
                                 <StatusBadge status={item.status} />
                             </td>
-
-                            {/* Ações — grid de 3 colunas fixas para alinhar todas as linhas */}
                             <td style={{ ...tdStyle, width: 230, minWidth: 230 }}>
                                 <div style={{
                                     display: 'grid',
@@ -272,7 +256,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                     gap: 5,
                                     alignItems: 'center',
                                 }}>
-                                    {/* Col 1: Ver — sempre presente */}
                                     <ActionBtn
                                         onClick={() => navigate(`/relatorio/${item.id}`)}
                                         color="#1D5E24"
@@ -281,8 +264,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                     >
                                         <IoEyeOutline size={12} /> Ver
                                     </ActionBtn>
-
-                                    {/* Col 2: Enviar | Prorrogar | placeholder */}
                                     {item.status === 1 ? (
                                         <ActionBtn
                                             onClick={() => { setAvaliacaoAlvo(item); setShowEnviar(true); }}
@@ -301,10 +282,8 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                             <BsUpload size={11} /> Prorrogar
                                         </ActionBtn>
                                     ) : (
-                                        <span /> // placeholder — mantém o grid alinhado
+                                        <span />
                                     )}
-
-                                    {/* Col 3: Lixeira | placeholder */}
                                     {item.status === 1 ? (
                                         <ActionBtn
                                             onClick={() => { setAvaliacaoAlvo(item); setShowExcluir(true); }}
@@ -315,7 +294,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                             <FaTrash size={11} />
                                         </ActionBtn>
                                     ) : (
-                                        <span /> // placeholder
+                                        <span />
                                     )}
                                 </div>
                             </td>
@@ -324,7 +303,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 </tbody>
             </table>
 
-            {/* Paginação */}
             {totalPages > 1 && (
                 <div style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -363,7 +341,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 </div>
             )}
 
-            {/* Modal — Enviar */}
             <ConfirmModal
                 show={showEnviar}
                 onConfirm={handleEnviarConfirm}
@@ -380,7 +357,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 loading={enviarMutation.isPending}
             />
 
-            {/* Modal — Excluir */}
             <ConfirmModal
                 show={showExcluir}
                 onConfirm={handleExcluirConfirm}
@@ -397,7 +373,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                 loading={deleteMutation.isPending}
             />
 
-            {/* Modal — Prorrogar */}
             <Modal
                 show={showProrrogar}
                 onHide={() => !prorrogarMutation.isPending && setShowProrrogar(false)}

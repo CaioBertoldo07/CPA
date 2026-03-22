@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { Toast } from 'primereact/toast';
+import { useNotification } from '../context/NotificationContext';
 import logo from '../assets/imgs/cpa_logo.svg';
 import simIcon from '../assets/imgs/yes_emoji.svg';
 import naoIcon from '../assets/imgs/no_emoji.svg';
@@ -269,8 +269,6 @@ const AvaliacaoAlunos = () => {
                     {adicionarRespostaMutation.isPending ? 'Enviando...' : 'Enviar Avaliação'}
                 </button>
             </main>
-
-            <Toast ref={toast} />
         </div>
     );
 };

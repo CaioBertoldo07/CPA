@@ -1,13 +1,9 @@
-// src/components/Tables/Table_Modalidades.js
-import React, { useState, useEffect, useRef } from 'react';
-import { Table, Modal, Button, Spinner } from 'react-bootstrap';
-import './Table.css';
+import React, { useState, useEffect } from 'react';
+import { useNotification } from '../../context/NotificationContext';
 import EditModal from '../Modals/ModalUpdateModalidades';
 import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
-import { Toast } from 'primereact/toast';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
-
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 
@@ -59,6 +55,7 @@ const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
 const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
     const { data: modalidades = [], isLoading: loading, isError } = useGetModalidadesQuery();
     const deleteMutation = useDeleteModalidadeMutation();
+    const showNotification = useNotification();
 
     const [editingModalidade, setEditingModalidade] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -66,13 +63,7 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingModalidade, setDeletingModalidade] = useState(null);
 
-    const toast = useRef(null);
-
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar modalidades.'); }, [isError]);
-
-    const showToast = (severity, detail) => {
-        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-    };
+    useEffect(() => { if (isError) showNotification('Erro ao carregar modalidades.', 'error'); }, [isError, showNotification]);
 
     const filtered = modalidades.filter(m => {
         const q = searchQuery.toLowerCase();
@@ -89,7 +80,6 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
 
     const handleEditSave = (message) => {
         setShowEditModal(false);
-        showToast('success', message || 'Modalidade atualizada com sucesso!');
         if (onSuccess) onSuccess(message);
     };
 
@@ -102,12 +92,11 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
         if (!deletingModalidade) return;
         deleteMutation.mutate(deletingModalidade.id, {
             onSuccess: () => {
-                showToast('success', `Modalidade "${deletingModalidade.mod_ensino}" excluída com sucesso!`);
-                if (onSuccess) onSuccess('Modalidade excluída com sucesso!');
+                if (onSuccess) onSuccess(`Modalidade "${deletingModalidade.mod_ensino}" excluída com sucesso!`);
                 setShowDeleteModal(false);
                 setDeletingModalidade(null);
             },
-            onError: () => showToast('error', 'Erro ao excluir modalidade. Tente novamente.')
+            onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir modalidade. Tente novamente.', 'error')
         });
     };
 
@@ -118,7 +107,6 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
 
     return (
         <div>
-            <Toast ref={toast} />
             <style>{`.mod-row:hover td { background:#f8fafc !important; }`}</style>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

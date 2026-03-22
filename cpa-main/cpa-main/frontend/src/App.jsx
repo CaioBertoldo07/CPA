@@ -20,35 +20,21 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './styles/theme';
 
-import { Toast } from 'primereact/toast';
+import { NotificationProvider, useNotification } from './context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 
 const AuthObserver = () => {
     const navigate = useNavigate();
-    const toast = React.useRef(null);
+    const showNotification = useNotification();
 
     React.useEffect(() => {
         const handleUnauthorized = () => {
-            if (toast.current) {
-                toast.current.show({
-                    severity: 'error',
-                    summary: 'Sessão Expirada',
-                    detail: 'Sua sessão expirou. Por favor, faça login novamente.',
-                    life: 5000
-                });
-            }
+            showNotification('Sua sessão expirou. Por favor, faça login novamente.', 'error');
             setTimeout(() => { navigate('/login'); }, 1500);
         };
 
         const handleAccessDenied = () => {
-            if (toast.current) {
-                toast.current.show({
-                    severity: 'warn',
-                    summary: 'Acesso Negado',
-                    detail: 'Você não tem permissão para acessar esta página.',
-                    life: 5000
-                });
-            }
+            showNotification('Você não tem permissão para acessar esta página.', 'warning');
         };
 
         window.addEventListener('auth:unauthorized', handleUnauthorized);
@@ -58,45 +44,47 @@ const AuthObserver = () => {
             window.removeEventListener('auth:unauthorized', handleUnauthorized);
             window.removeEventListener('auth:access-denied', handleAccessDenied);
         };
-    }, [navigate]);
+    }, [navigate, showNotification]);
 
-    return <Toast ref={toast} />;
+    return null;
 };
 
 const App = () => {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Router>
-                <AuthObserver />
-                <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/" element={<LoginPage />} />
+            <NotificationProvider>
+                <Router>
+                    <AuthObserver />
+                    <Routes>
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/" element={<LoginPage />} />
 
-                    {/* Admin Routes with Layout */}
-                    <Route path="/eixos" element={<ProtectedRoute element={Eixos} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/avaliacoes" element={<ProtectedRoute element={Avaliacoes} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/relatorios" element={<ProtectedRoute element={Relatorios} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/questoes" element={<ProtectedRoute element={Questoes} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/admin" element={<ProtectedRoute element={AdminPage} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/modalidades" element={<ProtectedRoute element={Modalidades} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/categorias" element={<ProtectedRoute element={Categorias} isAdminRequired={true} layout={Layout} />} />
-                    <Route path="/padraoresposta" element={<ProtectedRoute element={PadraoResposta} isAdminRequired={true} layout={Layout} />} />
+                        {/* Admin Routes with Layout */}
+                        <Route path="/eixos" element={<ProtectedRoute element={Eixos} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/avaliacoes" element={<ProtectedRoute element={Avaliacoes} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/relatorios" element={<ProtectedRoute element={Relatorios} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/questoes" element={<ProtectedRoute element={Questoes} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/admin" element={<ProtectedRoute element={AdminPage} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/modalidades" element={<ProtectedRoute element={Modalidades} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/categorias" element={<ProtectedRoute element={Categorias} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/padraoresposta" element={<ProtectedRoute element={PadraoResposta} isAdminRequired={true} layout={Layout} />} />
 
-                    {/* Student Routes */}
-                    <Route path="/alunos" element={<ProtectedRoute element={Alunos} />} />
-                    <Route
-                        path="/alunos/avaliacao/:id"
-                        element={<ProtectedRoute element={AvaliacaoAlunos} />}
-                    />
+                        {/* Student Routes */}
+                        <Route path="/alunos" element={<ProtectedRoute element={Alunos} />} />
+                        <Route
+                            path="/alunos/avaliacao/:id"
+                            element={<ProtectedRoute element={AvaliacaoAlunos} />}
+                        />
 
-                    {/* Relatório can also have Layout if it's for admins */}
-                    <Route
-                        path="/relatorio/:id"
-                        element={<ProtectedRoute element={RelatorioAvaliacao} isAdminRequired={true} layout={Layout} />}
-                    />
-                </Routes>
-            </Router>
+                        {/* Relatório can also have Layout if it's for admins */}
+                        <Route
+                            path="/relatorio/:id"
+                            element={<ProtectedRoute element={RelatorioAvaliacao} isAdminRequired={true} layout={Layout} />}
+                        />
+                    </Routes>
+                </Router>
+            </NotificationProvider>
         </ThemeProvider>
     );
 };

@@ -39,7 +39,7 @@ function Modal_Categorias(props) {
                 onHide();
                 onSuccess?.(data?.message || 'Categoria salva com sucesso!');
             },
-            onError: (err) => setError(err.response?.data?.error || 'Erro ao salvar categoria.')
+            onError: (err) => setError(err.response?.data?.message || err.response?.data?.error || 'Erro ao salvar categoria.')
         });
     };
 

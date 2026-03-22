@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
 
 const IconClipboard = () => (
@@ -117,7 +114,7 @@ const thStyle = {
 const tdStyle = { padding: '14px 16px', color: '#1a202c', verticalAlign: 'middle', fontSize: 13 };
 
 const Relatorios = () => {
-    const toast = useRef(null);
+    const showNotification = useNotification();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -129,14 +126,9 @@ const Relatorios = () => {
 
     useEffect(() => {
         if (isError) {
-            toast.current?.show({
-                severity: 'error',
-                summary: 'Erro',
-                detail: 'Não foi possível carregar as avaliações.',
-                life: 4000
-            });
+            showNotification('Não foi possível carregar as avaliações.', 'error');
         }
-    }, [isError]);
+    }, [isError, showNotification]);
 
     const total = avaliacoes.length;
     const enviadas = avaliacoes.filter(a => a.status === 2).length;
@@ -160,7 +152,6 @@ const Relatorios = () => {
 
     return (
         <>
-            <Toast ref={toast} />
             <style>{`
                 @keyframes fadeInUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes skeletonPulse { 0%{background-position:-200% 0} 100%{background-position:200% 0} }

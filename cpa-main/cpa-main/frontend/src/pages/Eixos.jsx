@@ -1,30 +1,21 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import TableEixos from '../components/Tables/TableEixos';
 import ModalEixos from '../components/Modals/Modal_Eixos';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 
 const Eixos = () => {
     const [modalShow, setModalShow] = useState(false);
     const [updateTable, setUpdateTable] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const toast = useRef(null);
+    const showNotification = useNotification();
 
     const handleSuccess = (message) => {
         setUpdateTable(prev => !prev);
-        toast.current?.show({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: message || 'Operação realizada com sucesso!',
-            life: 3000,
-        });
+        showNotification(message || 'Operação realizada com sucesso!', 'success');
     };
 
     return (
         <>
-            <Toast ref={toast} />
 
             <style>{`
                 @keyframes fadeInUp {

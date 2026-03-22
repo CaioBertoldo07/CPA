@@ -1,7 +1,6 @@
 // src/components/Tables/TableAdmins.js
-import React, { useEffect, useState, useRef } from 'react';
-import { Table, Modal, Button, Spinner } from 'react-bootstrap';
-import { Toast } from 'primereact/toast';
+import React, { useEffect, useState } from 'react';
+import { useNotification } from '../../context/NotificationContext';
 import ModalAdmin from '../Modals/Modal_Admin';
 import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
@@ -58,6 +57,7 @@ const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
 const TableAdmins = ({ searchQuery = '', onSuccess }) => {
     const { data: admins = [], isLoading: loadingTable, isError } = useGetAdminsQuery();
     const deleteAdminMutation = useDeleteAdminMutation();
+    const showNotification = useNotification();
 
     const [modalShow, setModalShow] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState(null);
@@ -65,22 +65,11 @@ const TableAdmins = ({ searchQuery = '', onSuccess }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingAdmin, setDeletingAdmin] = useState(null);
 
-    const toast = useRef(null);
-
-    const showToast = (severity, detail) => {
-        toast.current?.show({
-            severity,
-            summary: severity === 'error' ? 'Erro' : 'Sucesso',
-            detail,
-            life: 3000,
-        });
-    };
-
     useEffect(() => {
         if (isError) {
-            showToast('error', 'Erro ao carregar administradores.');
+            showNotification('Erro ao carregar administradores.', 'error');
         }
-    }, [isError]);
+    }, [isError, showNotification]);
 
     const filtered = admins.filter(a => {
         const q = searchQuery.toLowerCase();
@@ -99,13 +88,13 @@ const TableAdmins = ({ searchQuery = '', onSuccess }) => {
         if (!deletingAdmin) return;
         deleteAdminMutation.mutate(deletingAdmin.id, {
             onSuccess: () => {
-                showToast('success', `Admin "${deletingAdmin.email}" removido com sucesso!`);
+                showNotification(`Admin "${deletingAdmin.email}" removido com sucesso!`, 'success');
                 setShowDeleteModal(false);
                 setDeletingAdmin(null);
                 if (onSuccess) onSuccess();
             },
             onError: (error) => {
-                showToast('error', error.response?.data?.error || 'Erro ao remover admin. Tente novamente.');
+                showNotification(error.response?.data?.error || 'Erro ao remover admin. Tente novamente.', 'error');
             }
         });
     };
@@ -117,13 +106,11 @@ const TableAdmins = ({ searchQuery = '', onSuccess }) => {
 
     const handleAdminSaved = (message) => {
         setModalShow(false);
-        showToast('success', message || 'Admin salvo com sucesso!');
-        if (onSuccess) onSuccess(message);
+        if (onSuccess) onSuccess(message || 'Admin salvo com sucesso!');
     };
 
     return (
         <div>
-            <Toast ref={toast} />
             <style>{`.adm-row:hover td { background:#f8fafc !important; }`}</style>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

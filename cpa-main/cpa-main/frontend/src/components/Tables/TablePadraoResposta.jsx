@@ -1,13 +1,12 @@
 // src/components/Tables/TablePadraoResposta.js
-import React, { useState, useEffect, useRef } from 'react';
-import { Table, Dropdown, Accordion, Modal, Button, Spinner } from 'react-bootstrap';
-import { IoSettingsSharp, IoTrashOutline } from "react-icons/io5";
+import React, { useState, useEffect } from 'react';
+import { Accordion } from 'react-bootstrap';
+import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from 'react-icons/fa';
-import { Toast } from 'primereact/toast';
+import { useNotification } from '../../context/NotificationContext';
 import ModalUpdatePadraoResposta from '../Modals/ModalUpdatePadraoResposta';
 import ModalAddAlternativa from '../Modals/ModalAddAlternativa';
 import ModalUpdateAlternativa from '../Modals/ModalUpdateAlternativa';
-import ButtonAdicionar from '../Buttons/Button_Adicionar';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { useGetPadraoRespostaQuery } from '../../hooks/queries/usePadraoRespostaQueries';
 import { useDeletePadraoRespostaMutation } from '../../hooks/mutations/usePadraoRespostaMutations';
@@ -123,6 +122,7 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
     const { data: dataPadroes = [], isLoading: loadingTable, isError } = useGetPadraoRespostaQuery();
     const deletePadraoMutation = useDeletePadraoRespostaMutation();
     const deleteAlternativaMutation = useDeleteAlternativaMutation();
+    const showNotification = useNotification();
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModalUpdatePadrao, setShowModalUpdatePadrao] = useState(false);
@@ -135,13 +135,7 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
     const [confirmLabel, setConfirmLabel] = useState('');
     const [confirmAction, setConfirmAction] = useState(null);
 
-    const toast = useRef(null);
-
-    const showToast = (severity, detail) => {
-        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-    };
-
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar padrões.'); }, [isError]);
+    useEffect(() => { if (isError) showNotification('Erro ao carregar padrões.', 'error'); }, [isError, showNotification]);
 
     // ── filtro ─────────────────────────────────────
     const filtered = dataPadroes.filter(p =>
@@ -163,11 +157,11 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
                     await deleteAlternativaMutation.mutateAsync(alt.id);
                 }
                 await deletePadraoMutation.mutateAsync(item.id);
-                showToast('success', `Padrão "${item.sigla}" excluído com sucesso!`);
+                showNotification(`Padrão "${item.sigla}" excluído com sucesso!`, 'success');
                 setShowConfirm(false);
                 if (onSuccess) onSuccess('Padrão excluído com sucesso!');
             } catch (e) {
-                showToast('error', 'Erro ao excluir padrão de resposta.');
+                showNotification('Erro ao excluir padrão de resposta.', 'error');
             }
         });
         setShowConfirm(true);
@@ -184,17 +178,16 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
         setConfirmAction(() => () => {
             deleteAlternativaMutation.mutate(alt.id, {
                 onSuccess: () => {
-                    showToast('success', 'Alternativa excluída com sucesso!');
+                    showNotification('Alternativa excluída com sucesso!', 'success');
                     setShowConfirm(false);
                 },
-                onError: () => showToast('error', 'Erro ao excluir alternativa.')
+                onError: () => showNotification('Erro ao excluir alternativa.', 'error')
             });
         });
         setShowConfirm(true);
     };
 
     const handleUpdateSuccess = (message) => {
-        showToast('success', message);
         setShowModalUpdatePadrao(false);
         setShowModalUpdateAlternativa(false);
         if (onSuccess) onSuccess(message);
@@ -212,7 +205,6 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
                 .padrao-item .accordion-header button:focus { box-shadow:none !important; outline:none !important; }
                 .alt-row:hover td { background:#f8fafc !important; }
             `}</style>
-            <Toast ref={toast} />
 
             {loadingTable ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -1,24 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import TableQuestoes from '../components/Tables/Table_Questoes';
 import ModalQuestoes from '../components/Modals/Modal_Questoes';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 
 const Questoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const toast = useRef(null);
+    const showNotification = useNotification();
 
     // Chamado quando questão é criada OU atualizada com sucesso
     const handleSuccess = (message) => {
-        toast.current?.show({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: message || 'Operação realizada!',
-            life: 3000,
-        });
+        showNotification(message || 'Operação realizada!', 'success');
     };
 
     // Chamado quando o modal é fechado sem sucesso (botão Cancelar ou X)
@@ -28,7 +20,6 @@ const Questoes = () => {
 
     return (
         <>
-            <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
             <div style={{ width: '100%', maxWidth: '1600px' }}>

@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Accordion, Modal, Button, Spinner } from 'react-bootstrap';
 import ModalUpdate from '../Modals/ModalUpdateEixo';
 import ModalUpdateDimensao from '../Modals/ModalUpdateDimensao';
 import ModalAddDimensao from '../Modals/ModalAddDimensao';
-import { Toast } from 'primereact/toast';
+import { useNotification } from '../../context/NotificationContext';
 import { FaRegEdit } from 'react-icons/fa';
 import { IoTrashOutline } from 'react-icons/io5';
 import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
@@ -106,6 +106,7 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
     const { data: eixos = [], isLoading: loadingEixos, isError } = useGetEixosQuery();
     const deleteEixoMutation = useDeleteEixoMutation();
     const deleteDimensaoMutation = useDeleteDimensaoMutation();
+    const showNotification = useNotification();
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModalUpdate, setShowModalUpdate] = useState(false);
@@ -116,10 +117,7 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
     const [showConfirm, setShowConfirm] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({});
 
-    const toast = useRef(null);
-    const showToast = (severity, detail) => toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-
-    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar eixos.'); }, [isError]);
+    useEffect(() => { if (isError) showNotification('Erro ao carregar eixos.', 'error'); }, [isError, showNotification]);
 
     const filteredData = eixos.filter(eixo => {
         const q = searchQuery.toLowerCase();
@@ -143,13 +141,19 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
             onConfirm: async () => {
                 if (isDimensao) {
                     deleteDimensaoMutation.mutate(item.numero, {
-                        onSuccess: () => { showToast('success', 'Dimensão excluída.'); setShowConfirm(false); },
-                        onError: () => showToast('error', 'Erro ao excluir dimensão.')
+                        onSuccess: () => {
+                            onSuccess?.('Dimensão excluída com sucesso!');
+                            setShowConfirm(false);
+                        },
+                        onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir dimensão.', 'error')
                     });
                 } else {
                     deleteEixoMutation.mutate(item.numero, {
-                        onSuccess: () => { showToast('success', 'Eixo excluído.'); setShowConfirm(false); },
-                        onError: () => showToast('error', 'Erro ao excluir eixo.')
+                        onSuccess: () => {
+                            onSuccess?.('Eixo excluído com sucesso!');
+                            setShowConfirm(false);
+                        },
+                        onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir eixo.', 'error')
                     });
                 }
             },
@@ -158,8 +162,9 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
     };
 
     const handleUpdateSuccess = (msg) => {
-        showToast('success', msg);
-        setShowModalUpdate(false); setShowModalUpdateDimensao(false); setShowModalAddDimensao(false);
+        setShowModalUpdate(false);
+        setShowModalUpdateDimensao(false);
+        setShowModalAddDimensao(false);
         onSuccess?.(msg);
     };
 
@@ -176,7 +181,6 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
                 .eixo-item .accordion-button::after { flex-shrink:0; }
                 .dim-row:hover td { background:#f8fafc !important; }
             `}</style>
-            <Toast ref={toast} />
 
             {loadingEixos ? (
                 <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -237,7 +241,9 @@ const TableEixos = ({ searchQuery = '', onSuccess }) => {
                 <ModalUpdate show handleClose={() => setShowModalUpdate(false)} eixoData={selectedItem} onSuccess={handleUpdateSuccess} />
             )}
             {showModalUpdateDimensao && selectedItem && isEditingDimensao && (
-                <ModalUpdateDimensao show handleClose={() => setShowModalUpdateDimensao(false)} dimensaoData={selectedItem} onSuccess={handleUpdateSuccess} />
+                <Accordion.Collapse in={showModalUpdateDimensao}>
+                    <ModalUpdateDimensao show handleClose={() => setShowModalUpdateDimensao(false)} dimensaoData={selectedItem} onSuccess={handleUpdateSuccess} />
+                </Accordion.Collapse>
             )}
             {showModalAddDimensao && currentEixoNumero && (
                 <ModalAddDimensao show handleClose={() => setShowModalAddDimensao(false)} eixoNumero={currentEixoNumero} onSuccess={handleUpdateSuccess} />
