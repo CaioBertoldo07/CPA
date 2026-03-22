@@ -41,7 +41,7 @@ Com os containers rodando, execute os comandos abaixo para criar as tabelas e in
 docker exec backend-cpa npx prisma db push
 
 # Popular o banco com dados iniciais
-docker exec backend-cpa node prisma/scripts.js
+docker exec backend-cpa npx prisma db seed
 ```
 
 ### 5. Acesso

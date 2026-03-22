@@ -25,7 +25,7 @@ const deleteAdmin = asyncHandler(async (req: Request, res: Response) => {
 const updateAdmin = asyncHandler(async (req: Request, res: Response) => {
     const email = req.params.email as string;
     const nome = req.body.nome as string;
-    const updated = await adminService.create({ email, nome });
+    const updated = await adminService.update(email, { nome });
     res.status(200).json({ message: 'Administrador atualizado com sucesso.', admin: updated });
 });
 

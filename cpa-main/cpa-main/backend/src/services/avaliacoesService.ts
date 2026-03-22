@@ -6,7 +6,7 @@ import axios from 'axios';
 import https from 'https';
 
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
+    rejectUnauthorized: process.env.DISABLE_SSL_VALIDATION !== 'true',
 });
 
 class AvaliacoesService {
@@ -65,14 +65,14 @@ class AvaliacoesService {
 
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
         const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
-        const avaliacoesNaoRespondidas = [];
 
-        for (const avaliacao of avaliacoes) {
-            const resposta = await avaliacaoRepository.findRespostaDoAvaliador(matricula, avaliacao.id);
-            if (!resposta) {
-                avaliacoesNaoRespondidas.push(avaliacao);
-            }
-        }
+        if (avaliacoes.length === 0) return [];
+
+        const avaliacaoIds = avaliacoes.map(a => a.id);
+        const respondidas = await avaliacaoRepository.findAvaliacoesRespondidasPeloAvaliador(matricula, avaliacaoIds);
+        const respondidasIds = new Set(respondidas.map(r => r.avaliacao_questao?.id_avaliacao).filter(Boolean));
+
+        const avaliacoesNaoRespondidas = avaliacoes.filter(a => !respondidasIds.has(a.id));
 
         return (avaliacoesNaoRespondidas as unknown) as AvaliacaoResponseDTO[];
     }

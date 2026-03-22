@@ -9,7 +9,7 @@ export interface AuthLoginDTO {
 }
 
 export interface UserResponseDTO {
-    id: number;
+    // id: number;
     matricula: string;
     nome: string;
     email: string;
@@ -17,6 +17,10 @@ export interface UserResponseDTO {
     unidade: string;
     categoria: string;
     oberonPerfilNome: string;
+    usuarioNome: string;
     token: string;
     universityToken: string;
+    role: string;
+    isAdmin: boolean;
+    permissions?: string[];
 }
