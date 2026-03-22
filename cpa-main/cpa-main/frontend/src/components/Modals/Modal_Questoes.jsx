@@ -1,79 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import { Form, Button } from 'react-bootstrap';
-import Modal from "react-bootstrap/Modal";
-import "./Modal_Questoes.css";
-import { ToggleSlider } from 'react-toggle-slider';
+import React, { useEffect, useState, useMemo } from 'react';
+import {
+    TextField,
+    Button,
+    MenuItem,
+    Box,
+    Typography,
+    Grid,
+    FormControlLabel,
+    Switch,
+    IconButton,
+    Tooltip,
+    Alert,
+    Divider,
+    Paper
+} from '@mui/material';
+import { IoAddOutline, IoTrashOutline } from 'react-icons/io5';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
-import { CategoryCheckboxes } from '../utils/Check_boxes';
 import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
+import { useGetCategoriasQuery } from '../../hooks/queries/useCategoriaQueries';
 import { useGetPadraoRespostaQuery } from '../../hooks/queries/usePadraoRespostaQueries';
 import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
 import { useGetTiposQuestoesQuery } from '../../hooks/queries/useTipoQuestaoQueries';
 import { useAdicionarQuestaoMutation, useEditQuestaoMutation } from '../../hooks/mutations/useQuestaoMutations';
 
 function Modal_Questoes(props) {
+    const { questao: editingQuestao, show, onHide, onSuccess } = props;
+
     const { data: eixos = [] } = useGetEixosQuery();
     const { data: padraoResposta = [] } = useGetPadraoRespostaQuery();
     const { data: tiposQuestoes = [] } = useGetTiposQuestoesQuery();
     const { data: modalidadesRaw = [] } = useGetModalidadesQuery();
+    const { data: categoriasRaw = [] } = useGetCategoriasQuery();
 
     const [eixoSelecionado, setEixoSelecionado] = useState('');
     const { data: dimensoes = [] } = useGetDimensoesByEixoQuery(eixoSelecionado);
 
     const adicionarMutation = useAdicionarQuestaoMutation();
     const editarMutation = useEditQuestaoMutation();
+    const isLoading = adicionarMutation.isPending || editarMutation.isPending;
 
     const [dimensaoSelecionada, setDimensaoSelecionada] = useState('');
     const [error, setError] = useState('');
-    const [categorias, setCategorias] = useState({});
+    const [categoriasSelecionadas, setCategoriasSelecionadas] = useState([]);
     const [modalidadeSelecionada, setModalidadeSelecionada] = useState([]);
     const [basica, setBasica] = useState(false);
-    const [questao, setQuestao] = useState('');
-    const [padraorespostaselecionado, setPadraoRespostaselecionado] = useState('');
+    const [descricaoQuestao, setDescricaoQuestao] = useState('');
+    const [padraoRespostaSelecionado, setPadraoRespostaSelecionado] = useState('');
     const [tipoQuestao, setTipoQuestao] = useState('');
     const [questoesAdicionais, setQuestoesAdicionais] = useState([]);
 
-    const modalidadesOptions = React.useMemo(() =>
+    const modalidadesOptions = useMemo(() =>
         modalidadesRaw.map(m => ({ value: m.id, label: m.mod_ensino })),
         [modalidadesRaw]);
 
+    const categoriasOptions = useMemo(() =>
+        categoriasRaw.map(c => ({ value: c.id, label: c.nome })),
+        [categoriasRaw]);
+
     useEffect(() => {
-        if (props.questao && props.show) {
-            setQuestao(props.questao.descricao || '');
-            setEixoSelecionado(props.questao.dimensao?.eixo?.numero || '');
-            setDimensaoSelecionada(props.questao.dimensao?.numero || '');
-            setBasica(props.questao.basica || false);
-            setPadraoRespostaselecionado(props.questao.padraoRespostaId || '');
-            setTipoQuestao(props.questao.tipo_questao_id || '');
-            setQuestoesAdicionais(props.questao.questoesAdicionais?.map(qa => qa.descricao) || []);
-
-            const cats = {};
-            props.questao.categorias?.forEach(c => cats[c.id] = true);
-            setCategorias(cats);
-
-            setModalidadeSelecionada(props.questao.modalidades?.map(m => m.id) || []);
-        } else if (!props.show) {
+        if (editingQuestao && show) {
+            setDescricaoQuestao(editingQuestao.descricao || '');
+            setEixoSelecionado(editingQuestao.dimensao?.eixo?.numero || '');
+            setDimensaoSelecionada(editingQuestao.dimensao?.numero || '');
+            setBasica(editingQuestao.basica || false);
+            setPadraoRespostaSelecionado(editingQuestao.idPadraoResposta || '');
+            setTipoQuestao(editingQuestao.tipoId || '');
+            setQuestoesAdicionais(editingQuestao.questoesAdicionais?.map(qa => qa.descricao) || []);
+            setCategoriasSelecionadas(editingQuestao.categorias?.map(c => c.id) || []);
+            setModalidadeSelecionada(editingQuestao.modalidades?.map(m => m.id) || []);
+        } else if (!show) {
             resetFormState();
         }
-    }, [props.questao, props.show]);
+    }, [editingQuestao, show]);
 
     const resetFormState = () => {
-        setQuestao('');
+        setDescricaoQuestao('');
         setEixoSelecionado('');
         setDimensaoSelecionada('');
-        setCategorias({});
+        setCategoriasSelecionadas([]);
         setModalidadeSelecionada([]);
         setBasica(false);
-        setPadraoRespostaselecionado('');
+        setPadraoRespostaSelecionado('');
         setTipoQuestao('');
         setError('');
         setQuestoesAdicionais([]);
     };
 
-    const handleQuestaoChange = (event) => setQuestao(event.target.value);
+    const handleQuestaoChange = (event) => setDescricaoQuestao(event.target.value);
 
     const handleEixoSelect = (event) => {
         setEixoSelecionado(event.target.value);
@@ -85,14 +100,14 @@ function Modal_Questoes(props) {
         setModalidadeSelecionada(selectedIds);
     };
 
-    const handleCategoriaChange = (event) => {
-        const { id } = event.target;
-        setCategorias(prev => ({ ...prev, [id]: !prev[id] }));
+    const handleCategoriasChange = (selectedOptions) => {
+        const selectedIds = selectedOptions.map(option => option.value);
+        setCategoriasSelecionadas(selectedIds);
     };
 
-    const handleBasica = (event) => setBasica(event);
+    const handleBasicaToggle = (event) => setBasica(event.target.checked);
 
-    const handlePadraoRespostaSelect = (event) => setPadraoRespostaselecionado(event.target.value);
+    const handlePadraoRespostaSelect = (event) => setPadraoRespostaSelecionado(event.target.value);
 
     const handleTipoQuestaoChange = (event) => setTipoQuestao(event.target.value);
 
@@ -108,31 +123,33 @@ function Modal_Questoes(props) {
         setQuestoesAdicionais(questoesAdicionais.filter((_, i) => i !== index));
     };
 
-    const handleCadastrarQuestao = () => {
-        if (!questao.trim()) {
-            setError('A questão não pode estar vazia.');
-            return;
+    const handleSave = () => {
+        if (!descricaoQuestao.trim()) {
+            return setError('O enunciado da questão não pode estar vazio.');
+        }
+        if (!dimensaoSelecionada) {
+            return setError('Selecione uma dimensão para a questão.');
         }
 
         const questaoData = {
-            questao,
+            questao: descricaoQuestao,
             dimensaoNumero: dimensaoSelecionada,
-            padraoRespostaId: padraorespostaselecionado,
+            padraoRespostaId: padraoRespostaSelecionado,
             basica,
             tipo_questao: tipoQuestao,
-            categorias: Object.keys(categorias).filter(key => categorias[key]),
+            categorias: categoriasSelecionadas,
             modalidades: modalidadeSelecionada,
             questoesAdicionais: questoesAdicionais.filter(q => q.trim()).map(item => ({ descricao: item })),
         };
 
-        const mutation = props.questao ? editarMutation : adicionarMutation;
-        const payload = props.questao ? { id: props.questao.id, questao: questaoData } : questaoData;
+        const mutation = editingQuestao ? editarMutation : adicionarMutation;
+        const payload = editingQuestao ? { id: editingQuestao.id, questao: questaoData } : questaoData;
 
         mutation.mutate(payload, {
             onSuccess: () => {
                 resetFormState();
-                props.onHide();
-                if (props.onSuccess) props.onSuccess('Questão salva com sucesso!');
+                onHide();
+                if (onSuccess) onSuccess('Questão salva com sucesso!');
             },
             onError: (err) => {
                 setError(err.response?.data?.error || 'Falha ao salvar a questão');
@@ -140,102 +157,229 @@ function Modal_Questoes(props) {
         });
     };
 
-    const isLoading = adicionarMutation.isPending || editarMutation.isPending;
+    const modalActions = (
+        <>
+            <Button
+                onClick={onHide}
+                color="inherit"
+                disabled={isLoading}
+                sx={{ fontWeight: 600 }}
+            >
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleSave}
+                variant="contained"
+                color="primary"
+                disabled={isLoading}
+                sx={{
+                    fontWeight: 700,
+                    minWidth: '120px'
+                }}
+            >
+                {editingQuestao ? 'Salvar Alterações' : 'Cadastrar Questão'}
+            </Button>
+        </>
+    );
 
     return (
-        <Modal {...props} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
-            <Modal.Header closeButton>
-                <Modal.Title id="contained-modal-title-vcenter">
-                    {props.questao ? 'Editar Questão' : 'Nova Questão'}
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                {error && <div className="alert alert-danger">{error}</div>}
-                <div className="question-container">
-                    <textarea
-                        className="input-question"
-                        placeholder="Digite uma nova questão"
-                        value={questao}
+        <MuiBaseModal
+            open={show}
+            onClose={onHide}
+            title={editingQuestao ? 'Editar Questão' : 'Nova Questão'}
+            actions={modalActions}
+            isLoading={isLoading}
+            maxWidth="md"
+        >
+            <Box sx={{ mt: 1 }}>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
+                        Enunciado Principal
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        placeholder="Digite o enunciado da nova questão..."
+                        value={descricaoQuestao}
                         onChange={handleQuestaoChange}
+                        disabled={isLoading}
+                        variant="outlined"
+                        sx={{ mt: 1 }}
                     />
-                    <div className="input-question2">
-                        <div className="input-question3">
-                            <h6>Tipo de questão</h6>
-                            <select className="form-control" value={tipoQuestao} onChange={handleTipoQuestaoChange}>
-                                <option value="" disabled hidden>Selecione o tipo de questão</option>
-                                {tiposQuestoes.map(tipo => (
-                                    <option key={tipo.id} value={tipo.id}>{tipo.descricao}</option>
-                                ))}
-                            </select>
-                            <h6>Eixo</h6>
-                            <select className="form-control" value={eixoSelecionado} onChange={handleEixoSelect}>
-                                <option value="" disabled hidden>Selecione um eixo</option>
+                </Box>
+
+                {tipoQuestao?.toString() === '2' && (
+                    <Box sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
+                                Sub-Questões (Itens da Grade)
+                            </Typography>
+                            <Button
+                                size="small"
+                                startIcon={<IoAddOutline />}
+                                onClick={handleAdicionarQuestaoAdicional}
+                                disabled={isLoading}
+                                variant="outlined"
+                            >
+                                Adicionar Item
+                            </Button>
+                        </Box>
+                        <Grid container spacing={2}>
+                            {questoesAdicionais.map((qAd, index) => (
+                                <Grid item xs={12} sm={6} key={index}>
+                                    <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            value={qAd}
+                                            onChange={(event) => handleQuestaoAdicionalChange(index, event)}
+                                            placeholder={`Item ${index + 1}`}
+                                            disabled={isLoading}
+                                        />
+                                        <Tooltip title="Remover">
+                                            <IconButton
+                                                color="error"
+                                                onClick={() => handleRemoverQuestaoAdicional(index)}
+                                                disabled={isLoading}
+                                                size="small"
+                                            >
+                                                <IoTrashOutline />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Box>
+                )}
+
+                <Divider sx={{ mb: 3 }} />
+
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
+                    Configurações e Classificação
+                </Typography>
+
+                <Paper variant="outlined" sx={{ p: 3, backgroundColor: 'grey.50', mb: 3 }}>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Eixo"
+                                value={eixoSelecionado}
+                                onChange={handleEixoSelect}
+                                size="small"
+                                disabled={isLoading}
+                                InputLabelProps={{ shrink: true }}
+                            >
                                 {eixos.map(eixo => (
-                                    <option key={eixo.id} value={eixo.numero}>{eixo.nome}</option>
+                                    <MenuItem key={eixo.id} value={eixo.numero}>{eixo.nome}</MenuItem>
                                 ))}
-                            </select>
-                            <Form.Group controlId="modalidades">
-                                <h6>Modalidades:</h6>
-                                <AnimatedMultiSelect
-                                    options={modalidadesOptions}
-                                    onChange={handleModalidadesChange}
-                                    placeholder="Selecione as modalidades"
-                                    value={modalidadesOptions.filter(o => modalidadeSelecionada.includes(o.value))}
-                                />
-                            </Form.Group>
-                            <p> </p>
-                            <h6>Básico</h6>
-                            <ToggleSlider onToggle={handleBasica} checked={basica} />
-                        </div>
-                        <div className="input-question3">
-                            {tipoQuestao?.toString() === '2' && (
-                                <div>
-                                    <h6>Questões Adicionais:</h6>
-                                    {questoesAdicionais.map((qAd, index) => (
-                                        <div key={index} className="questao-adicional">
-                                            <textarea
-                                                className="form-control mb-2"
-                                                value={qAd}
-                                                onChange={(event) => handleQuestaoAdicionalChange(index, event)}
-                                                placeholder={`Questão adicional ${index + 1}`}
-                                            />
-                                            <Button variant="danger" size="sm" onClick={() => handleRemoverQuestaoAdicional(index)}>
-                                                Remover
-                                            </Button>
-                                        </div>
-                                    ))}
-                                    <Button variant="secondary" size="sm" onClick={handleAdicionarQuestaoAdicional}>
-                                        Adicionar Questão
-                                    </Button>
-                                </div>
-                            )}
-                            <h6>Padrão de resposta</h6>
-                            <select className="form-control" value={padraorespostaselecionado} onChange={handlePadraoRespostaSelect}>
-                                <option value="" disabled hidden>Selecione um padrão de resposta</option>
-                                {padraoResposta.map(padrao => (
-                                    <option key={padrao.id} value={padrao.id}>{padrao.sigla}</option>
-                                ))}
-                            </select>
-                            <h6>Dimensão</h6>
-                            <select className="form-control" value={dimensaoSelecionada} onChange={(e) => setDimensaoSelecionada(e.target.value)}>
-                                <option value="" disabled hidden>Selecione uma dimensão</option>
+                            </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Dimensão"
+                                value={dimensaoSelecionada}
+                                onChange={(e) => setDimensaoSelecionada(e.target.value)}
+                                size="small"
+                                disabled={isLoading || !eixoSelecionado}
+                                InputLabelProps={{ shrink: true }}
+                                error={!dimensaoSelecionada && !!eixoSelecionado}
+                                helperText={!eixoSelecionado ? "Selecione um eixo primeiro" : ""}
+                            >
                                 {dimensoes.map(dimensao => (
-                                    <option key={dimensao.numero} value={dimensao.numero}>{dimensao.nome}</option>
+                                    <MenuItem key={dimensao.numero} value={dimensao.numero}>{dimensao.nome}</MenuItem>
                                 ))}
-                            </select>
-                            <h6>Categoria</h6>
-                            <CategoryCheckboxes categorias={categorias} onChange={handleCategoriaChange} />
-                        </div>
-                    </div>
-                </div>
-            </Modal.Body>
-            <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide} disabled={isLoading}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarQuestao} disabled={isLoading}>
-                    {isLoading ? (props.questao ? 'Salvando...' : 'Cadastrando...') : (props.questao ? 'Salvar' : 'Cadastrar')}
-                </ButtonCadastrar>
-            </Modal.Footer>
-        </Modal>
+                            </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Tipo de Questão"
+                                value={tipoQuestao}
+                                onChange={handleTipoQuestaoChange}
+                                size="small"
+                                disabled={isLoading}
+                                InputLabelProps={{ shrink: true }}
+                            >
+                                {tiposQuestoes.map(tipo => (
+                                    <MenuItem key={tipo.id} value={tipo.id}>{tipo.descricao}</MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Padrão de Resposta"
+                                value={padraoRespostaSelecionado}
+                                onChange={handlePadraoRespostaSelect}
+                                size="small"
+                                disabled={isLoading}
+                                InputLabelProps={{ shrink: true }}
+                            >
+                                {padraoResposta.map(padrao => (
+                                    <MenuItem key={padrao.id} value={padrao.id}>{padrao.sigla}</MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
+                                Modalidades Aplicáveis
+                            </Typography>
+                            <AnimatedMultiSelect
+                                options={modalidadesOptions}
+                                onChange={handleModalidadesChange}
+                                placeholder="Selecione as modalidades..."
+                                value={modalidadesOptions.filter(o => modalidadeSelecionada.includes(o.value))}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
+                                Categorias Aplicáveis
+                            </Typography>
+                            <AnimatedMultiSelect
+                                options={categoriasOptions}
+                                onChange={handleCategoriasChange}
+                                placeholder="Selecione as categorias..."
+                                value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={basica}
+                                        onChange={handleBasicaToggle}
+                                        disabled={isLoading}
+                                        color="primary"
+                                    />
+                                }
+                                label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Questão Básica (Geral)</Typography>}
+                                labelPlacement="start"
+                            />
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Box>
+        </MuiBaseModal >
     );
 }
 

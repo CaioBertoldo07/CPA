@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { TextField, Button, Box, Grid } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useEditEixoMutation } from '../../hooks/mutations/useEixoMutations';
 import { useEditDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
 
-const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao }) => {
+const ModalUpdateEixo = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao }) => {
   const [formData, setFormData] = useState({ numero: '', nome: '', numero_eixos: '' });
 
   const editEixoMutation = useEditEixoMutation();
@@ -28,14 +29,20 @@ const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao
 
   const handleSubmit = async () => {
     if (isEditingDimensao) {
-      editDimensaoMutation.mutate({ numero: formData.numero, data: { nome: formData.nome, numero_eixos: formData.numero_eixos } }, {
+      editDimensaoMutation.mutate({
+        numero: formData.numero,
+        data: { nome: formData.nome, numero_eixos: formData.numero_eixos }
+      }, {
         onSuccess: () => {
           onSuccess('Dimensão atualizada com sucesso');
           handleClose();
         }
       });
     } else {
-      editEixoMutation.mutate({ numero: formData.numero, data: { nome: formData.nome } }, {
+      editEixoMutation.mutate({
+        numero: formData.numero,
+        data: { nome: formData.nome }
+      }, {
         onSuccess: () => {
           onSuccess('Eixo atualizado com sucesso');
           handleClose();
@@ -44,56 +51,93 @@ const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao
     }
   };
 
+  const modalActions = (
+    <>
+      <Button
+        onClick={handleClose}
+        color="inherit"
+        disabled={isPending}
+        sx={{ fontWeight: 600 }}
+      >
+        Cancelar
+      </Button>
+      <Button
+        onClick={handleSubmit}
+        variant="contained"
+        color="primary"
+        disabled={isPending}
+        sx={{
+          fontWeight: 700,
+          minWidth: '100px'
+        }}
+      >
+        {isPending ? 'Salvando...' : 'Salvar'}
+      </Button>
+    </>
+  );
 
   return (
-    <Modal show={show} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>{isEditingDimensao ? 'Editar Dimensão' : 'Editar Eixo'}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group controlId="formNumero">
-            <Form.Label>Número</Form.Label>
-            <Form.Control
-              type="text"
+    <MuiBaseModal
+      open={show}
+      onClose={handleClose}
+      title={isEditingDimensao ? 'Editar Dimensão' : 'Editar Eixo'}
+      actions={modalActions}
+      isLoading={isPending}
+      maxWidth="sm"
+    >
+      <Box component="form" noValidate sx={{ mt: 1 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Número (Identificador)"
               name="numero"
               value={formData.numero}
-              onChange={handleChange}
-              disabled
+              disabled={true} // Fixed identifier
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              helperText="O número identificador não pode ser alterado."
             />
-          </Form.Group>
-          <Form.Group controlId="formNome">
-            <Form.Label>Nome</Form.Label>
-            <Form.Control
-              type="text"
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Nome"
               name="nome"
               value={formData.nome}
               onChange={handleChange}
+              disabled={isPending}
+              variant="outlined"
+              autoFocus
+              InputLabelProps={{ shrink: true }}
             />
-          </Form.Group>
+          </Grid>
+
           {isEditingDimensao && (
-            <Form.Group controlId="formNumeroEixos">
-              <Form.Label>Número do Eixo</Form.Label>
-              <Form.Control
-                type="text"
+            <Grid item xs={12}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                label="Número do Eixo"
                 name="numero_eixos"
                 value={formData.numero_eixos}
                 onChange={handleChange}
+                disabled={isPending}
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                placeholder="Ex: 1"
               />
-            </Form.Group>
+            </Grid>
           )}
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose} disabled={isPending}>
-          Cancelar
-        </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={isPending}>
-          {isPending ? 'Salvando...' : 'Salvar'}
-        </Button>
-      </Modal.Footer>
-    </Modal>
+        </Grid>
+      </Box>
+    </MuiBaseModal>
   );
 };
 
-export default ModalUpdate;
+export default ModalUpdateEixo;

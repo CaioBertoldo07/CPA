@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Spinner } from "react-bootstrap";
-import ButtonCancelar from "../Buttons/Button_Cancelar";
-import ButtonCadastrar from "../Buttons/Button_Cadastrar";
+import { TextField, Button, Alert, Box } from "@mui/material";
+import MuiBaseModal from "../utils/MuiBaseModal";
 import { useAdicionarCategoriaMutation, useEditCategoriaMutation } from "../../hooks/mutations/useCategoriaMutations";
 
 function Modal_Categorias(props) {
+    const { show, onHide, categoria, onSuccess } = props;
     const [nomecategoria, setNomeCategoria] = useState('');
     const [error, setError] = useState('');
 
@@ -13,64 +13,93 @@ function Modal_Categorias(props) {
     const loading = adicionarMutation.isPending || editarMutation.isPending;
 
     useEffect(() => {
-        if (props.show) {
-            setNomeCategoria(props.categoria?.nome || '');
+        if (show) {
+            setNomeCategoria(categoria?.nome || '');
         } else {
             setNomeCategoria('');
             setError('');
         }
-    }, [props.categoria, props.show]);
+    }, [categoria, show]);
 
     const handleNomeCategoriaChange = (event) => setNomeCategoria(event.target.value);
 
-    const handleCadastrarCategoria = async () => {
-        if (!nomecategoria.trim()) return setError('Nome não pode estar vazio.');
+    const handleSave = async () => {
+        if (!nomecategoria.trim()) {
+            return setError('O nome da categoria não pode estar vazio.');
+        }
         setError('');
 
-        const mutation = props.categoria ? editarMutation : adicionarMutation;
-        const payload = props.categoria
-            ? { id: props.categoria.id, categoria: { nome: nomecategoria } }
+        const mutation = categoria ? editarMutation : adicionarMutation;
+        const payload = categoria
+            ? { id: categoria.id, categoria: { nome: nomecategoria } }
             : { nome: nomecategoria };
 
         mutation.mutate(payload, {
             onSuccess: (data) => {
-                props.onHide();
-                props.onSuccess?.(data?.message || 'Categoria salva!');
+                onHide();
+                onSuccess?.(data?.message || 'Categoria salva com sucesso!');
             },
             onError: (err) => setError(err.response?.data?.error || 'Erro ao salvar categoria.')
         });
     };
 
+    const modalActions = (
+        <>
+            <Button
+                onClick={onHide}
+                color="inherit"
+                disabled={loading}
+                sx={{ fontWeight: 600 }}
+            >
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleSave}
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{
+                    fontWeight: 700,
+                    minWidth: '100px'
+                }}
+            >
+                {categoria ? 'Atualizar' : 'Cadastrar'}
+            </Button>
+        </>
+    );
+
     return (
-        <Modal {...props} size="md" aria-labelledby="contained-modal-title-vcenter" centered>
-            <Modal.Header closeButton>
-                <Modal.Title id="contained-modal-title-vcenter">
-                    {props.categoria ? 'Editar Categoria' : 'Nova Categoria'}
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body style={{ padding: '20px' }}>
-                {error && <div className="alert alert-danger">{error}</div>}
-                <h6 style={{ marginBottom: '10px' }}>Categoria</h6>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                    <input
-                        type="text"
-                        value={nomecategoria}
-                        onChange={handleNomeCategoriaChange}
-                        placeholder="Nome"
-                        className="input-field"
-                        style={{ width: '100%', maxWidth: '300px', padding: '5px 10px' }}
-                        disabled={loading}
-                    />
-                </div>
-            </Modal.Body>
-            <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide} disabled={loading}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarCategoria} disabled={loading}>
-                    {loading ? <Spinner size="sm" animation="border" className="me-2" /> : null}
-                    {props.categoria ? 'Atualizar' : 'Cadastrar'}
-                </ButtonCadastrar>
-            </Modal.Footer>
-        </Modal>
+        <MuiBaseModal
+            open={show}
+            onClose={onHide}
+            title={categoria ? 'Editar Categoria' : 'Nova Categoria'}
+            actions={modalActions}
+            isLoading={loading}
+        >
+            <Box component="form" noValidate sx={{ mt: 1 }}>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="nome-categoria"
+                    label="Nome da Categoria"
+                    name="nome"
+                    autoFocus
+                    value={nomecategoria}
+                    onChange={handleNomeCategoriaChange}
+                    disabled={loading}
+                    variant="outlined"
+                    placeholder="Ex: Infraestrutura, Biblioteca..."
+                    InputLabelProps={{ shrink: true }}
+                />
+            </Box>
+        </MuiBaseModal>
     );
 }
 

@@ -1,8 +1,6 @@
-// src/components/Modals/Modal_Modalidades.js
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import Modal from 'react-bootstrap/Modal';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { TextField, Button, Alert, Box } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useAdicionarModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 
 function Modal_Modalidades({ show, onHide, onSuccess }) {
@@ -24,87 +22,104 @@ function Modal_Modalidades({ show, onHide, onSuccess }) {
         onHide();
     };
 
-    const handleCadastrarModalidade = () => {
-        if (!modEnsino.trim()) return setError('O campo "Modalidade de ensino" é obrigatório.');
+    // Ensure state is reset when modal closes/opens
+    useEffect(() => {
+        if (!show) {
+            resetForm();
+        }
+    }, [show]);
+
+    const handleSave = () => {
+        if (!modEnsino.trim()) {
+            return setError('O campo "Modalidade de Ensino" é obrigatório.');
+        }
         setError('');
 
-        mutation.mutate({ mod_ensino: modEnsino.trim(), mod_oferta: modOferta.trim() }, {
+        mutation.mutate({
+            mod_ensino: modEnsino.trim(),
+            mod_oferta: modOferta.trim()
+        }, {
             onSuccess: () => {
-                resetForm();
-                onHide();
+                handleClose();
                 if (onSuccess) onSuccess('Modalidade cadastrada com sucesso!');
             },
             onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar modalidade.')
         });
     };
 
-    return (
-        <Modal
-            show={show}
-            onHide={handleClose}
-            size="lg"
-            aria-labelledby="modal-modalidade-title"
-            centered
-        >
-            <Modal.Header closeButton>
-                <Modal.Title id="modal-modalidade-title">
-                    Nova Modalidade
-                </Modal.Title>
-            </Modal.Header>
+    const modalActions = (
+        <>
+            <Button
+                onClick={handleClose}
+                color="inherit"
+                disabled={loading}
+                sx={{ fontWeight: 600 }}
+            >
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleSave}
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{
+                    fontWeight: 700,
+                    minWidth: '100px'
+                }}
+            >
+                {loading ? 'Cadastrando...' : 'Cadastrar'}
+            </Button>
+        </>
+    );
 
-            <Modal.Body style={{ marginLeft: '20px' }}>
-                <h6>Ensino <span style={{ color: 'red' }}>*</span></h6>
-                <input
-                    type="text"
+    return (
+        <MuiBaseModal
+            open={show}
+            onClose={handleClose}
+            title="Nova Modalidade"
+            actions={modalActions}
+            isLoading={loading}
+            maxWidth="sm"
+        >
+            <Box component="form" noValidate sx={{ mt: 1 }}>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="mod-ensino"
+                    label="Modalidade de Ensino"
+                    name="modEnsino"
+                    autoFocus
                     value={modEnsino}
                     onChange={(e) => setModEnsino(e.target.value)}
+                    disabled={loading}
+                    variant="outlined"
                     placeholder="Ex: REGULAR"
-                    style={{
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        boxSizing: 'border-box',
-                        margin: '5px 0',
-                        width: '100%',
-                        maxWidth: '300px'
-                    }}
+                    InputLabelProps={{ shrink: true }}
                 />
 
-                <p style={{ margin: '8px 0' }}></p>
-
-                <h6>Oferta</h6>
-                <input
-                    type="text"
+                <TextField
+                    margin="normal"
+                    fullWidth
+                    id="mod-oferta"
+                    label="Modalidade de Oferta"
+                    name="modOferta"
                     value={modOferta}
-                    placeholder="Ex: PRESENCIAL"
-                    style={{
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        boxSizing: 'border-box',
-                        margin: '5px 0',
-                        width: '100%',
-                        maxWidth: '300px'
-                    }}
                     onChange={(e) => setModOferta(e.target.value)}
+                    disabled={loading}
+                    variant="outlined"
+                    placeholder="Ex: PRESENCIAL"
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ mt: 2 }}
                 />
-
-                {error && (
-                    <div className="alert alert-danger mt-3" role="alert">
-                        {error}
-                    </div>
-                )}
-            </Modal.Body>
-
-            <Modal.Footer>
-                <ButtonCancelar onClick={handleClose} disabled={loading}>
-                    Cancelar
-                </ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarModalidade} disabled={loading}>
-                    {loading ? 'Cadastrando...' : 'Cadastrar'}
-                </ButtonCadastrar>
-            </Modal.Footer>
-        </Modal>
+            </Box>
+        </MuiBaseModal>
     );
 }
 

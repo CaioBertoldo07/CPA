@@ -1,29 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
+import { TextField, Button, Alert, Box, Grid, Typography, Divider } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import DynamicInputs from '../utils/Inputs_Dinamico';
 import { useAdicionarEixoMutation } from '../../hooks/mutations/useEixoMutations';
 
-function Modal_Eixos(props) {
+function Modal_Eixos({ show, onHide, onSuccess }) {
   const [eixoNome, setEixoNome] = useState('');
   const [numeroEixo, setNumeroEixo] = useState('');
   const [dimensoes, setDimensoes] = useState([{ numero: '', nome: '' }]);
   const [error, setError] = useState('');
 
   const adicionarEixoMutation = useAdicionarEixoMutation();
+  const loading = adicionarEixoMutation.isPending;
 
   useEffect(() => {
-    if (props.show) {
+    if (show) {
       setEixoNome('');
       setNumeroEixo('');
       setDimensoes([{ numero: '', nome: '' }]);
       setError('');
     }
-  }, [props.show]);
-
-  const handleEixoChange = (e) => setEixoNome(e.target.value);
-  const handleNumeroEixoChange = (e) => setNumeroEixo(e.target.value);
+  }, [show]);
 
   const addDimensaoField = () => setDimensoes([...dimensoes, { numero: '', nome: '' }]);
   const removeDimensaoField = (index) => setDimensoes(dimensoes.filter((_, i) => i !== index));
@@ -40,51 +37,103 @@ function Modal_Eixos(props) {
     setDimensoes(newDimensoes);
   };
 
-  const handleCadastrarEixo = () => {
-    if (!eixoNome || !numeroEixo) return setError('Preencha os campos do Eixo.');
+  const handleSave = () => {
+    if (!eixoNome.trim() || !numeroEixo.trim()) {
+      return setError('Por favor, preencha o número e o nome do Eixo.');
+    }
     setError('');
 
-    adicionarEixoMutation.mutate({ nome: eixoNome, numero: numeroEixo, dimensoes }, {
+    adicionarEixoMutation.mutate({
+      nome: eixoNome.trim(),
+      numero: numeroEixo.trim(),
+      dimensoes
+    }, {
       onSuccess: () => {
-        props.onHide();
-        if (props.onSuccess) props.onSuccess('Eixo cadastrado com sucesso!');
+        onHide();
+        if (onSuccess) onSuccess('Eixo cadastrado com sucesso!');
       },
       onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar eixo.')
     });
   };
 
+  const modalActions = (
+    <>
+      <Button
+        onClick={onHide}
+        color="inherit"
+        disabled={loading}
+        sx={{ fontWeight: 600 }}
+      >
+        Cancelar
+      </Button>
+      <Button
+        onClick={handleSave}
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        sx={{
+          fontWeight: 700,
+          minWidth: '100px'
+        }}
+      >
+        {loading ? 'Cadastrando...' : 'Cadastrar'}
+      </Button>
+    </>
+  );
 
   return (
-    <Modal {...props} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
-      <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">
-          Novo Eixo
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && <div className="alert alert-danger">{error}</div>}
+    <MuiBaseModal
+      open={show}
+      onClose={onHide}
+      title="Cadastro de Novo Eixo"
+      actions={modalActions}
+      isLoading={loading}
+      maxWidth="md"
+    >
+      <Box sx={{ mt: 1 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-        <h6>Eixo</h6>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-          <input
-            type="text"
-            value={numeroEixo}
-            onChange={handleNumeroEixoChange}
-            placeholder="Número"
-            className="input-field"
-            style={{ width: '80px' }}
-          />
-          <input
-            type="text"
-            value={eixoNome}
-            onChange={handleEixoChange}
-            placeholder="Nome"
-            className="input-field"
-            style={{ width: '200px' }}
-          />
-        </div>
+        <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 700, textTransform: 'uppercase' }}>
+          Informações do Eixo
+        </Typography>
 
-        <h6 style={{ marginTop: '20px' }}>Dimensões</h6>
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              required
+              fullWidth
+              label="Número"
+              value={numeroEixo}
+              onChange={(e) => setNumeroEixo(e.target.value)}
+              disabled={loading}
+              placeholder="Ex: 1"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={9}>
+            <TextField
+              required
+              fullWidth
+              label="Nome do Eixo"
+              value={eixoNome}
+              onChange={(e) => setEixoNome(e.target.value)}
+              disabled={loading}
+              placeholder="Ex: Eixo 1 - Planejamento e Avaliação Institucional"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ mb: 3 }} />
+
+        <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 700, textTransform: 'uppercase' }}>
+          Dimensões Vinculadas
+        </Typography>
+
         <DynamicInputs
           inputs={dimensoes}
           adicionarInput={addDimensaoField}
@@ -92,16 +141,8 @@ function Modal_Eixos(props) {
           handleNumeroChange={handleNumeroChange}
           handleNomeChange={handleNomeChange}
         />
-      </Modal.Body>
-      <Modal.Footer>
-        <ButtonCancelar onClick={props.onHide} disabled={adicionarEixoMutation.isPending}>
-          Cancelar
-        </ButtonCancelar>
-        <ButtonCadastrar onClick={handleCadastrarEixo} disabled={adicionarEixoMutation.isPending}>
-          {adicionarEixoMutation.isPending ? 'Cadastrando...' : 'Cadastrar'}
-        </ButtonCadastrar>
-      </Modal.Footer>
-    </Modal>
+      </Box>
+    </MuiBaseModal>
   );
 }
 

@@ -16,6 +16,9 @@ import AvaliacaoAlunos from './pages/AvaliacaoAlunos';
 import PadraoResposta from './pages/Padrao_Resposta';
 import RelatorioAvaliacao from './pages/RelatorioAvaliacao';
 import Layout from './components/utils/Layout';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './styles/theme';
 
 import { Toast } from 'primereact/toast';
 import { useNavigate } from 'react-router-dom';
@@ -62,36 +65,39 @@ const AuthObserver = () => {
 
 const App = () => {
     return (
-        <Router>
-            <AuthObserver />
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/" element={<LoginPage />} />
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+                <AuthObserver />
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/" element={<LoginPage />} />
 
-                {/* Admin Routes with Layout */}
-                <Route path="/eixos" element={<ProtectedRoute element={Eixos} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/avaliacoes" element={<ProtectedRoute element={Avaliacoes} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/relatorios" element={<ProtectedRoute element={Relatorios} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/questoes" element={<ProtectedRoute element={Questoes} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/admin" element={<ProtectedRoute element={AdminPage} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/modalidades" element={<ProtectedRoute element={Modalidades} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/categorias" element={<ProtectedRoute element={Categorias} isAdminRequired={true} layout={Layout} />} />
-                <Route path="/padraoresposta" element={<ProtectedRoute element={PadraoResposta} isAdminRequired={true} layout={Layout} />} />
+                    {/* Admin Routes with Layout */}
+                    <Route path="/eixos" element={<ProtectedRoute element={Eixos} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/avaliacoes" element={<ProtectedRoute element={Avaliacoes} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/relatorios" element={<ProtectedRoute element={Relatorios} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/questoes" element={<ProtectedRoute element={Questoes} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/admin" element={<ProtectedRoute element={AdminPage} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/modalidades" element={<ProtectedRoute element={Modalidades} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/categorias" element={<ProtectedRoute element={Categorias} isAdminRequired={true} layout={Layout} />} />
+                    <Route path="/padraoresposta" element={<ProtectedRoute element={PadraoResposta} isAdminRequired={true} layout={Layout} />} />
 
-                {/* Student Routes */}
-                <Route path="/alunos" element={<ProtectedRoute element={Alunos} />} />
-                <Route
-                    path="/alunos/avaliacao/:id"
-                    element={<ProtectedRoute element={AvaliacaoAlunos} />}
-                />
+                    {/* Student Routes */}
+                    <Route path="/alunos" element={<ProtectedRoute element={Alunos} />} />
+                    <Route
+                        path="/alunos/avaliacao/:id"
+                        element={<ProtectedRoute element={AvaliacaoAlunos} />}
+                    />
 
-                {/* Relatório can also have Layout if it's for admins */}
-                <Route
-                    path="/relatorio/:id"
-                    element={<ProtectedRoute element={RelatorioAvaliacao} isAdminRequired={true} layout={Layout} />}
-                />
-            </Routes>
-        </Router>
+                    {/* Relatório can also have Layout if it's for admins */}
+                    <Route
+                        path="/relatorio/:id"
+                        element={<ProtectedRoute element={RelatorioAvaliacao} isAdminRequired={true} layout={Layout} />}
+                    />
+                </Routes>
+            </Router>
+        </ThemeProvider>
     );
 };
 
