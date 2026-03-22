@@ -20,7 +20,7 @@ class AuthService {
     /**
      * Login Real usando as APIs da UEA (Lyceum/Oberon)
      */
-    async login(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO; isAdmin: boolean }> {
+    async login(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
         const { email, senha } = data;
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -97,7 +97,7 @@ class AuthService {
             const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
             user.token = token;
 
-            return { token, user, isAdmin };
+            return { token, user };
 
         } catch (error: any) {
             console.error('Erro no login oficial UEA:', error.message);
@@ -109,7 +109,7 @@ class AuthService {
     /**
      * Login de Desenvolvimento (Falso) para testes rápidos
      */
-    async loginDev(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO; isAdmin: boolean }> {
+    async loginDev(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
         const { email } = data;
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -139,7 +139,7 @@ class AuthService {
         const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
         user.token = token;
 
-        return { token, user, isAdmin };
+        return { token, user };
     }
 
     /**
