@@ -13,7 +13,8 @@ import { useDeletePadraoRespostaMutation } from '../../hooks/mutations/usePadrao
 import { useGetAlternativasByPadraoRespostaIdQuery } from '../../hooks/queries/useAlternativaQueries';
 import { useDeleteAlternativaMutation } from '../../hooks/mutations/useAlternativaMutations';
 import { getAlternativasByPadraoRespostaId } from '../../api/alternativas';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales';
 import {
     Box,
     IconButton,

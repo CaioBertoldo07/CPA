@@ -5,7 +5,8 @@ import ModalAdmin from '../Modals/Modal_Admin';
 import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Skeleton } from '@mui/material';
 
 import { useGetAdminsQuery } from '../../hooks/queries/useAdminQueries';

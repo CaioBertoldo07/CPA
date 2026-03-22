@@ -8,7 +8,8 @@ import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import ModalQuestoes from '../Modals/Modal_Questoes';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const Table_Questoes = ({ searchQuery = '', onSuccess }) => {

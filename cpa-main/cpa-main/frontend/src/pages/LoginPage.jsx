@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './LoginPage.css';
+// import './LoginPage.css';
 import Button from '../components/Buttons/Button';
 import Modal from 'react-bootstrap/Modal';
 import logo from '../assets/imgs/cpa_logo.svg';
