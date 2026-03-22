@@ -17,6 +17,10 @@ export interface UserResponseDTO {
     unidade: string;
     categoria: string;
     oberonPerfilNome: string;
+    usuarioNome: string;
     token: string;
     universityToken: string;
+    role: string;
+    isAdmin: boolean;
+    permissions?: string[];
 }
