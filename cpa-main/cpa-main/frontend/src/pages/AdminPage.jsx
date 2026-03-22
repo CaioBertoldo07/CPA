@@ -20,7 +20,7 @@ const AdminPage = () => {
             <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ maxWidth: 1200 }}>
+            <div style={{ width: '100%', maxWidth: '1600px' }}>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
                     <div>
@@ -56,7 +56,14 @@ const AdminPage = () => {
                     </div>
                 </div>
 
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', overflow: 'hidden', animation: 'fadeInUp 400ms 150ms both' }}>
+                <div style={{
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 14,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                    overflowX: 'auto',
+                    animation: 'fadeInUp 400ms 150ms both'
+                }}>
                     <TableAdmins searchQuery={searchQuery} onSuccess={handleSuccess} />
                 </div>
             </div>

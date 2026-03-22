@@ -33,7 +33,7 @@ const Eixos = () => {
                 }
             `}</style>
 
-            <div style={{ maxWidth: 1200 }}>
+            <div style={{ width: '100%', maxWidth: '1600px' }}>
                 {/* ── Cabeçalho ── */}
                 <div style={{
                     display: 'flex', alignItems: 'center',
@@ -114,7 +114,7 @@ const Eixos = () => {
                     border: '1px solid #e2e8f0',
                     borderRadius: 14,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    overflow: 'hidden',
+                    overflowX: 'auto',
                     animation: 'fadeInUp 400ms both',
                 }}>
                     <TableEixos

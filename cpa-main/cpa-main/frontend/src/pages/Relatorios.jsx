@@ -167,7 +167,7 @@ const Relatorios = () => {
                 .rel-row:hover td { background:#f8fafc !important; }
             `}</style>
 
-            <div style={{ maxWidth: 1200 }}>
+            <div style={{ width: '100%', maxWidth: '1600px' }}>
 
                 {/* ── Cabeçalho ── */}
                 <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
@@ -178,7 +178,7 @@ const Relatorios = () => {
                 {/* ── StatCards: grid com 4 colunas iguais ── */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',   // 4 colunas sempre iguais
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                     gap: 16,
                     marginBottom: 32,
                     alignItems: 'stretch',                   // mesma altura
@@ -224,7 +224,14 @@ const Relatorios = () => {
                 </div>
 
                 {/* ── Tabela ── */}
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', overflow: 'hidden', animation: 'fadeInUp 400ms 250ms both' }}>
+                <div style={{
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 14,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                    overflowX: 'auto',
+                    animation: 'fadeInUp 400ms 250ms both'
+                }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <thead>
                             <tr>

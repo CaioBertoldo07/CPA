@@ -13,10 +13,11 @@ import {
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import { TbCategory } from 'react-icons/tb';
 import { IoLogOutOutline } from 'react-icons/io5';
+import { FiX } from 'react-icons/fi';
 import logo from '../../assets/imgs/cpa_logo.svg';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
     const [userEmail, setUserEmail] = useState('');
     const navigate = useNavigate();
 
@@ -42,14 +43,27 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
-                <div className="logo-container">
+                {/* Close Button for Mobile */}
+                <button
+                    className="mobile-close"
+                    onClick={() => setIsOpen(false)}
+                    style={{
+                        position: 'absolute',
+                        right: '16px',
+                        top: '24px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: window.innerWidth <= 768 ? 'block' : 'none'
+                    }}
+                >
+                    <FiX size={20} />
+                </button>
+                <div className="logo-container unified-logo">
                     <img src={logo} alt="CPA Logo" className="sidebar-logo" />
-                </div>
-                <div className="system-info">
-                    <h1 className="system-title">CPA/UEA</h1>
-                    <p className="system-subtitle">SELF-ASSESSMENT SYSTEM</p>
                 </div>
             </div>
 

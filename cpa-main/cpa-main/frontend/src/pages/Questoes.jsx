@@ -31,7 +31,7 @@ const Questoes = () => {
             <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ maxWidth: 1200 }}>
+            <div style={{ width: '100%', maxWidth: '1600px' }}>
 
                 {/* ── Cabeçalho ── */}
                 <div style={{
@@ -103,7 +103,7 @@ const Questoes = () => {
                 <div style={{
                     background: '#fff', border: '1px solid #e2e8f0',
                     borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    overflow: 'hidden', animation: 'fadeInUp 400ms 150ms both',
+                    overflowX: 'auto', animation: 'fadeInUp 400ms 150ms both',
                 }}>
                     <TableQuestoes
                         searchQuery={searchQuery}

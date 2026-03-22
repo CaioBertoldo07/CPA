@@ -267,7 +267,7 @@ const RelatorioAvaliacao = () => {
                 }
             `}</style>
 
-            <div className="container" style={{ paddingTop: 32, paddingBottom: 48 }}>
+            <div className="container" style={{ width: '100%', maxWidth: '1600px', paddingTop: 32, paddingBottom: 48 }}>
 
                 {/* Breadcrumb */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#718096', marginBottom: 24 }}>
