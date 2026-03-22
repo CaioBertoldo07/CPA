@@ -9,7 +9,11 @@ import { IoTrashOutline } from "react-icons/io5";
 import ModalQuestoes from '../Modals/Modal_Questoes';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { DataGrid } from '@mui/x-data-grid';
+<<<<<<< HEAD
 import { ptBR } from '@mui/x-data-grid/locales'
+=======
+import { ptBR } from '@mui/x-data-grid/locales';
+>>>>>>> b36eede (fix: re-stabilize frontend after git merge and manual reverts)
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const Table_Questoes = ({ searchQuery = '', onSuccess }) => {

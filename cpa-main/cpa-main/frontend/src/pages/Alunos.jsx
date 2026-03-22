@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCalendarAlt, faArrowRight, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { jwtDecode } from 'jwt-decode';
 import logo from '../assets/imgs/cpa_logo.svg';
-import './Alunos.css';
+// import './Alunos.css';
 
 import { useGetAvaliacoesDisponiveisQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { getToken } from '../api/tokenStore'; // Added import for getToken

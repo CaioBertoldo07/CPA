@@ -12,7 +12,7 @@ import { useDeleteEixoMutation } from '../../hooks/mutations/useEixoMutations';
 import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
 import { useDeleteDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
 import { DataGrid } from '@mui/x-data-grid';
-import { ptBR } from '@mui/x-data-grid/locales'
+import { ptBR } from '@mui/x-data-grid/locales';
 import {
     Box,
     IconButton,

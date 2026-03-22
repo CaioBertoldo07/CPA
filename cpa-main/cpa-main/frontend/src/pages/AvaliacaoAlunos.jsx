@@ -6,7 +6,7 @@ import logo from '../assets/imgs/cpa_logo.svg';
 import simIcon from '../assets/imgs/yes_emoji.svg';
 import naoIcon from '../assets/imgs/no_emoji.svg';
 import naoSeiIcon from '../assets/imgs/idono_emoji.svg';
-import './AvaliacaoAlunos.css';
+// import './AvaliacaoAlunos.css';
 import {
     useGetAvaliacaoByIdQuery,
     useGetVerificarRespostaQuery

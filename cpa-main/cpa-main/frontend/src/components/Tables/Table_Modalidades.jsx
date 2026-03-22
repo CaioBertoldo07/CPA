@@ -8,7 +8,11 @@ import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 import { DataGrid } from '@mui/x-data-grid';
+<<<<<<< HEAD
 import { ptBR } from '@mui/x-data-grid/locales'
+=======
+import { ptBR } from '@mui/x-data-grid/locales';
+>>>>>>> b36eede (fix: re-stabilize frontend after git merge and manual reverts)
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {

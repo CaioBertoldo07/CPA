@@ -13,7 +13,7 @@ import {
     useProrrogarAvaliacaoMutation
 } from '../../hooks/mutations/useAvaliacaoMutations';
 import { DataGrid } from '@mui/x-data-grid';
-import { ptBR } from '@mui/x-data-grid/locales'
+import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const STATUS_MAP = {

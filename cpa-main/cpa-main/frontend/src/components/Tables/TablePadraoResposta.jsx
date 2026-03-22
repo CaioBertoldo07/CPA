@@ -14,7 +14,7 @@ import { useGetAlternativasByPadraoRespostaIdQuery } from '../../hooks/queries/u
 import { useDeleteAlternativaMutation } from '../../hooks/mutations/useAlternativaMutations';
 import { getAlternativasByPadraoRespostaId } from '../../api/alternativas';
 import { DataGrid } from '@mui/x-data-grid';
-import { ptBR } from '@mui/x-data-grid/locales'
+import { ptBR } from '@mui/x-data-grid/locales';
 import {
     Box,
     IconButton,
