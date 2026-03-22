@@ -13,7 +13,70 @@ router.get('/eixo/:numeroEixo', dimensoesController.getDimensoesByEixo);
 router.get('/eixo/numero/:numeroDimensao', dimensoesController.getNumeroEixoByDimensao);
 
 
-// Rota para criar uma nova dimensão
+/**
+ * @swagger
+ * tags:
+ *   name: Dimensões
+ *   description: Gerenciamento das Dimensões do questionário
+ */
+
+/**
+ * @swagger
+ * /api/dimensoes:
+ *   get:
+ *     summary: Retorna a lista de todas as dimensões
+ *     tags: [Dimensões]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de dimensões retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   numero:
+ *                     type: integer
+ *                   nome:
+ *                     type: string
+ *                   numero_eixos:
+ *                     type: integer
+ *   post:
+ *     summary: Cria uma nova dimensão
+ *     tags: [Dimensões]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               numero:
+ *                 type: integer
+ *               nome:
+ *                 type: string
+ *               numero_eixos:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Dimensão criada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 numero:
+ *                   type: integer
+ *                 nome:
+ *                   type: string
+ *                 numero_eixos:
+ *                   type: integer
+ */
 router.get('/', dimensoesController.getDimensoes);
 router.post('/', dimensoesController.postDimensoes);
 

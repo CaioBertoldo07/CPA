@@ -1,6 +1,14 @@
 import express from 'express';
 import cors from 'cors';
+import { setupSwagger } from './config/swagger';
+
 const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Initialize Swagger Docs
+setupSwagger(app);
 
 import eixosRouter from './routes/eixosRouter';
 import dimensoesRouter from './routes/dimensoesRouter';
@@ -46,8 +54,8 @@ if (shouldImportCursosOnStart) {
             .then(async (response) => {
                 const cursos =
                     response &&
-                    Object.prototype.hasOwnProperty.call(response, 'UNIDADECURSOS') &&
-                    Array.isArray(response.UNIDADECURSOS)
+                        Object.prototype.hasOwnProperty.call(response, 'UNIDADECURSOS') &&
+                        Array.isArray(response.UNIDADECURSOS)
                         ? response.UNIDADECURSOS
                         : null;
 
