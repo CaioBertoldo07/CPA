@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, clearAll } from './tokenStore';
 
 const api = axios.create({
     baseURL: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3034'}/api`,
@@ -7,7 +8,7 @@ const api = axios.create({
 // Interceptor de requisição para adicionar o token no cabeçalho
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('authToken');
+        const token = getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -21,10 +22,11 @@ api.interceptors.response.use(
     (response) => response.data,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Expira a sessão quando o backend retorna 401 (token expirado ou inválido)
-            alert('Sua sessão expirou. Faça login novamente.');
-            localStorage.clear(); // Limpa o token e dados do usuário
-            window.location.href = '/login'; // Redireciona para a página de login
+            // Notifica a aplicação sobre o erro de autenticação via evento customizado
+            // Isso permite que um componente React (como App.jsx) lide com o redirect e o Toast
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+
+            clearAll(); // Limpa o token e dados do usuário por segurança
         }
         return Promise.reject(error); // Rejeita o erro para handlers adicionais
     }

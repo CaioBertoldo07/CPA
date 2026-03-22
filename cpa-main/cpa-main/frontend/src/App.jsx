@@ -17,9 +17,53 @@ import PadraoResposta from './pages/Padrao_Resposta';
 import RelatorioAvaliacao from './pages/RelatorioAvaliacao';
 import Layout from './components/utils/Layout';
 
+import { Toast } from 'primereact/toast';
+import { useNavigate } from 'react-router-dom';
+
+const AuthObserver = () => {
+    const navigate = useNavigate();
+    const toast = React.useRef(null);
+
+    React.useEffect(() => {
+        const handleUnauthorized = () => {
+            if (toast.current) {
+                toast.current.show({
+                    severity: 'error',
+                    summary: 'Sessão Expirada',
+                    detail: 'Sua sessão expirou. Por favor, faça login novamente.',
+                    life: 5000
+                });
+            }
+            setTimeout(() => { navigate('/login'); }, 1500);
+        };
+
+        const handleAccessDenied = () => {
+            if (toast.current) {
+                toast.current.show({
+                    severity: 'warn',
+                    summary: 'Acesso Negado',
+                    detail: 'Você não tem permissão para acessar esta página.',
+                    life: 5000
+                });
+            }
+        };
+
+        window.addEventListener('auth:unauthorized', handleUnauthorized);
+        window.addEventListener('auth:access-denied', handleAccessDenied);
+
+        return () => {
+            window.removeEventListener('auth:unauthorized', handleUnauthorized);
+            window.removeEventListener('auth:access-denied', handleAccessDenied);
+        };
+    }, [navigate]);
+
+    return <Toast ref={toast} />;
+};
+
 const App = () => {
     return (
         <Router>
+            <AuthObserver />
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/" element={<LoginPage />} />

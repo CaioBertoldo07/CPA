@@ -1,9 +1,10 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { getToken, getIsAdmin } from '../../api/tokenStore';
 
-const ProtectedRoute = ({ element: Component, isAdminRequired, layout: Layout, ...rest }) => {
-    const token = localStorage.getItem('authToken');
-    const userIsAdmin = localStorage.getItem('isAdmin') === 'true';
+const ProtectedRoute = ({ element: Component, isAdminRequired = false, layout: Layout, ...rest }) => {
+    const token = getToken();
+    const userIsAdmin = getIsAdmin();
 
     // Verificar se o token existe e se está expirado
     if (!token) {
@@ -11,7 +12,7 @@ const ProtectedRoute = ({ element: Component, isAdminRequired, layout: Layout, .
     }
 
     if (isAdminRequired && !userIsAdmin) {
-        alert('Você não tem acesso a esta página.');
+        window.dispatchEvent(new CustomEvent('auth:access-denied'));
         return <Navigate to="/alunos" />;
     }
 

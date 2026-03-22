@@ -14,9 +14,10 @@ import {
 import { useAdicionarRespostaMutation } from '../hooks/mutations/useRespostaMutations';
 
 const AvaliacaoAlunos = () => {
-    const { id } = useParams();
+    const { id: avaliacaoId } = useParams();
     const navigate = useNavigate();
-    const token = localStorage.getItem('authToken');
+    const [idUnidadeMedia, setIdUnidadeMedia] = useState(null);
+    const token = getToken();
     const toast = useRef(null);
 
     const {
