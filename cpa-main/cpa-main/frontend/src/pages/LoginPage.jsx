@@ -21,7 +21,7 @@ const LoginPage = () => {
     event.preventDefault();
     loginMutation.mutate({ email, senha }, {
       onSuccess: (data) => {
-        if (data.isAdmin) {
+        if (data.user?.isAdmin) {
           setShowAdminOptions(true);
         } else {
           navigate('/alunos');

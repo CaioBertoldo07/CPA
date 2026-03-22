@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import NavigationBar from '../components/utils/NavBar';
 import TableCategorias from '../components/Tables/Table_Categorias';
 import ModalCategorias from '../components/Modals/Modal_Categorias';
 import { Toast } from 'primereact/toast';
@@ -17,12 +16,11 @@ const Categorias = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 48px' }}>
+            <div style={{ maxWidth: 1200 }}>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
                     <div>
@@ -64,7 +62,7 @@ const Categorias = () => {
             </div>
 
             <ModalCategorias show={modalShow} onHide={() => setModalShow(false)} onSuccess={handleSuccess} />
-        </div>
+        </>
     );
 };
 

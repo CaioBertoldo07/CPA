@@ -7,7 +7,7 @@ export const useLoginMutation = () => {
         onSuccess: (data, variables) => {
             if (data.token) {
                 localStorage.setItem('authToken', data.token);
-                localStorage.setItem('isAdmin', data.isAdmin);
+                localStorage.setItem('isAdmin', String(!!data.user?.isAdmin));
                 localStorage.setItem('userEmail', variables.email);
             }
         },

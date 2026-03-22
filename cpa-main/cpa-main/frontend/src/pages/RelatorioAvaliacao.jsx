@@ -10,7 +10,6 @@ import { Toast } from 'primereact/toast';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import NavigationBar from '../components/utils/NavBar';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQueries';
 
@@ -227,8 +226,7 @@ const RelatorioAvaliacao = () => {
     const questoesAgrupadas = agruparRespostas(respostas);
 
     if (loadingAvaliacao) return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <div className="container" style={{ paddingTop: 32 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 680 }}>
                     <SkeletonBlock h={32} w="50%" />
@@ -237,12 +235,11 @@ const RelatorioAvaliacao = () => {
                     <SkeletonBlock h={120} />
                 </div>
             </div>
-        </div>
+        </>
     );
 
     if (errorAvaliacao) return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <div className="container" style={{ paddingTop: 32 }}>
                 <Alert variant="danger">
                     <Alert.Heading>Erro</Alert.Heading>
@@ -252,12 +249,11 @@ const RelatorioAvaliacao = () => {
                     </button>
                 </Alert>
             </div>
-        </div>
+        </>
     );
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <Toast ref={toast} />
 
             <style>{`
@@ -399,7 +395,7 @@ const RelatorioAvaliacao = () => {
                     questoesAgrupadas.map((q, idx) => <QuestaoCard key={idx} questao={q} idx={idx} />)
                 )}
             </div>
-        </div>
+        </>
     );
 };
 

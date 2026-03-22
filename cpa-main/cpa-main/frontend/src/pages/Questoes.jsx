@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import NavigationBar from '../components/utils/NavBar';
 import TableQuestoes from '../components/Tables/Table_Questoes';
 import ModalQuestoes from '../components/Modals/Modal_Questoes';
 import { Toast } from 'primereact/toast';
@@ -28,12 +27,11 @@ const Questoes = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <Toast ref={toast} />
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 48px' }}>
+            <div style={{ maxWidth: 1200 }}>
 
                 {/* ── Cabeçalho ── */}
                 <div style={{
@@ -121,7 +119,7 @@ const Questoes = () => {
                 onSuccess={handleSuccess}       // ← fecha + reload + toast
                 onUpdateQuestion={handleSuccess}
             />
-        </div>
+        </>
     );
 };
 

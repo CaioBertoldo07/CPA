@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import NavigationBar from '../components/utils/NavBar';
 import TableEixos from '../components/Tables/TableEixos';
 import ModalEixos from '../components/Modals/Modal_Eixos';
 import { Toast } from 'primereact/toast';
@@ -24,8 +23,7 @@ const Eixos = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f4f6f8' }}>
-            <NavigationBar />
+        <>
             <Toast ref={toast} />
 
             <style>{`
@@ -35,8 +33,7 @@ const Eixos = () => {
                 }
             `}</style>
 
-            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 48px' }}>
-
+            <div style={{ maxWidth: 1200 }}>
                 {/* ── Cabeçalho ── */}
                 <div style={{
                     display: 'flex', alignItems: 'center',
@@ -68,7 +65,7 @@ const Eixos = () => {
                         onMouseLeave={e => { e.currentTarget.style.background = '#1D5E24'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                         </svg>
                         Novo Eixo
                     </button>
@@ -90,7 +87,7 @@ const Eixos = () => {
                         onBlurCapture={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                         <input
                             type="text"
@@ -105,15 +102,10 @@ const Eixos = () => {
                         />
                         {searchQuery && (
                             <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex', alignItems: 'center' }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                             </button>
                         )}
                     </div>
-                    {searchQuery && (
-                        <p style={{ fontSize: 12, color: '#718096', marginTop: 6, marginLeft: 2 }}>
-                            Filtrando por "{searchQuery}"
-                        </p>
-                    )}
                 </div>
 
                 {/* ── Tabela ── */}
@@ -138,7 +130,7 @@ const Eixos = () => {
                 onHide={() => setModalShow(false)}
                 onSuccess={handleSuccess}
             />
-        </div>
+        </>
     );
 };
 
