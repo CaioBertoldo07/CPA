@@ -33,7 +33,7 @@ function ModalUpdateAlternativa({ show, handleClose, onSuccess, alternativa }) {
         handleClose();
       },
       onError: (err) => {
-        setError(err?.response?.data?.error || "Erro ao atualizar alternativa.");
+        setError(err?.response?.data?.message || err?.response?.data?.error || "Erro ao atualizar alternativa.");
       }
     });
   };

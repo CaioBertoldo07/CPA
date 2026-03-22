@@ -34,7 +34,7 @@ const ModalUpdateDimensao = ({ show, handleClose, dimensaoData, onSuccess }) => 
                 handleClose();
             },
             onError: (err) => {
-                setError(err?.response?.data?.error || 'Erro ao atualizar dimensão.');
+                setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao atualizar dimensão.');
             }
         });
     };

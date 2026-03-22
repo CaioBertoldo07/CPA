@@ -33,7 +33,7 @@ function ModalUpdateModalidades({ show, modalidade, onClose, onSave }) {
                 onClose();
             },
             onError: (err) => {
-                setError(err?.response?.data?.error || 'Erro ao atualizar modalidade.');
+                setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao atualizar modalidade.');
             }
         });
     };

@@ -17,6 +17,7 @@ function DynamicInputs({ inputs, adicionarInput, removerInput, handleNumeroChang
         >
           <TextField
             label="Número"
+            type="number"
             size="small"
             value={input.numero}
             onChange={(e) => handleNumeroChange(index, e.target.value)}

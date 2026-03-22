@@ -43,7 +43,7 @@ function Modal_Modalidades({ show, onHide, onSuccess }) {
                 handleClose();
                 if (onSuccess) onSuccess('Modalidade cadastrada com sucesso!');
             },
-            onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar modalidade.')
+            onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao cadastrar modalidade.')
         });
     };
 

@@ -113,7 +113,7 @@ function Modal_Avaliacoes(props) {
 
         adicionarAvaliacaoMutation.mutate(avaliacaoData, {
             onSuccess: () => props.onClose?.(),
-            onError: (err) => setError(err?.response?.data?.error || 'Erro ao criar avaliação.')
+            onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao criar avaliação.')
         });
     };
 

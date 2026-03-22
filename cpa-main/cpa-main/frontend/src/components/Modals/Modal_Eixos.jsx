@@ -38,21 +38,30 @@ function Modal_Eixos({ show, onHide, onSuccess }) {
   };
 
   const handleSave = () => {
-    if (!eixoNome.trim() || !numeroEixo.trim()) {
-      return setError('Por favor, preencha o número e o nome do Eixo.');
+    const parsedNumeroEixo = parseInt(numeroEixo.trim(), 10);
+    const parsedDimensoes = dimensoes.map(d => ({
+      ...d,
+      numero: parseInt(d.numero, 10)
+    }));
+
+    if (isNaN(parsedNumeroEixo)) {
+      return setError('O número do eixo deve ser um valor numérico válido.');
     }
-    setError('');
+
+    if (parsedDimensoes.some(d => isNaN(d.numero))) {
+      return setError('Todas as dimensões devem ter um número válido.');
+    }
 
     adicionarEixoMutation.mutate({
       nome: eixoNome.trim(),
-      numero: numeroEixo.trim(),
-      dimensoes
+      numero: parsedNumeroEixo,
+      dimensoes: parsedDimensoes
     }, {
       onSuccess: () => {
         onHide();
         if (onSuccess) onSuccess('Eixo cadastrado com sucesso!');
       },
-      onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar eixo.')
+      onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao cadastrar eixo.')
     });
   };
 
@@ -107,6 +116,7 @@ function Modal_Eixos({ show, onHide, onSuccess }) {
               required
               fullWidth
               label="Número"
+              type="number"
               value={numeroEixo}
               onChange={(e) => setNumeroEixo(e.target.value)}
               disabled={loading}
