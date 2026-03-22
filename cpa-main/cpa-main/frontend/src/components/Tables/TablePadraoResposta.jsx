@@ -65,22 +65,48 @@ const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 100,
+            width: 180,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-end', width: '100%' }}>
                     <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => onEdit(params.row)} sx={{ color: '#4a5568', '&:hover': { bgcolor: '#f1f5f9' } }}>
-                            <FaRegEdit size={14} />
-                        </IconButton>
+                        <MuiButton
+                            size="small"
+                            variant="text"
+                            startIcon={<FaRegEdit size={12} />}
+                            onClick={() => onEdit(params.row)}
+                            sx={{
+                                color: '#4a5568',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.65rem',
+                                minWidth: 'auto',
+                                '&:hover': { bgcolor: '#f1f5f9' }
+                            }}
+                        >
+                            Editar
+                        </MuiButton>
                     </Tooltip>
                     <Tooltip title="Excluir">
-                        <IconButton size="small" onClick={() => onDelete(params.row)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}>
-                            <IoTrashOutline size={15} />
-                        </IconButton>
+                        <MuiButton
+                            size="small"
+                            variant="text"
+                            color="error"
+                            startIcon={<IoTrashOutline size={13} />}
+                            onClick={() => onDelete(params.row)}
+                            sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.65rem',
+                                minWidth: 'auto',
+                                '&:hover': { bgcolor: '#fee2e2' }
+                            }}
+                        >
+                            Excluir
+                        </MuiButton>
                     </Tooltip>
                 </Box>
             )
@@ -96,7 +122,7 @@ const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
     }
 
     return (
-        <Box sx={{ width: '100%', height: 300, mt: 1 }}>
+        <Box sx={{ width: '100%', mt: 1 }}>
             <DataGrid
                 rows={rows}
                 columns={columns}
@@ -104,6 +130,8 @@ const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
                 getRowId={(row) => row.id}
                 pageSizeOptions={[5, 10]}
                 initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+                autoHeight
+                hideFooter
                 density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
@@ -227,23 +255,49 @@ const TablePadraoResposta = ({ searchQuery = '', onSuccess }) => {
                     <AccordionDetails sx={{ pt: 0, px: 0, pb: 0 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, bgcolor: '#fafafa', borderTop: '1px solid #f1f5f9' }}>
                             <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Alternativas</Typography>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                                 <MuiButton
                                     size="small" variant="outlined"
                                     onClick={() => { setCurrentPadraoNumero(padrao.id); setShowModalAddAlternativa(true); }}
-                                    sx={{ color: '#1D5E24', borderColor: '#1D5E24', '&:hover': { bgcolor: '#e8f5e9', borderColor: '#1D5E24' }, textTransform: 'none', fontWeight: 600 }}
+                                    sx={{ color: '#1D5E24', borderColor: '#1D5E24', '&:hover': { bgcolor: '#e8f5e9', borderColor: '#1D5E24' }, textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
                                 >
                                     + Alternativa
                                 </MuiButton>
                                 <Tooltip title="Editar Padrão">
-                                    <IconButton size="small" onClick={() => handleEditPadrao(padrao)} sx={{ color: '#4a5568', '&:hover': { bgcolor: '#f1f5f9' } }}>
-                                        <FaRegEdit size={16} />
-                                    </IconButton>
+                                    <MuiButton
+                                        size="small"
+                                        variant="text"
+                                        startIcon={<FaRegEdit size={14} />}
+                                        onClick={() => handleEditPadrao(padrao)}
+                                        sx={{
+                                            color: '#4a5568',
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem',
+                                            minWidth: 'auto',
+                                            '&:hover': { bgcolor: '#f1f5f9' }
+                                        }}
+                                    >
+                                        Editar
+                                    </MuiButton>
                                 </Tooltip>
                                 <Tooltip title="Excluir Padrão">
-                                    <IconButton size="small" onClick={() => handleDeletePadrao(padrao)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}>
-                                        <IoTrashOutline size={18} />
-                                    </IconButton>
+                                    <MuiButton
+                                        size="small"
+                                        variant="text"
+                                        color="error"
+                                        startIcon={<IoTrashOutline size={15} />}
+                                        onClick={() => handleDeletePadrao(padrao)}
+                                        sx={{
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem',
+                                            minWidth: 'auto',
+                                            '&:hover': { bgcolor: '#fee2e2' }
+                                        }}
+                                    >
+                                        Excluir
+                                    </MuiButton>
                                 </Tooltip>
                             </Box>
                         </Box>

@@ -22,7 +22,7 @@ const Questoes = () => {
         <>
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ width: '100%', maxWidth: '1600px' }}>
+            <div style={{ width: '100%' }}>
 
                 {/* ── Cabeçalho ── */}
                 <div style={{

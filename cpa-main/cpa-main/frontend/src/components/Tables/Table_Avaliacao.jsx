@@ -14,7 +14,7 @@ import {
 } from '../../hooks/mutations/useAvaliacaoMutations';
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton } from '@mui/material';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -25,16 +25,20 @@ const STATUS_MAP = {
 const StatusBadge = ({ status }) => {
     const s = STATUS_MAP[status] || STATUS_MAP[1];
     return (
-        <Box sx={{
-            display: 'inline-flex', alignItems: 'center', gap: 0.8,
-            px: 1.2, py: 0.4, borderRadius: 10,
-            bgcolor: s.bg, color: s.color,
-            fontSize: 10, fontWeight: 600, letterSpacing: '0.4px',
-            textTransform: 'uppercase', whiteSpace: 'nowrap',
-        }}>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: s.dot }} />
-            {s.label}
-        </Box>
+        <Chip
+            label={s.label}
+            size="small"
+            sx={{
+                bgcolor: s.bg,
+                color: s.color,
+                fontWeight: 700,
+                fontSize: '0.65rem',
+                height: 24,
+                '& .MuiChip-label': { px: 1 },
+                border: `1px solid ${s.dot}44`
+            }}
+            icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: s.dot, ml: '8px !important' }} />}
+        />
     );
 };
 
@@ -148,58 +152,109 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 180,
+            width: 350,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Ver relatório">
-                        <IconButton
-                            size="small"
-                            onClick={() => navigate(`/relatorio/${params.row.id}`)}
-                            sx={{ color: '#1D5E24', '&:hover': { bgcolor: '#e8f5e9' } }}
-                        >
-                            <IoEyeOutline size={18} />
-                        </IconButton>
-                    </Tooltip>
-
-                    {params.row.status === 1 && (
-                        <Tooltip title="Enviar">
-                            <IconButton
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '80px 110px 80px',
+                    gap: 1,
+                    height: '100%',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    width: '100%',
+                    pr: 1
+                }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <Tooltip title="Ver relatório">
+                            <MuiButton
                                 size="small"
-                                onClick={() => { setAvaliacaoAlvo(params.row); setShowEnviar(true); }}
-                                sx={{ color: '#2563eb', '&:hover': { bgcolor: '#dbeafe' } }}
+                                variant="text"
+                                startIcon={<IoEyeOutline size={16} />}
+                                onClick={() => navigate(`/relatorio/${params.row.id}`)}
+                                sx={{
+                                    color: '#1D5E24',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    minWidth: 'auto',
+                                    '&:hover': { bgcolor: '#e8f5e9' }
+                                }}
                             >
-                                <BsUpload size={16} />
-                            </IconButton>
+                                Ver
+                            </MuiButton>
                         </Tooltip>
-                    )}
+                    </Box>
 
-                    {params.row.status === 2 && (
-                        <Tooltip title="Prorrogar">
-                            <IconButton
-                                size="small"
-                                onClick={() => { setAvaliacaoAlvo(params.row); setNovaDataFim(''); setShowProrrogar(true); }}
-                                sx={{ color: '#7c3aed', '&:hover': { bgcolor: '#ede9fe' } }}
-                            >
-                                <BsUpload size={16} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        {params.row.status === 1 && (
+                            <Tooltip title="Enviar">
+                                <MuiButton
+                                    size="small"
+                                    variant="text"
+                                    startIcon={<BsUpload size={14} />}
+                                    onClick={() => { setAvaliacaoAlvo(params.row); setShowEnviar(true); }}
+                                    sx={{
+                                        color: '#2563eb',
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        minWidth: 'auto',
+                                        '&:hover': { bgcolor: '#dbeafe' }
+                                    }}
+                                >
+                                    Enviar
+                                </MuiButton>
+                            </Tooltip>
+                        )}
 
-                    {params.row.status === 1 && (
-                        <Tooltip title="Excluir">
-                            <IconButton
-                                size="small"
-                                onClick={() => { setAvaliacaoAlvo(params.row); setShowExcluir(true); }}
-                                sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
-                            >
-                                <FaTrash size={16} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
+                        {params.row.status === 2 && (
+                            <Tooltip title="Prorrogar">
+                                <MuiButton
+                                    size="small"
+                                    variant="text"
+                                    startIcon={<BsUpload size={14} />}
+                                    onClick={() => { setAvaliacaoAlvo(params.row); setNovaDataFim(''); setShowProrrogar(true); }}
+                                    sx={{
+                                        color: '#7c3aed',
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        minWidth: 'auto',
+                                        '&:hover': { bgcolor: '#ede9fe' }
+                                    }}
+                                >
+                                    Prorrogar
+                                </MuiButton>
+                            </Tooltip>
+                        )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        {params.row.status === 1 && (
+                            <Tooltip title="Excluir">
+                                <MuiButton
+                                    size="small"
+                                    variant="text"
+                                    color="error"
+                                    startIcon={<FaTrash size={14} />}
+                                    onClick={() => { setAvaliacaoAlvo(params.row); setShowExcluir(true); }}
+                                    sx={{
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        minWidth: 'auto',
+                                        '&:hover': { bgcolor: '#fee2e2' }
+                                    }}
+                                >
+                                    Excluir
+                                </MuiButton>
+                            </Tooltip>
+                        )}
+                    </Box>
                 </Box>
             )
         }
@@ -215,6 +270,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                 initialState={{
                     pagination: { paginationModel: { pageSize: 10 } },
                 }}
+                density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
                 sx={{
