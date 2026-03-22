@@ -5,14 +5,20 @@ import { IoEyeOutline } from 'react-icons/io5';
 import { BsUpload } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import { Toast } from 'primereact/toast';
+import { useGetAvaliacoesQuery } from '../../hooks/queries/useAvaliacaoQueries';
 import {
-    getAvaliacoes, enviarAvaliacao,
-    deletarAvaliacaoById, prorrogarAvaliacaoById,
-} from '../../services/avaliacoesService';
+    useDeleteAvaliacaoMutation,
+    useEnviarAvaliacaoMutation,
+    useProrrogarAvaliacaoMutation
+} from '../../hooks/mutations/useAvaliacaoMutations';
+
+const ITEMS_PER_PAGE = 10;
+
+const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
 const STATUS_MAP = {
-    1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
-    2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
+    1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+    2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
     3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
 };
 
@@ -34,7 +40,7 @@ const StatusBadge = ({ status }) => {
 
 const SkeletonRow = () => (
     <tr>
-        {[50, 120, 70, 55, 80, 80, 90, 200].map((w, i) => (
+        {[50, 120, 70, 55, 80, 80, 90, 60].map((w, i) => (
             <td key={i} style={{ padding: '15px 16px' }}>
                 <div style={{
                     height: 13, width: w, borderRadius: 6,
@@ -47,7 +53,7 @@ const SkeletonRow = () => (
     </tr>
 );
 
-function ConfirmModal({ show, onConfirm, onCancel, title, body, confirmLabel, confirmVariant = 'primary', loading }) {
+function ConfirmModal({ show, onConfirm, onCancel, title, body, loading, confirmLabel = "Confirmar", confirmVariant = "danger" }) {
     return (
         <Modal show={show} onHide={onCancel} centered size="sm">
             <Modal.Header closeButton style={{ borderBottom: '1px solid #e2e8f0', padding: '14px 20px' }}>
@@ -57,16 +63,12 @@ function ConfirmModal({ show, onConfirm, onCancel, title, body, confirmLabel, co
             <Modal.Footer style={{ borderTop: '1px solid #e2e8f0', gap: 8, padding: '12px 20px' }}>
                 <Button variant="light" onClick={onCancel} disabled={loading} size="sm">Cancelar</Button>
                 <Button variant={confirmVariant} onClick={onConfirm} disabled={loading} size="sm" style={{ minWidth: 90 }}>
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-1" />Aguarde...</>
-                        : confirmLabel}
+                    {loading ? <><Spinner size="sm" animation="border" className="me-1" />Processando...</> : confirmLabel}
                 </Button>
             </Modal.Footer>
         </Modal>
     );
 }
-
-const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
 const thStyle = {
     padding: '11px 16px', fontSize: 11, fontWeight: 600,
@@ -75,46 +77,29 @@ const thStyle = {
     background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
 };
 const tdStyle = { padding: '14px 16px', color: '#1a202c', verticalAlign: 'middle', fontSize: 13 };
-
 const pagBtn = {
-    width: 30, height: 30, borderRadius: 7,
-    border: '1px solid #e2e8f0', background: 'transparent',
-    color: '#4a5568', fontSize: 13, cursor: 'pointer',
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 150ms',
+    width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: 12,
+    cursor: 'pointer', transition: 'all 150ms', color: '#4a5568'
 };
 
-const ITEMS_PER_PAGE = 10;
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
+    const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
+    const deleteMutation = useDeleteAvaliacaoMutation();
+    const enviarMutation = useEnviarAvaliacaoMutation();
+    const prorrogarMutation = useProrrogarAvaliacaoMutation();
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
-    const [avaliacoes, setAvaliacoes] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [pagina, setPagina] = useState(1);
-    const [loadingEnviarId, setLoadingEnviarId] = useState(null);
-    const [loadingExcluirId, setLoadingExcluirId] = useState(null);
     const [showEnviar, setShowEnviar] = useState(false);
     const [showExcluir, setShowExcluir] = useState(false);
     const [showProrrogar, setShowProrrogar] = useState(false);
     const [avaliacaoAlvo, setAvaliacaoAlvo] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
-    const [loadingProrrogar, setLoadingProrrogar] = useState(false);
     const toast = useRef(null);
     const navigate = useNavigate();
 
-    const fetchAvaliacoes = async () => {
-        setLoading(true);
-        try {
-            setAvaliacoes((await getAvaliacoes()) || []);
-            setPagina(1);
-        } catch {
-            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao carregar avaliações.', life: 4000 });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchAvaliacoes(); }, [refreshTable]);
     useEffect(() => { setPagina(1); }, [filtroStatus, searchQuery]);
+    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar avaliações.'); }, [isError]);
 
     const showToast = (sev, msg) =>
         toast.current?.show({ severity: sev, summary: sev === 'error' ? 'Erro' : 'Sucesso', detail: msg, life: 4000 });
@@ -134,46 +119,34 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
     const paginated = filtered.slice((pagina - 1) * ITEMS_PER_PAGE, pagina * ITEMS_PER_PAGE);
 
     const handleEnviarConfirm = async () => {
-        setLoadingEnviarId(avaliacaoAlvo.id);
-        try {
-            await enviarAvaliacao(avaliacaoAlvo.id);
-            showToast('success', 'Avaliação enviada com sucesso.');
-            setShowEnviar(false);
-            fetchAvaliacoes();
-        } catch (e) {
-            showToast('error', e.error || 'Erro ao enviar.');
-        } finally {
-            setLoadingEnviarId(null);
-        }
+        enviarMutation.mutate(avaliacaoAlvo.id, {
+            onSuccess: () => {
+                showToast('success', 'Avaliação enviada com sucesso.');
+                setShowEnviar(false);
+            },
+            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao enviar.')
+        });
     };
 
     const handleExcluirConfirm = async () => {
-        setLoadingExcluirId(avaliacaoAlvo.id);
-        try {
-            await deletarAvaliacaoById(avaliacaoAlvo.id);
-            showToast('success', 'Avaliação excluída.');
-            setShowExcluir(false);
-            fetchAvaliacoes();
-        } catch (e) {
-            showToast('error', e.error || 'Erro ao excluir.');
-        } finally {
-            setLoadingExcluirId(null);
-        }
+        deleteMutation.mutate(avaliacaoAlvo.id, {
+            onSuccess: () => {
+                showToast('success', 'Avaliação excluída.');
+                setShowExcluir(false);
+            },
+            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao excluir.')
+        });
     };
 
     const handleProrrogarConfirm = async () => {
         if (!novaDataFim) { showToast('error', 'Informe a nova data.'); return; }
-        setLoadingProrrogar(true);
-        try {
-            await prorrogarAvaliacaoById(avaliacaoAlvo.id, novaDataFim);
-            showToast('success', 'Avaliação prorrogada.');
-            setShowProrrogar(false);
-            fetchAvaliacoes();
-        } catch (e) {
-            showToast('error', e.error || 'Erro ao prorrogar.');
-        } finally {
-            setLoadingProrrogar(false);
-        }
+        prorrogarMutation.mutate({ id: avaliacaoAlvo.id, novaDataFim }, {
+            onSuccess: () => {
+                showToast('success', 'Avaliação prorrogada.');
+                setShowProrrogar(false);
+            },
+            onError: (err) => showToast('error', err.response?.data?.error || 'Erro ao prorrogar.')
+        });
     };
 
     const ActionBtn = ({ onClick, color, hoverBg, title, children, disabled }) => (
@@ -314,7 +287,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
                                             onClick={() => { setAvaliacaoAlvo(item); setShowEnviar(true); }}
                                             color="#2563eb"
                                             hoverBg="#dbeafe"
-                                            disabled={loadingEnviarId === item.id}
+                                            disabled={enviarMutation.isPending && avaliacaoAlvo?.id === item.id}
                                         >
                                             <BsUpload size={11} /> Enviar
                                         </ActionBtn>
@@ -336,7 +309,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
                                             onClick={() => { setAvaliacaoAlvo(item); setShowExcluir(true); }}
                                             color="#ef4444"
                                             hoverBg="#fee2e2"
-                                            disabled={loadingExcluirId === item.id}
+                                            disabled={deleteMutation.isPending && avaliacaoAlvo?.id === item.id}
                                         >
                                             <FaTrash size={11} />
                                         </ActionBtn>
@@ -403,7 +376,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
                 }
                 confirmLabel="Enviar"
                 confirmVariant="success"
-                loading={loadingEnviarId === avaliacaoAlvo?.id}
+                loading={enviarMutation.isPending}
             />
 
             {/* Modal — Excluir */}
@@ -420,13 +393,13 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
                 }
                 confirmLabel="Excluir"
                 confirmVariant="danger"
-                loading={loadingExcluirId === avaliacaoAlvo?.id}
+                loading={deleteMutation.isPending}
             />
 
             {/* Modal — Prorrogar */}
             <Modal
                 show={showProrrogar}
-                onHide={() => !loadingProrrogar && setShowProrrogar(false)}
+                onHide={() => !prorrogarMutation.isPending && setShowProrrogar(false)}
                 centered
                 size="sm"
             >
@@ -445,22 +418,22 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', refreshTable }) => {
                             type="date"
                             value={novaDataFim}
                             onChange={e => setNovaDataFim(e.target.value)}
-                            disabled={loadingProrrogar}
+                            disabled={prorrogarMutation.isPending}
                             size="sm"
                         />
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer style={{ borderTop: '1px solid #e2e8f0', gap: 8, padding: '12px 20px' }}>
-                    <Button variant="light" size="sm" onClick={() => setShowProrrogar(false)} disabled={loadingProrrogar}>
+                    <Button variant="light" size="sm" onClick={() => setShowProrrogar(false)} disabled={prorrogarMutation.isPending}>
                         Cancelar
                     </Button>
                     <Button
                         size="sm"
                         style={{ background: '#1D5E24', border: 'none', minWidth: 90 }}
                         onClick={handleProrrogarConfirm}
-                        disabled={loadingProrrogar}
+                        disabled={prorrogarMutation.isPending}
                     >
-                        {loadingProrrogar
+                        {prorrogarMutation.isPending
                             ? <><Spinner size="sm" animation="border" className="me-1" />Salvando...</>
                             : 'Confirmar'}
                     </Button>

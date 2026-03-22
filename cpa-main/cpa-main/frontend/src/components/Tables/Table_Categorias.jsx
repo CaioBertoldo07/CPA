@@ -1,87 +1,36 @@
 // src/components/Tables/Table_Categorias.js
 import React, { useEffect, useRef, useState } from "react";
-import { getCategorias, deleteCategoria } from "../../services/categoriasService";
-import { Table, Modal, Button, Spinner } from "react-bootstrap";
+import { useGetCategoriasQuery } from "../../hooks/queries/useCategoriaQueries";
+import { useDeleteCategoriaMutation } from "../../hooks/mutations/useCategoriaMutations";
+import { Table, Spinner } from 'react-bootstrap';
 import { Toast } from 'primereact/toast';
-import ModalCategorias from "../Modals/Modal_Categorias";
-import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
+import ModalCategorias from '../Modals/Modal_Categorias';
+import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 
-// ── modal de confirmação ──────────────────────────
-function ConfirmDeleteModal({ show, onConfirm, onCancel, categoria, loading }) {
-    return (
-        <Modal show={show} onHide={onCancel} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Excluir Categoria</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>
-                    Tem certeza que deseja excluir a categoria{' '}
-                    <strong>{categoria?.nome}</strong>?
-                </p>
-                <p className="text-muted small">Esta ação não pode ser desfeita.</p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>
-                    Cancelar
-                </Button>
-                <Button variant="danger" onClick={onConfirm} disabled={loading} style={{ minWidth: 100 }}>
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Excluindo...</>
-                        : 'Excluir'}
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-}
+const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
+    const { data: datacategorias = [], isLoading: loadingTable, isError } = useGetCategoriasQuery();
+    const deleteMutation = useDeleteCategoriaMutation();
 
-const Table_Categorias = ({ updateTable, searchQuery = '', onSuccess }) => {
-    const [datacategorias, setDataCategorias] = useState([]);
-    const [loadingTable, setLoadingTable] = useState(false);
-
-    // edição
     const [modalShow, setModalShow] = useState(false);
     const [selectedCategoria, setSelectedCategoria] = useState(null);
 
-    // exclusão
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingCategoria, setDeletingCategoria] = useState(null);
-    const [deletingLoading, setDeletingLoading] = useState(false);
 
     const toast = useRef(null);
 
+    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar categorias.'); }, [isError]);
+
     const showToast = (severity, detail) => {
-        toast.current?.show({
-            severity,
-            summary: severity === 'error' ? 'Erro' : 'Sucesso',
-            detail,
-            life: 3000,
-        });
+        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
     };
 
-    const fetchCategorias = async () => {
-        setLoadingTable(true);
-        try {
-            const data = await getCategorias();
-            setDataCategorias(data || []);
-        } catch (error) {
-            showToast('error', 'Erro ao carregar categorias.');
-        } finally {
-            setLoadingTable(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchCategorias();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [updateTable]);
-
-    // ── filtro ─────────────────────────────────────
     const filtered = datacategorias.filter(c =>
         (c.nome || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // ── handlers exclusão ──────────────────────────
     const handleDeleteRequest = (categoria) => {
         setDeletingCategoria(categoria);
         setShowDeleteModal(true);
@@ -89,22 +38,17 @@ const Table_Categorias = ({ updateTable, searchQuery = '', onSuccess }) => {
 
     const handleDeleteConfirm = async () => {
         if (!deletingCategoria) return;
-        setDeletingLoading(true);
-        try {
-            await deleteCategoria(deletingCategoria.id);
-            setDataCategorias(prev => prev.filter(c => c.id !== deletingCategoria.id));
-            showToast('success', `Categoria "${deletingCategoria.nome}" excluída com sucesso!`);
-            if (onSuccess) onSuccess('Categoria excluída com sucesso!');
-        } catch (error) {
-            showToast('error', 'Erro ao excluir categoria. Tente novamente.');
-        } finally {
-            setDeletingLoading(false);
-            setShowDeleteModal(false);
-            setDeletingCategoria(null);
-        }
+        deleteMutation.mutate(deletingCategoria.id, {
+            onSuccess: () => {
+                showToast('success', `Categoria "${deletingCategoria.nome}" excluída com sucesso!`);
+                if (onSuccess) onSuccess('Categoria excluída com sucesso!');
+                setShowDeleteModal(false);
+                setDeletingCategoria(null);
+            },
+            onError: () => showToast('error', 'Erro ao excluir categoria. Tente novamente.')
+        });
     };
 
-    // ── handlers edição ────────────────────────────
     const handleUpdateCategoria = (categoria) => {
         setSelectedCategoria(categoria);
         setModalShow(true);
@@ -112,8 +56,7 @@ const Table_Categorias = ({ updateTable, searchQuery = '', onSuccess }) => {
 
     const handleCategoriaSaved = (message) => {
         setModalShow(false);
-        fetchCategorias(); // refetch após editar
-        showToast('success', message || 'Categoria atualizada com sucesso!');
+        showToast('success', message || 'Categoria salva com sucesso!');
         if (onSuccess) onSuccess(message);
     };
 
@@ -183,8 +126,8 @@ const Table_Categorias = ({ updateTable, searchQuery = '', onSuccess }) => {
                 show={showDeleteModal}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => { setShowDeleteModal(false); setDeletingCategoria(null); }}
-                categoria={deletingCategoria}
-                loading={deletingLoading}
+                message={deletingCategoria ? `Tem certeza que deseja excluir a categoria "${deletingCategoria.nome}"?` : ""}
+                loading={deleteMutation.isPending}
             />
         </div>
     );

@@ -3,50 +3,22 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Table, Modal, Button, Spinner } from 'react-bootstrap';
 import { Toast } from 'primereact/toast';
 import ModalAdmin from '../Modals/Modal_Admin';
-import { getAdmins, deleteAdmin } from '../../services/adminService';
 import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
+import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 
-// ── modal de confirmação ──────────────────────────
-function ConfirmDeleteModal({ show, onConfirm, onCancel, admin, loading }) {
-    return (
-        <Modal show={show} onHide={onCancel} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Excluir Administrador</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>
-                    Tem certeza que deseja remover o administrador{' '}
-                    <strong>{admin?.email}</strong>?
-                </p>
-                <p className="text-muted small">Esta ação não pode ser desfeita.</p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>
-                    Cancelar
-                </Button>
-                <Button variant="danger" onClick={onConfirm} disabled={loading} style={{ minWidth: 100 }}>
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Removendo...</>
-                        : 'Remover'}
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-}
+import { useGetAdminsQuery } from '../../hooks/queries/useAdminQueries';
+import { useDeleteAdminMutation } from '../../hooks/mutations/useAdminMutations';
 
-const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
-    const [admins, setAdmins] = useState([]);
-    const [loadingTable, setLoadingTable] = useState(false);
+const TableAdmins = ({ searchQuery = '', onSuccess }) => {
+    const { data: admins = [], isLoading: loadingTable, isError } = useGetAdminsQuery();
+    const deleteAdminMutation = useDeleteAdminMutation();
 
-    // edição
     const [modalShow, setModalShow] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState(null);
 
-    // exclusão
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingAdmin, setDeletingAdmin] = useState(null);
-    const [deletingLoading, setDeletingLoading] = useState(false);
 
     const toast = useRef(null);
 
@@ -59,29 +31,18 @@ const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
         });
     };
 
-    const fetchAdmins = async () => {
-        setLoadingTable(true);
-        try {
-            const data = await getAdmins();
-            setAdmins(data || []);
-        } catch (error) {
-            showToast('error', 'Erro ao carregar administradores.');
-        } finally {
-            setLoadingTable(false);
-        }
-    };
-
     useEffect(() => {
-        fetchAdmins();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [updateTable]);
+        if (isError) {
+            showToast('error', 'Erro ao carregar administradores.');
+        }
+    }, [isError]);
 
     // ── filtro ─────────────────────────────────────
     const filtered = admins.filter(a => {
         const q = searchQuery.toLowerCase();
         return (
             (a.email || '').toLowerCase().includes(q) ||
-            (a.nome  || '').toLowerCase().includes(q)
+            (a.nome || '').toLowerCase().includes(q)
         );
     });
 
@@ -93,19 +54,17 @@ const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
 
     const handleDeleteConfirm = async () => {
         if (!deletingAdmin) return;
-        setDeletingLoading(true);
-        try {
-            await deleteAdmin(deletingAdmin.id);
-            setAdmins(prev => prev.filter(a => a.id !== deletingAdmin.id));
-            showToast('success', `Admin "${deletingAdmin.email}" removido com sucesso!`);
-            if (onSuccess) onSuccess('Admin removido com sucesso!');
-        } catch (error) {
-            showToast('error', 'Erro ao remover admin. Tente novamente.');
-        } finally {
-            setDeletingLoading(false);
-            setShowDeleteModal(false);
-            setDeletingAdmin(null);
-        }
+        deleteAdminMutation.mutate(deletingAdmin.id, {
+            onSuccess: () => {
+                showToast('success', `Admin "${deletingAdmin.email}" removido com sucesso!`);
+                setShowDeleteModal(false);
+                setDeletingAdmin(null);
+                if (onSuccess) onSuccess();
+            },
+            onError: (error) => {
+                showToast('error', error.response?.data?.error || 'Erro ao remover admin. Tente novamente.');
+            }
+        });
     };
 
     // ── edição ─────────────────────────────────────
@@ -116,7 +75,6 @@ const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
 
     const handleAdminSaved = (message) => {
         setModalShow(false);
-        fetchAdmins();
         showToast('success', message || 'Admin salvo com sucesso!');
         if (onSuccess) onSuccess(message);
     };
@@ -186,9 +144,9 @@ const TableAdmins = ({ updateTable, searchQuery = '', onSuccess }) => {
             <ConfirmDeleteModal
                 show={showDeleteModal}
                 onConfirm={handleDeleteConfirm}
-                onCancel={() => { setShowDeleteModal(false); setDeletingAdmin(null); }}
-                admin={deletingAdmin}
-                loading={deletingLoading}
+                onCancel={() => setShowDeleteModal(false)}
+                message={deletingAdmin ? `Tem certeza que deseja remover o administrador "${deletingAdmin.email}"?` : ""}
+                loading={deleteAdminMutation.isPending}
             />
         </div>
     );

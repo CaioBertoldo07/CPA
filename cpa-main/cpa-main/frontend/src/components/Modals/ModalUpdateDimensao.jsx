@@ -1,47 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
-import { updateDimensao, getDimensoesByEixo } from '../../services/dimensoesService';
-import ButtonCancelar from "../Buttons/Button_Cancelar";
-import ButtonSalvar from "../Buttons/Button_Salvar";
+import { Modal, Form } from 'react-bootstrap';
+import ButtonCancelar from '../Buttons/Button_Cancelar';
+import ButtonSalvar from '../Buttons/Button_Salvar';
+import { useEditDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
+import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
+
 const ModalUpdateDimensao = ({ show, handleClose, dimensaoData, onSuccess }) => {
-    const [numero, setNumero] = useState('');
     const [novoNumero, setNovoNumero] = useState('');
     const [nome, setNome] = useState('');
     const [numeroEixos, setNumeroEixos] = useState('');
 
+    const editDimensaoMutation = useEditDimensaoMutation();
+
     useEffect(() => {
         if (dimensaoData) {
-            setNumero(dimensaoData.numero);
-            setNovoNumero(dimensaoData.numero); // Se desejar permitir a mudança do número
+            setNovoNumero(dimensaoData.numero);
             setNome(dimensaoData.nome);
-            // Buscar número do eixo automaticamente
-            const fetchEixo = async () => {
-                try {
-                    const dimensoes = await getDimensoesByEixo(dimensaoData.numero_eixos);
-                    if (dimensoes.length > 0) {
-                        setNumeroEixos(dimensaoData.numero_eixos); // Atualiza com o número do eixo da dimensão
-                    }
-                } catch (error) {
-                    console.error('Erro ao buscar dimensões:', error);
-                }
-            };
-            fetchEixo();
+            setNumeroEixos(dimensaoData.numero_eixos);
         }
     }, [dimensaoData]);
 
     const handleUpdate = async () => {
-        try {
-            if (!numeroEixos) {
-                console.error('Número do eixo não definido.');
-                return;
+        if (!numeroEixos) return;
+        editDimensaoMutation.mutate({
+            numero: dimensaoData.numero,
+            data: { numero: novoNumero, nome, numero_eixos: numeroEixos }
+        }, {
+            onSuccess: () => {
+                onSuccess('Dimensão atualizada com sucesso');
+                handleClose();
             }
-
-            await updateDimensao(numero, { novoNumero, nome, numero_eixos: numeroEixos });
-            onSuccess('Dimensão atualizada com sucesso');
-            handleClose();
-        } catch (error) {
-            console.error('Erro ao atualizar dimensão', error);
-        }
+        });
     };
 
     return (
@@ -72,11 +61,11 @@ const ModalUpdateDimensao = ({ show, handleClose, dimensaoData, onSuccess }) => 
                 </Form>
             </Modal.Body>
             <Modal.Footer>
-                <ButtonCancelar variant="secondary" onClick={handleClose}>
+                <ButtonCancelar onClick={handleClose} disabled={editDimensaoMutation.isPending}>
                     Fechar
                 </ButtonCancelar>
-                <ButtonSalvar variant="primary" onClick={handleUpdate}>
-                    Atualizar
+                <ButtonSalvar onClick={handleUpdate} disabled={editDimensaoMutation.isPending}>
+                    {editDimensaoMutation.isPending ? 'Salvando...' : 'Atualizar'}
                 </ButtonSalvar>
             </Modal.Footer>
         </Modal>

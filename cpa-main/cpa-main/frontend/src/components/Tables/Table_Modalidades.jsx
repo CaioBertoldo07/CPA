@@ -6,98 +6,29 @@ import EditModal from '../Modals/ModalUpdateModalidades';
 import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { Toast } from 'primereact/toast';
+import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 
-import {
-    getModalidades,
-    deleteModalidades
-} from '../../services/modalidadesService';
+import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
+import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 
-// ────────────────────────────────────────────────
-// Modal de confirmação reutilizável
-// ────────────────────────────────────────────────
-function ConfirmDeleteModal({ show, onConfirm, onCancel, modalidade, loading }) {
-    return (
-        <Modal show={show} onHide={onCancel} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Confirmar exclusão</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>
-                    Tem certeza que deseja excluir a modalidade{' '}
-                    <strong>{modalidade?.mod_ensino}</strong>?
-                </p>
-                <p className="text-muted small">Esta ação não pode ser desfeita.</p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>
-                    Cancelar
-                </Button>
-                <Button
-                    variant="danger"
-                    onClick={onConfirm}
-                    disabled={loading}
-                    style={{ minWidth: 100 }}
-                >
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Excluindo...</>
-                        : 'Excluir'
-                    }
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-}
+const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
+    const { data: modalidades = [], isLoading: loading, isError } = useGetModalidadesQuery();
+    const deleteMutation = useDeleteModalidadeMutation();
 
-// ────────────────────────────────────────────────
-// Tabela principal
-// ────────────────────────────────────────────────
-const Table_Modalidades = ({ searchQuery = '', updateTable, onSuccess }) => {
-    const [modalidades, setModalidades] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    // Estado do modal de edição
     const [editingModalidade, setEditingModalidade] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Estado do modal de confirmação de exclusão
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingModalidade, setDeletingModalidade] = useState(null);
-    const [deletingLoading, setDeletingLoading] = useState(false);
 
     const toast = useRef(null);
 
-    // ── busca na API ──────────────────────────────
-    const fetchModalidades = async () => {
-        setLoading(true);
-        try {
-            const response = await getModalidades();
-            setModalidades(response || []);
-        } catch (error) {
-            console.error("Erro ao buscar modalidades:", error);
-            setModalidades([]);
-            showToast('error', 'Erro ao carregar modalidades.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar modalidades.'); }, [isError]);
 
-    // Re-busca sempre que updateTable mudar (pai sinalizou nova operação)
-    useEffect(() => {
-        fetchModalidades();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [updateTable]);
-
-    // ── helpers ───────────────────────────────────
     const showToast = (severity, detail) => {
-        toast.current?.show({
-            severity,
-            summary: severity === 'error' ? 'Erro' : 'Sucesso',
-            detail,
-            life: 3000
-        });
+        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
     };
 
-    // ── filtro de pesquisa ────────────────────────
     const filtered = modalidades.filter(m => {
         const q = searchQuery.toLowerCase();
         return (
@@ -106,45 +37,33 @@ const Table_Modalidades = ({ searchQuery = '', updateTable, onSuccess }) => {
         );
     });
 
-    // ── handlers de edição ────────────────────────
     const handleEdit = (modalidade) => {
         setEditingModalidade(modalidade);
         setShowEditModal(true);
     };
 
-    const handleEditSave = (updatedModalidade) => {
-        // Atualiza localmente e notifica o pai
-        setModalidades(prev =>
-            prev.map(m => m.id === updatedModalidade.id ? { ...m, ...updatedModalidade } : m)
-        );
+    const handleEditSave = (message) => {
         setShowEditModal(false);
-        showToast('success', 'Modalidade atualizada com sucesso!');
-        if (onSuccess) onSuccess('Modalidade atualizada com sucesso!');
+        showToast('success', message || 'Modalidade atualizada com sucesso!');
+        if (onSuccess) onSuccess(message);
     };
 
-    // ── handlers de exclusão ─────────────────────
     const handleDeleteRequest = (modalidade) => {
         setDeletingModalidade(modalidade);
         setShowDeleteModal(true);
     };
 
-    const handleDeleteConfirm = async () => {
+    const handleDeleteConfirm = () => {
         if (!deletingModalidade) return;
-        setDeletingLoading(true);
-        try {
-            await deleteModalidades(deletingModalidade.id);
-            // Remove localmente sem precisar rebuscar
-            setModalidades(prev => prev.filter(m => m.id !== deletingModalidade.id));
-            showToast('success', `Modalidade "${deletingModalidade.mod_ensino}" excluída com sucesso!`);
-            if (onSuccess) onSuccess('Modalidade excluída com sucesso!');
-        } catch (error) {
-            console.error('Erro ao deletar modalidade:', error);
-            showToast('error', 'Erro ao excluir modalidade. Tente novamente.');
-        } finally {
-            setDeletingLoading(false);
-            setShowDeleteModal(false);
-            setDeletingModalidade(null);
-        }
+        deleteMutation.mutate(deletingModalidade.id, {
+            onSuccess: () => {
+                showToast('success', `Modalidade "${deletingModalidade.mod_ensino}" excluída com sucesso!`);
+                if (onSuccess) onSuccess('Modalidade excluída com sucesso!');
+                setShowDeleteModal(false);
+                setDeletingModalidade(null);
+            },
+            onError: () => showToast('error', 'Erro ao excluir modalidade. Tente novamente.')
+        });
     };
 
     const handleDeleteCancel = () => {
@@ -225,8 +144,8 @@ const Table_Modalidades = ({ searchQuery = '', updateTable, onSuccess }) => {
                 show={showDeleteModal}
                 onConfirm={handleDeleteConfirm}
                 onCancel={handleDeleteCancel}
-                modalidade={deletingModalidade}
-                loading={deletingLoading}
+                message={deletingModalidade ? `Tem certeza que deseja excluir a modalidade "${deletingModalidade.mod_ensino}"?` : ""}
+                loading={deleteMutation.isPending}
             />
         </div>
     );

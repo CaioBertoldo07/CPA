@@ -2,93 +2,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './Table.css';
 import { Modal, Button, Spinner, Table } from 'react-bootstrap';
-import { getQuestoes, deleteQuestoes, getQuestaoById } from "../../services/questoesService";
-import ModalQuestoes from "../Modals/Modal_Questoes";
-import { IoTrashOutline } from "react-icons/io5";
-import { FaRegEdit } from "react-icons/fa";
+import { useGetQuestoesQuery, useGetQuestaoByIdQuery } from "../../hooks/queries/useQuestaoQueries";
+import { useDeleteQuestaoMutation } from "../../hooks/mutations/useQuestaoMutations";
+import { getQuestaoById } from "../../api/questoes";
 import { Toast } from 'primereact/toast';
+import { FaRegEdit } from "react-icons/fa";
+import { IoTrashOutline } from "react-icons/io5";
+import ModalQuestoes from '../Modals/Modal_Questoes';
+import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 
-// ── Modal de confirmação de exclusão ─────────────
-function ConfirmDeleteModal({ show, onConfirm, onCancel, questao, loading }) {
-    return (
-        <Modal show={show} onHide={onCancel} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Confirmar exclusão</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>Tem certeza que deseja excluir a questão:</p>
-                <blockquote className="blockquote">
-                    <p className="mb-0" style={{ fontSize: '0.95rem' }}>
-                        {questao?.descricao}
-                    </p>
-                </blockquote>
-                <p className="text-muted small mt-2">Esta ação não pode ser desfeita.</p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onCancel} disabled={loading}>
-                    Cancelar
-                </Button>
-                <Button
-                    variant="danger"
-                    onClick={onConfirm}
-                    disabled={loading}
-                    style={{ minWidth: 100 }}
-                >
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Excluindo...</>
-                        : 'Excluir'
-                    }
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-}
+const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
+    const { data: dataQuestoes = [], isLoading: loadingTable, isError } = useGetQuestoesQuery();
+    const deleteMutation = useDeleteQuestaoMutation();
 
-// ── Tabela principal ──────────────────────────────
-const Table_Questoes = ({ searchQuery = '', updateTable, onSuccess }) => {
-    const [dataQuestoes, setDataQuestoes] = useState([]);
-    const [loadingTable, setLoadingTable] = useState(false);
-
-    // modal de EDIÇÃO (só edição, nunca criação)
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
 
-    // modal de confirmação de exclusão
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingQuestao, setDeletingQuestao] = useState(null);
-    const [deletingLoading, setDeletingLoading] = useState(false);
 
     const toast = useRef(null);
 
+    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar questões.'); }, [isError]);
+
     const showToast = (severity, detail) => {
-        toast.current?.show({
-            severity,
-            summary: severity === 'error' ? 'Erro' : 'Sucesso',
-            detail,
-            life: 3000,
-        });
+        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
     };
 
-    // ── busca na API ───────────────────────────────
-    const fetchQuestoes = async () => {
-        setLoadingTable(true);
-        try {
-            const data = await getQuestoes();
-            setDataQuestoes(data || []);
-        } catch (error) {
-            showToast('error', 'Erro ao carregar questões.');
-        } finally {
-            setLoadingTable(false);
-        }
-    };
-
-    // Re-busca quando updateTable muda (criou ou editou no pai)
-    useEffect(() => {
-        fetchQuestoes();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [updateTable]);
-
-    // ── filtro ─────────────────────────────────────
     const filtered = dataQuestoes.filter(q => {
         const term = searchQuery.toLowerCase();
         return (
@@ -98,7 +38,6 @@ const Table_Questoes = ({ searchQuery = '', updateTable, onSuccess }) => {
         );
     });
 
-    // ── edição ─────────────────────────────────────
     const handleEditQuestion = async (questao) => {
         try {
             const details = await getQuestaoById(questao.id);
@@ -112,32 +51,25 @@ const Table_Questoes = ({ searchQuery = '', updateTable, onSuccess }) => {
     const handleEditSaved = (message) => {
         setShowEditModal(false);
         setSelectedQuestion(null);
-        fetchQuestoes(); // refetch local após editar
         showToast('success', message || 'Questão atualizada com sucesso!');
         if (onSuccess) onSuccess(message || 'Questão atualizada com sucesso!');
     };
 
-    // ── exclusão ───────────────────────────────────
     const handleDeleteRequest = (questao) => {
         setDeletingQuestao(questao);
         setShowDeleteModal(true);
     };
 
-    const handleDeleteConfirm = async () => {
+    const handleDeleteConfirm = () => {
         if (!deletingQuestao) return;
-        setDeletingLoading(true);
-        try {
-            await deleteQuestoes(deletingQuestao.id);
-            // Remove localmente — sem reload
-            setDataQuestoes(prev => prev.filter(q => q.id !== deletingQuestao.id));
-            showToast('success', 'Questão excluída com sucesso!');
-        } catch (error) {
-            showToast('error', 'Erro ao excluir questão. Tente novamente.');
-        } finally {
-            setDeletingLoading(false);
-            setShowDeleteModal(false);
-            setDeletingQuestao(null);
-        }
+        deleteMutation.mutate(deletingQuestao.id, {
+            onSuccess: () => {
+                showToast('success', 'Questão excluída com sucesso!');
+                setShowDeleteModal(false);
+                setDeletingQuestao(null);
+            },
+            onError: () => showToast('error', 'Erro ao excluir questão. Tente novamente.')
+        });
     };
 
     // ── render ─────────────────────────────────────
@@ -231,8 +163,8 @@ const Table_Questoes = ({ searchQuery = '', updateTable, onSuccess }) => {
                 show={showDeleteModal}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => { setShowDeleteModal(false); setDeletingQuestao(null); }}
-                questao={deletingQuestao}
-                loading={deletingLoading}
+                message={deletingQuestao ? `Tem certeza que deseja excluir a questão "${deletingQuestao.descricao}"?` : ""}
+                loading={deleteMutation.isPending}
             />
         </div>
     );

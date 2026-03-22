@@ -1,67 +1,44 @@
 import React, { useEffect, useState } from "react";
-import Modal from "react-bootstrap/Modal";
+import { Modal, Spinner } from "react-bootstrap";
 import ButtonCancelar from "../Buttons/Button_Cancelar";
 import ButtonCadastrar from "../Buttons/Button_Cadastrar";
-import {cadastrarCategoria, updateCategoria} from "../../services/categoriasService";
+import { useAdicionarCategoriaMutation, useEditCategoriaMutation } from "../../hooks/mutations/useCategoriaMutations";
 
 function Modal_Categorias(props) {
     const [nomecategoria, setNomeCategoria] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+
+    const adicionarMutation = useAdicionarCategoriaMutation();
+    const editarMutation = useEditCategoriaMutation();
+    const loading = adicionarMutation.isPending || editarMutation.isPending;
 
     useEffect(() => {
         if (props.show) {
-            if (props.categoria) {
-                setNomeCategoria(props.categoria.nome || '');
-            } else {
-                setNomeCategoria('');
-            }
+            setNomeCategoria(props.categoria?.nome || '');
         } else {
             setNomeCategoria('');
             setError('');
-            setSuccess('');
         }
     }, [props.categoria, props.show]);
 
-    const handleNomeCategoriaChange = (event) => {
-        setNomeCategoria(event.target.value);
-    }
+    const handleNomeCategoriaChange = (event) => setNomeCategoria(event.target.value);
 
     const handleCadastrarCategoria = async () => {
-        if (!nomecategoria.trim()) {
-            setError('O nome da categoria não pode estar vazio.');
-            return;
-        }
-        try {
-            const categoriaData = {
-                nome: nomecategoria,
-            };
+        if (!nomecategoria.trim()) return setError('Nome não pode estar vazio.');
+        setError('');
 
-            if (props.categoria) {
-                await handleUpdateCategoria(props.categoria.id, categoriaData);
-            } else {
-                await cadastrarCategoria(categoriaData);
-            }
-            setSuccess('Categoria salva com sucesso!');
-            props.onHide();
-            props.onSuccess('Categoria salva com sucesso!');
-        } catch (error) {
-            setSuccess('');
-            if (error.response && error.response.data && error.response.data.error) {
-                setError(error.response.data.error);
-            } else {
-                setError('Erro ao salvar categoria');
-            }
-        }
-    };
+        const mutation = props.categoria ? editarMutation : adicionarMutation;
+        const payload = props.categoria
+            ? { id: props.categoria.id, categoria: { nome: nomecategoria } }
+            : { nome: nomecategoria };
 
-    const handleUpdateCategoria = async (id, categoriaAtualizada) => {
-        try {
-            const data = await updateCategoria(id, categoriaAtualizada);
-            props.onSuccess(data.message);
-        } catch (error) {
-            console.error('Erro ao atualizar a categoria:', error);
-        }
+        mutation.mutate(payload, {
+            onSuccess: (data) => {
+                props.onHide();
+                props.onSuccess?.(data?.message || 'Categoria salva!');
+            },
+            onError: (err) => setError(err.response?.data?.error || 'Erro ao salvar categoria.')
+        });
     };
 
     return (
@@ -73,7 +50,6 @@ function Modal_Categorias(props) {
             </Modal.Header>
             <Modal.Body style={{ padding: '20px' }}>
                 {error && <div className="alert alert-danger">{error}</div>}
-                {success && <div className="alert alert-success">{success}</div>}
                 <h6 style={{ marginBottom: '10px' }}>Categoria</h6>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                     <input
@@ -83,12 +59,14 @@ function Modal_Categorias(props) {
                         placeholder="Nome"
                         className="input-field"
                         style={{ width: '100%', maxWidth: '300px', padding: '5px 10px' }}
+                        disabled={loading}
                     />
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarCategoria}>
+                <ButtonCancelar onClick={props.onHide} disabled={loading}>Cancelar</ButtonCancelar>
+                <ButtonCadastrar onClick={handleCadastrarCategoria} disabled={loading}>
+                    {loading ? <Spinner size="sm" animation="border" className="me-2" /> : null}
                     {props.categoria ? 'Atualizar' : 'Cadastrar'}
                 </ButtonCadastrar>
             </Modal.Footer>

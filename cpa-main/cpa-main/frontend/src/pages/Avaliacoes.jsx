@@ -9,22 +9,20 @@ import 'primeicons/primeicons.css';
 
 // Filtros de status
 const FILTROS = [
-    { label: 'Todos',      status: null },
-    { label: 'Rascunho',   status: 1    },
-    { label: 'Enviadas',   status: 2    },
-    { label: 'Encerradas', status: 3    },
+    { label: 'Todos', status: null },
+    { label: 'Rascunho', status: 1 },
+    { label: 'Enviadas', status: 2 },
+    { label: 'Encerradas', status: 3 },
 ];
 
 const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [refreshTable, setRefreshTable] = useState(false);
     const toast = useRef(null);
 
     const handleAvaliacaoCriada = () => {
         setModalShow(false);
-        setRefreshTable(prev => !prev);
         toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Avaliação criada com sucesso!', life: 3000 });
     };
 
@@ -51,7 +49,7 @@ const Avaliacoes = () => {
                         onMouseEnter={e => { e.currentTarget.style.background = '#256428'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = '#1D5E24'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
                         Nova Avaliação
                     </button>
                 </div>
@@ -81,7 +79,7 @@ const Avaliacoes = () => {
                         onBlurCapture={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}
                     >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                         <input
                             type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -90,7 +88,7 @@ const Avaliacoes = () => {
                         />
                         {searchQuery && (
                             <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex' }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                             </button>
                         )}
                     </div>
@@ -101,7 +99,6 @@ const Avaliacoes = () => {
                     <TableAvaliacao
                         filtroStatus={filtroStatus}
                         searchQuery={searchQuery}
-                        refreshTable={refreshTable}
                     />
                 </div>
             </div>

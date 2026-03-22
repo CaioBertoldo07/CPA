@@ -3,77 +3,56 @@ import Modal from 'react-bootstrap/Modal';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 import DynamicInputs from '../utils/Inputs_Dinamico';
-import { cadastrarEixo } from '../../services/eixosService';
-// import './modalStyles.css'; // Importe o arquivo CSS
+import { useAdicionarEixoMutation } from '../../hooks/mutations/useEixoMutations';
 
 function Modal_Eixos(props) {
   const [eixoNome, setEixoNome] = useState('');
   const [numeroEixo, setNumeroEixo] = useState('');
   const [dimensoes, setDimensoes] = useState([{ numero: '', nome: '' }]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  const adicionarEixoMutation = useAdicionarEixoMutation();
 
   useEffect(() => {
-    if (props.data) {
-      setEixoNome(props.data.eixo.eixo);
-      setDimensoes(props.data.eixo.dimensoes);
+    if (props.show) {
+      setEixoNome('');
+      setNumeroEixo('');
+      setDimensoes([{ numero: '', nome: '' }]);
+      setError('');
     }
-  }, [props.data]);
+  }, [props.show]);
 
-  const handleEixoChange = (event) => {
-    setEixoNome(event.target.value);
-  };
+  const handleEixoChange = (e) => setEixoNome(e.target.value);
+  const handleNumeroEixoChange = (e) => setNumeroEixo(e.target.value);
 
-  const handleNumeroEixoChange = (event) => {
-    setNumeroEixo(event.target.value);
-  };
+  const addDimensaoField = () => setDimensoes([...dimensoes, { numero: '', nome: '' }]);
+  const removeDimensaoField = (index) => setDimensoes(dimensoes.filter((_, i) => i !== index));
 
   const handleNumeroChange = (index, value) => {
-    const updatedDimensoes = [...dimensoes];
-    updatedDimensoes[index].numero = value;
-    setDimensoes(updatedDimensoes);
+    const newDimensoes = [...dimensoes];
+    newDimensoes[index].numero = value;
+    setDimensoes(newDimensoes);
   };
 
   const handleNomeChange = (index, value) => {
-    const updatedDimensoes = [...dimensoes];
-    updatedDimensoes[index].nome = value;
-    setDimensoes(updatedDimensoes);
+    const newDimensoes = [...dimensoes];
+    newDimensoes[index].nome = value;
+    setDimensoes(newDimensoes);
   };
 
-  const addDimensaoField = () => {
-    setDimensoes([...dimensoes, { numero: '', nome: '' }]);
+  const handleCadastrarEixo = () => {
+    if (!eixoNome || !numeroEixo) return setError('Preencha os campos do Eixo.');
+    setError('');
+
+    adicionarEixoMutation.mutate({ nome: eixoNome, numero: numeroEixo, dimensoes }, {
+      onSuccess: () => {
+        props.onHide();
+        if (props.onSuccess) props.onSuccess('Eixo cadastrado com sucesso!');
+      },
+      onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar eixo.')
+    });
   };
 
-  const removeDimensaoField = (index) => {
-    const updatedDimensoes = [...dimensoes];
-    updatedDimensoes.splice(index, 1);
-    setDimensoes(updatedDimensoes);
-  };
-
-  const handleCadastrarEixo = async () => {
-    try {
-      const eixoData = {
-        numero: numeroEixo,
-        nome: eixoNome,
-        dimensoes: dimensoes.filter(d => d.numero !== '' || d.nome !== '')
-      };
-  
-      const response = await cadastrarEixo(eixoData);
-      setSuccess('Eixo cadastrado com sucesso!');
-      setError('');
-      props.onHide();
-      props.onSuccess('Eixo cadastrado com sucesso!'); // Atualiza a tabela após o sucesso
-    } catch (error) {
-      console.error('Erro ao cadastrar eixo:', error);
-      setSuccess('');
-      if (error.response && error.response.data && error.response.data.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Erro ao cadastrar eixo');
-      }
-    }
-  };
-  
 
   return (
     <Modal {...props} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
@@ -84,7 +63,6 @@ function Modal_Eixos(props) {
       </Modal.Header>
       <Modal.Body>
         {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
 
         <h6>Eixo</h6>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
@@ -116,8 +94,12 @@ function Modal_Eixos(props) {
         />
       </Modal.Body>
       <Modal.Footer>
-        <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-        <ButtonCadastrar onClick={handleCadastrarEixo}>Cadastrar</ButtonCadastrar>
+        <ButtonCancelar onClick={props.onHide} disabled={adicionarEixoMutation.isPending}>
+          Cancelar
+        </ButtonCancelar>
+        <ButtonCadastrar onClick={handleCadastrarEixo} disabled={adicionarEixoMutation.isPending}>
+          {adicionarEixoMutation.isPending ? 'Cadastrando...' : 'Cadastrar'}
+        </ButtonCadastrar>
       </Modal.Footer>
     </Modal>
   );

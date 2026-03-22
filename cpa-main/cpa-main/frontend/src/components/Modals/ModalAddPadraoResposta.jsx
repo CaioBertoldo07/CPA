@@ -1,31 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import Modal from 'react-bootstrap/Modal';
+import { Modal } from 'react-bootstrap';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import DynamicInputs from '../utils/Dinamico_PadraoResposta';
-import { cadastrarPadraoResposta } from '../../services/padraoRespostaService';
-import { cadastrarAlternativa } from '../../services/alternativasServices';
+import Dinamico_PadraoResposta from '../utils/Dinamico_PadraoResposta';
+import { useAdicionarPadraoRespostaMutation } from '../../hooks/mutations/usePadraoRespostaMutations';
 
 function ModalAddPadraoResposta(props) {
-  // const [id, setId] = useState('');
   const [sigla, setSigla] = useState('');
   const [alternativas, setAlternativas] = useState([{ descricao: '' }]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  const adicionarMutation = useAdicionarPadraoRespostaMutation();
 
   useEffect(() => {
     if (props.data) {
       setSigla(props.data.sigla);
-      setAlternativas(props.data.alternativas);
+      setAlternativas(props.data.alternativas || [{ descricao: '' }]);
     }
   }, [props.data]);
 
   const handleSiglaChange = (event) => {
     setSigla(event.target.value);
   };
-  // const handleIdChange = (event) => {
-  //   setId(event.target.value);
-  // };
+
   const handleAlternativaChange = (index, value) => {
     const updatedAlternativas = [...alternativas];
     updatedAlternativas[index].descricao = value;
@@ -42,28 +39,24 @@ function ModalAddPadraoResposta(props) {
     setAlternativas(updatedAlternativas);
   };
 
-  const handleCadastrarPadraoResposta = async () => {
-    try {
-      const padraoRespostaData = {
-        sigla,
-        alternativas: alternativas.filter(a => a.descricao && a.descricao.trim())  // Filtra alternativas válidas
-      };
+  const handleCadastrarPadraoResposta = () => {
+    const payload = {
+      sigla,
+      alternativas: alternativas.filter(a => a.descricao && a.descricao.trim())
+    };
 
-      const response = await cadastrarPadraoResposta(padraoRespostaData);
-
-      setSuccess('Padrão de resposta cadastrado com sucesso!');
-      setError('');
-      props.onHide();
-      props.onSuccess('Padrão de resposta cadastrado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao cadastrar padrão de resposta:', error);
-      setSuccess('');
-      if (error.response && error.response.data && error.response.data.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Erro ao cadastrar padrão de resposta.');
+    adicionarMutation.mutate(payload, {
+      onSuccess: () => {
+        setError('');
+        setSigla('');
+        setAlternativas([{ descricao: '' }]);
+        props.onHide();
+        props.onSuccess('Padrão de resposta cadastrado com sucesso!');
+      },
+      onError: (err) => {
+        setError(err.response?.data?.error || 'Erro ao cadastrar padrão de resposta.');
       }
-    }
+    });
   };
 
 
@@ -76,7 +69,6 @@ function ModalAddPadraoResposta(props) {
       </Modal.Header>
       <Modal.Body>
         {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
 
         <h6>Sigla</h6>
         <input
@@ -89,17 +81,18 @@ function ModalAddPadraoResposta(props) {
         />
 
         <h6>Alternativas</h6>
-        <DynamicInputs
+        <Dinamico_PadraoResposta
           inputs={alternativas}
           adicionarInput={addAlternativaField}
           removerInput={removeAlternativaField}
           handlePadraoChange={handleAlternativaChange} // Usado para o texto da alternativa
-
         />
       </Modal.Body>
       <Modal.Footer>
-        <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-        <ButtonCadastrar onClick={handleCadastrarPadraoResposta}>Cadastrar</ButtonCadastrar>
+        <ButtonCancelar onClick={props.onHide} disabled={adicionarMutation.isPending}>Cancelar</ButtonCancelar>
+        <ButtonCadastrar onClick={handleCadastrarPadraoResposta} disabled={adicionarMutation.isPending}>
+          {adicionarMutation.isPending ? 'Cadastrando...' : 'Cadastrar'}
+        </ButtonCadastrar>
       </Modal.Footer>
     </Modal>
   );

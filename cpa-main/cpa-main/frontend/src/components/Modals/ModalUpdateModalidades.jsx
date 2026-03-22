@@ -1,40 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap';
-import { updateModalidades } from '../../services/modalidadesService'; // Importação correta
+import { Button, Spinner } from 'react-bootstrap';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
+import { useEditModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 
 function ModalUpdateModalidades({ show, modalidade, onClose, onSave }) {
     const [modEnsino, setModEnsino] = useState('');
     const [modOferta, setModOferta] = useState('');
+    const [error, setError] = useState('');
 
-    // Usando o useEffect para atualizar os estados locais sempre que `modalidade` mudar
+    const mutation = useEditModalidadeMutation();
+    const loading = mutation.isPending;
+
     useEffect(() => {
         if (modalidade) {
             setModEnsino(modalidade.mod_ensino || '');
             setModOferta(modalidade.mod_oferta || '');
+            setError('');
         }
-    }, [modalidade]); // Dependência em `modalidade`
+    }, [modalidade]);
 
-    const handleSave = async () => {
-        if (!modalidade.id) {
-            console.error("ID da modalidade não definido.");
-            return;
-        }
-        try {
-            const updatedModalidade = {
-                ...modalidade,
-                mod_ensino: modEnsino,
-                mod_oferta: modOferta,
-            };
-            console.log("Atualizando modalidade com ID:", modalidade.id); // Log para debug
-            await updateModalidades(modalidade.id, updatedModalidade); // Chamada de função de atualização com o ID
-            onSave(updatedModalidade); // Passa os dados atualizados para o componente pai
-            onClose(); // Fecha o modal após salvar
-        } catch (error) {
-            console.error("Erro ao atualizar modalidade:", error);
-        }
+    const handleSave = () => {
+        if (!modEnsino.trim()) return setError('Ensino é obrigatório.');
+
+        mutation.mutate({ id: modalidade.id, data: { mod_ensino: modEnsino, mod_oferta: modOferta } }, {
+            onSuccess: (data) => {
+                onSave?.(data?.message || 'Modalidade atualizada!');
+                onClose();
+            },
+            onError: (err) => setError(err?.response?.data?.error || 'Erro ao atualizar modalidade.')
+        });
     };
 
     return (
@@ -43,36 +39,29 @@ function ModalUpdateModalidades({ show, modalidade, onClose, onSave }) {
                 <Modal.Title>Editar Modalidade</Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                {error && <div className="alert alert-danger">{error}</div>}
                 <h6>Ensino</h6>
                 <input
                     type="text"
                     value={modEnsino}
                     onChange={(e) => setModEnsino(e.target.value)}
-                    style={{
-                        border: '1px solid',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        boxSizing: 'border-box',
-                        margin: '5px 0'
-                    }}
+                    style={{ border: '1px solid', borderRadius: '4px', padding: '8px', boxSizing: 'border-box', margin: '5px 0', width: '100%', maxWidth: '300px' }}
+                    disabled={loading}
                 />
                 <h6>Oferta</h6>
                 <input
                     type="text"
                     value={modOferta}
                     onChange={(e) => setModOferta(e.target.value)}
-                    style={{
-                        border: '1px solid',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        boxSizing: 'border-box',
-                        margin: '5px 0'
-                    }}
+                    style={{ border: '1px solid', borderRadius: '4px', padding: '8px', boxSizing: 'border-box', margin: '5px 0', width: '100%', maxWidth: '300px' }}
+                    disabled={loading}
                 />
             </Modal.Body>
             <Modal.Footer>
-                <ButtonCancelar variant="secondary" onClick={onClose}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar variant="primary" onClick={handleSave}>Salvar</ButtonCadastrar>
+                <ButtonCancelar variant="secondary" onClick={onClose} disabled={loading}>Cancelar</ButtonCancelar>
+                <ButtonCadastrar variant="primary" onClick={handleSave} disabled={loading}>
+                    {loading ? <><Spinner size="sm" animation="border" className="me-2" /> Salvando...</> : 'Salvar'}
+                </ButtonCadastrar>
             </Modal.Footer>
         </Modal>
     );

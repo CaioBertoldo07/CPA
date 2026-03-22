@@ -1,20 +1,12 @@
-// src/components/Modals/Modal_Avaliacoes.js
-// MUDANÇAS: 
-//   1. salvarAvaliacao → chama props.onClose() corretamente após sucesso
-//   2. Melhor validação de erros com mensagem do backend
-//   3. Loading state no botão Salvar
-
 import React, { useState, useEffect } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import { Row, Col, Form, Button, Spinner } from 'react-bootstrap';
+import { Modal, Form, Row, Col, Spinner, Button } from 'react-bootstrap';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import './Modal_Avaliacao.css';
-import { createAvaliacao } from '../../services/avaliacoesService';
+import { useAdicionarAvaliacaoMutation } from '../../hooks/mutations/useAvaliacaoMutations';
+import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
+import { useGetMunicipiosQuery } from '../../hooks/queries/useMunicipioQueries';
+import { useGetUnidadesByMunicipiosQuery } from '../../hooks/queries/useUnidadeQueries';
 import { CategoryCheckboxes } from "../utils/Check_boxes";
-import { getModalidades } from '../../services/modalidadesService';
-import { getMunicipios } from '../../services/municipiosService';
-import { getUnidadesByMunicipios } from '../../services/unidadesService';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import CursoSelectionModal from './CursoSelectionModal';
 import QuestaoSelectionModal from './QuestaoSelectionModal';
@@ -24,86 +16,41 @@ function Modal_Avaliacoes(props) {
     const [periodo, setPeriodo] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-    const [municipios, setMunicipios] = useState([]);
     const [municipiosVinculo, setMunicipiosVinculo] = useState([]);
-    const [unidades, setUnidades] = useState([]);
     const [unidadeSelecionada, setUnidadeSelecionada] = useState(null);
     const [categorias, setCategorias] = useState({});
-    const [modalidades, setModalidades] = useState([]);
     const [modalidadeSelecionada, setModalidadeSelecionada] = useState([]);
     const [curso, setCurso] = useState('');
     const [cursosSelecionados, setCursosSelecionados] = useState([]);
     const [questoesSelecionadas, setQuestoesSelecionadas] = useState([]);
     const [error, setError] = useState('');
-    const [loading, setSaving] = useState(false);
     const [showCursoModal, setShowCursoModal] = useState(false);
     const [showQuestaoModal, setShowQuestaoModal] = useState(false);
 
-    // ── reset ao abrir/fechar ─────────────────────
+    const { data: municipiosData = [] } = useGetMunicipiosQuery();
+    const { data: modalidadesData = [] } = useGetModalidadesQuery();
+
+    const municipiosNomes = municipiosVinculo.map(m => m.label.split(' - ')[0]);
+    const { data: unidadesData = [] } = useGetUnidadesByMunicipiosQuery(municipiosNomes);
+
+    const adicionarAvaliacaoMutation = useAdicionarAvaliacaoMutation();
+    const loading = adicionarAvaliacaoMutation.isPending;
+
+    const municipios = municipiosData.map(m => ({ value: m.id, label: `${m.nome} - ${m.UF}` }));
+    const modalidades = modalidadesData.map(m => ({ value: m.id, label: m.mod_ensino }));
+    const unidades = unidadesData.map(u => ({ value: u.id, label: `${u.nome} - ${u.sigla}` }));
+
     useEffect(() => {
         if (!props.show) {
-            setAno('');
-            setPeriodo('');
+            setAno(''); setPeriodo('');
             setStartDate(new Date().toISOString().split('T')[0]);
             setEndDate(new Date().toISOString().split('T')[0]);
-            setMunicipiosVinculo([]);
-            setUnidadeSelecionada(null);
-            setCategorias({});
-            setModalidadeSelecionada([]);
-            setCurso('');
-            setCursosSelecionados([]);
-            setQuestoesSelecionadas([]);
-            setError('');
+            setMunicipiosVinculo([]); setUnidadeSelecionada(null);
+            setCategorias({}); setModalidadeSelecionada([]);
+            setCurso(''); setCursosSelecionados([]);
+            setQuestoesSelecionadas([]); setError('');
         }
     }, [props.show]);
-
-    // ── carrega municípios ────────────────────────
-    useEffect(() => {
-        const fetchMunicipios = async () => {
-            try {
-                const data = await getMunicipios();
-                setMunicipios(data.map(m => ({ value: m.id, label: `${m.nome} - ${m.UF}` })));
-            } catch (e) {
-                console.error('Erro ao carregar municípios:', e);
-            }
-        };
-        fetchMunicipios();
-    }, []);
-
-    // ── carrega modalidades ───────────────────────
-    useEffect(() => {
-        const fetchModalidades = async () => {
-            try {
-                const data = await getModalidades();
-                if (Array.isArray(data)) {
-                    setModalidades(data.map(m => ({ value: m.id, label: m.mod_ensino })));
-                }
-            } catch (e) {
-                console.error('Erro ao carregar modalidades:', e);
-            }
-        };
-        fetchModalidades();
-    }, []);
-
-    // ── carrega unidades quando municípios mudam ──
-    useEffect(() => {
-        const fetchUnidades = async () => {
-            if (municipiosVinculo.length > 0) {
-                try {
-                    const nomes = municipiosVinculo.map(m => m.label.split(' - ')[0]);
-                    const data = await getUnidadesByMunicipios(nomes);
-                    setUnidades(data.map(u => ({ value: u.id, label: `${u.nome} - ${u.sigla}` })));
-                } catch (e) {
-                    console.error('Erro ao carregar unidades:', e);
-                    setUnidades([]);
-                }
-            } else {
-                setUnidades([]);
-                setUnidadeSelecionada(null);
-            }
-        };
-        fetchUnidades();
-    }, [municipiosVinculo]);
 
     const handleCategoriaChange = (event) => {
         const { id } = event.target;
@@ -122,37 +69,18 @@ function Modal_Avaliacoes(props) {
     };
 
     const salvarAvaliacao = async () => {
-        // Validação básica no frontend
-        if (!ano || !periodo) {
-            setError('Preencha o período letivo (ano e semestre).');
-            return;
-        }
-        if (!startDate || !endDate) {
-            setError('Preencha as datas de início e fim.');
-            return;
-        }
-        if (!unidadeSelecionada || unidadeSelecionada.length === 0) {
-            setError('Selecione pelo menos uma unidade.');
-            return;
-        }
-        if (cursosSelecionados.length === 0) {
-            setError('Selecione pelo menos um curso.');
-            return;
-        }
-        if (questoesSelecionadas.length === 0) {
-            setError('Selecione pelo menos uma questão.');
-            return;
-        }
+        if (!ano || !periodo) return setError('Preencha o período letivo.');
+        if (!startDate || !endDate) return setError('Preencha as datas.');
+        if (!unidadeSelecionada?.length) return setError('Selecione uma unidade.');
+        if (!cursosSelecionados.length) return setError('Selecione um curso.');
+        if (!questoesSelecionadas.length) return setError('Selecione uma questão.');
 
         setError('');
-        setSaving(true);
 
         const avaliacaoData = {
             unidade: unidadeSelecionada.map(q => q.value),
             cursos: cursosSelecionados.map(c => c.value ?? c.identificador_api_lyceum),
-            categorias: Object.keys(categorias)
-                .filter(id => categorias[id])
-                .map(id => parseInt(id, 10)),
+            categorias: Object.keys(categorias).filter(id => categorias[id]).map(id => parseInt(id, 10)),
             modalidade: modalidadeSelecionada.map(q => q.value),
             questoes: questoesSelecionadas,
             periodo_letivo: `${ano}.${periodo}`,
@@ -162,16 +90,10 @@ function Modal_Avaliacoes(props) {
             ano,
         };
 
-        try {
-            await createAvaliacao(avaliacaoData);
-            // Notifica o pai (fecha modal + dispara refetch)
-            if (props.onClose) props.onClose();
-        } catch (err) {
-            const msg = err?.response?.data?.error || 'Erro ao criar avaliação. Verifique os dados.';
-            setError(msg);
-        } finally {
-            setSaving(false);
-        }
+        adicionarAvaliacaoMutation.mutate(avaliacaoData, {
+            onSuccess: () => props.onClose?.(),
+            onError: (err) => setError(err?.response?.data?.error || 'Erro ao criar avaliação.')
+        });
     };
 
     return (

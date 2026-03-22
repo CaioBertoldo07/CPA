@@ -2,86 +2,42 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import { Form, Table, Spinner, Alert } from 'react-bootstrap';
-import { getCursosByUnidades } from '../../services/cursosService';
+import { useGetCursosByUnidadesQuery } from '../../hooks/queries/useCursoQueries';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 
 function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas }) {
-    const [cursos, setCursos] = useState([]);
     const [selectedCursos, setSelectedCursos] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [debugInfo, setDebugInfo] = useState('');
 
-    useEffect(() => {
-        if (!show) return;
+    const unidadesIds = unidadesSelecionadas?.map(u => u.value) || [];
+    const {
+        data: response = [],
+        isLoading: loading,
+        isError,
+        error: queryError
+    } = useGetCursosByUnidadesQuery(unidadesIds);
 
-        const fetchCursos = async () => {
-            if (!unidadesSelecionadas || unidadesSelecionadas.length === 0) {
-                setError('Nenhuma unidade selecionada. Volte e selecione ao menos uma unidade.');
-                setCursos([]);
-                return;
-            }
+    // Normaliza a resposta — pode vir como array direto, ou { data: [] }, ou { cursos: [] }
+    let cursos = [];
+    if (Array.isArray(response)) {
+        cursos = response;
+    } else if (response && Array.isArray(response.data)) {
+        cursos = response.data;
+    } else if (response && Array.isArray(response.cursos)) {
+        cursos = response.cursos;
+    } else if (response && typeof response === 'object') {
+        const firstArray = Object.values(response).find(v => Array.isArray(v));
+        if (firstArray) cursos = firstArray;
+    }
 
-            setLoading(true);
-            setError('');
-            setDebugInfo('');
-
-            try {
-                const unidadesIds = unidadesSelecionadas.map(u => u.value);
-                console.log('[CursoModal] Buscando cursos para unidades:', unidadesIds);
-
-                const response = await getCursosByUnidades(unidadesIds);
-                console.log('[CursoModal] Resposta bruta:', response);
-
-                // Normaliza a resposta — pode vir como array direto, ou { data: [] }, ou { cursos: [] }
-                let lista = [];
-                if (Array.isArray(response)) {
-                    lista = response;
-                } else if (response && Array.isArray(response.data)) {
-                    lista = response.data;
-                } else if (response && Array.isArray(response.cursos)) {
-                    lista = response.cursos;
-                } else if (response && typeof response === 'object') {
-                    // Tenta pegar o primeiro array encontrado no objeto
-                    const firstArray = Object.values(response).find(v => Array.isArray(v));
-                    if (firstArray) lista = firstArray;
-                }
-
-                console.log('[CursoModal] Lista normalizada:', lista);
-
-                if (lista.length === 0) {
-                    setDebugInfo(
-                        `Nenhum curso retornado para as unidades: [${unidadesIds.join(', ')}]. ` +
-                        `Resposta da API: ${JSON.stringify(response)}`
-                    );
-                }
-
-                setCursos(lista);
-            } catch (err) {
-                console.error('[CursoModal] Erro ao buscar cursos:', err);
-                const msg = err?.response?.data?.error
-                    || err?.message
-                    || 'Erro ao carregar cursos.';
-                const status = err?.response?.status;
-                setError(`${msg}${status ? ` (HTTP ${status})` : ''}`);
-                setCursos([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCursos();
-    }, [show, unidadesSelecionadas]);
+    const error = isError ? (queryError?.response?.data?.error || queryError?.message || 'Erro ao carregar cursos.') : '';
 
     // Reset ao fechar
     useEffect(() => {
         if (!show) {
             setSelectedCursos([]);
             setSelectAll(false);
-            setError('');
-            setDebugInfo('');
         }
     }, [show]);
 
@@ -209,12 +165,6 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                         <Alert variant="warning">
                             Nenhum curso encontrado para as unidades selecionadas.
                         </Alert>
-                        {/* Info de debug — remover depois de resolver */}
-                        {debugInfo && (
-                            <Alert variant="secondary" style={{ fontSize: '0.78rem', wordBreak: 'break-all' }}>
-                                <strong>Debug:</strong> {debugInfo}
-                            </Alert>
-                        )}
                     </div>
                 )}
             </Modal.Body>

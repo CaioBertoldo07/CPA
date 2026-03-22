@@ -3,32 +3,29 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCalendarAlt, faArrowRight, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { jwtDecode } from 'jwt-decode';
-import { getAvaliacoesDisponiveis } from '../services/avaliacoesService';
 import logo from '../assets/imgs/cpa_logo.svg';
 import './Alunos.css';
 
+import { useGetAvaliacoesDisponiveisQuery } from '../hooks/queries/useAvaliacaoQueries';
+
 const Alunos = () => {
-    const [avaliacoes, setAvaliacoes] = useState([]);
-    const [usuarioNome, setUsuarioNome] = useState('');
     const navigate = useNavigate();
     const token = localStorage.getItem('authToken');
+    const { data: avaliacoes = [], isLoading } = useGetAvaliacoesDisponiveisQuery();
+    const [usuarioNome, setUsuarioNome] = useState('');
 
     useEffect(() => {
-        if (!token) navigate('/login');
-
-        const loadData = async () => {
-            try {
-                const decoded = jwtDecode(token);
-                setUsuarioNome(decoded.usuarioNome || 'Usuário');
-
-                const data = await getAvaliacoesDisponiveis(token);
-                setAvaliacoes(data || []);
-            } catch (error) {
-                console.error('Erro:', error);
-                setAvaliacoes([]);
-            }
-        };
-        loadData();
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        try {
+            const decoded = jwtDecode(token);
+            setUsuarioNome(decoded.usuarioNome || 'Usuário');
+        } catch (error) {
+            console.error('Erro ao decodificar token:', error);
+            navigate('/login');
+        }
     }, [token, navigate]);
 
     const handleLogout = () => {
@@ -60,7 +57,9 @@ const Alunos = () => {
                     </div>
                 </div>
                 <div className="avaliacoes-grid">
-                    {avaliacoes.length > 0 ? (
+                    {isLoading ? (
+                        <div className="loading-state">Carregando avaliações...</div>
+                    ) : avaliacoes.length > 0 ? (
                         avaliacoes.map((avaliacao) => (
                             <div className="avaliacao-card" key={avaliacao.id}>
                                 <div className="card-top">

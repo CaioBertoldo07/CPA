@@ -2,46 +2,31 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import { Form, Row, Col, Spinner } from 'react-bootstrap';
-import { getQuestoes } from '../../services/questoesService';
+import { useGetQuestoesQuery } from '../../hooks/queries/useQuestaoQueries';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 
 function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
-    const [questoes, setQuestoes] = useState([]);
     const [dimensaoSelecionada, setDimensaoSelecionada] = useState('');
     const [questoesSelecionadas, setQuestoesSelecionadas] = useState([]);
-    const [dimensoes, setDimensoes] = useState([]);
-    const [loading, setLoading] = useState(false);
+
+    const {
+        data: questoes = [],
+        isLoading: loading,
+        isError,
+        error: queryError
+    } = useGetQuestoesQuery();
+
+    const dimensoes = Array.from(new Set(questoes
+        .map(q => q?.dimensao?.nome)
+        .filter(Boolean)
+    )).sort();
 
     useEffect(() => {
-        if (!show) return;
-
-        const fetchQuestoes = async () => {
-            setLoading(true);
-            try {
-                const questoesData = await getQuestoes();
-                setQuestoes(questoesData || []);
-
-                // Extrai dimensões únicas com segurança (sem undefined)
-                const dimensoesMap = new Map();
-                (questoesData || []).forEach(q => {
-                    // Acesso seguro via optional chaining
-                    const nomeDimensao = q?.dimensao?.nome;
-                    const numeroDimensao = q?.dimensao?.numero;
-                    if (nomeDimensao && !dimensoesMap.has(nomeDimensao)) {
-                        dimensoesMap.set(nomeDimensao, numeroDimensao);
-                    }
-                });
-                setDimensoes(Array.from(dimensoesMap.keys()).sort());
-            } catch (error) {
-                console.error("Erro ao carregar questões:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchQuestoes();
-    }, [show]);
+        if (isError) {
+            console.error("Erro ao carregar questões:", queryError);
+        }
+    }, [isError, queryError]);
 
     // Ao fechar, reseta seleções
     const handleClose = () => {

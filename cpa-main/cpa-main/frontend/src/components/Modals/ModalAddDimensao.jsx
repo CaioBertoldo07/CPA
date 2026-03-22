@@ -1,23 +1,22 @@
-// src/components/ModalAddDimensao.js
 import React, { useState } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
-import { cadastrarDimensao } from '../../services/dimensoesService';
-import './ModalAddDimensao.css'; // Adicione um arquivo CSS para customizações
+import { Modal, Form, Button } from 'react-bootstrap';
+import { useAdicionarDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
 
 const ModalAddDimensao = ({ show, handleClose, eixoNumero, onSuccess }) => {
     const [numero, setNumero] = useState('');
     const [nome, setNome] = useState('');
 
+    const adicionarDimensaoMutation = useAdicionarDimensaoMutation();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const newDimensao = { numero, nome, numero_eixos: eixoNumero };
-            await cadastrarDimensao(newDimensao);
-            onSuccess('Dimensão adicionada com sucesso');
-            handleClose();
-        } catch (error) {
-            console.error('Erro ao adicionar dimensão:', error);
-        }
+        const newDimensao = { numero, nome, numero_eixos: eixoNumero };
+        adicionarDimensaoMutation.mutate(newDimensao, {
+            onSuccess: () => {
+                onSuccess('Dimensão adicionada com sucesso');
+                handleClose();
+            }
+        });
     };
 
     return (
@@ -49,8 +48,8 @@ const ModalAddDimensao = ({ show, handleClose, eixoNumero, onSuccess }) => {
                             className="form-control-dimensao" // Classe para remover as setinhas
                         />
                     </Form.Group>
-                    <Button variant="primary" type="submit">
-                        Adicionar
+                    <Button variant="primary" type="submit" disabled={adicionarDimensaoMutation.isPending}>
+                        {adicionarDimensaoMutation.isPending ? 'Adicionando...' : 'Adicionar'}
                     </Button>
                 </Form>
             </Modal.Body>

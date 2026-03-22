@@ -1,23 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Form } from 'react-bootstrap';
-import { getCategorias } from "../../services/categoriasService";
-import { getModalidades } from "../../services/modalidadesService";
+import { useGetCategoriasQuery } from "../../hooks/queries/useCategoriaQueries";
+import { useGetModalidadesQuery } from "../../hooks/queries/useModalidadeQueries";
 
 const CategoryCheckboxes = ({ categorias = {}, onChange }) => {
-    const [dataCategorias, setDataCategorias] = useState([]);
-
-    useEffect(() => {
-        const fetchCategorias = async () => {
-            try {
-                const categorias = await getCategorias();
-                setDataCategorias(categorias);
-            } catch (error) {
-                console.error('Erro ao buscar categorias:', error);
-            }
-        };
-
-        fetchCategorias();
-    }, []);
+    const { data: dataCategorias = [] } = useGetCategoriasQuery();
 
     const capitalize = (str) => {
         if (typeof str === 'string' && str.length > 0) {
@@ -29,22 +16,13 @@ const CategoryCheckboxes = ({ categorias = {}, onChange }) => {
     return (
         <div className="input-checkbox">
             {dataCategorias.map((categoria) => (
-                //     <Form.Check
-                //     key={categoria.id}
-                //     custom
-                //     type="checkbox"
-                //     id={`categoria-${categoria.id}`}  // Usando o id como parte do id do checkbox
-                //     label={capitalize(categoria.nome)}
-                //     checked={!!categorias[categoria.id]}  // Verificando o id da categoria no estado
-                //     onChange={onChange}
-                // />
                 <Form.Check
                     key={categoria.id}
                     custom
                     type="checkbox"
-                    id={categoria.id}  // Usando o id como parte do id do checkbox
+                    id={categoria.id}
                     label={capitalize(categoria.nome)}
-                    checked={!!categorias[categoria.id]}  // Verificando o id da categoria no estado
+                    checked={!!categorias[categoria.id]}
                     onChange={onChange}
                 />
             ))}
@@ -53,19 +31,7 @@ const CategoryCheckboxes = ({ categorias = {}, onChange }) => {
 };
 
 const ModalityCheckboxes = ({ modalidades, onChange }) => {
-    const [dataModalidades, setDataModalidades] = useState([]);
-
-    useEffect(() => {
-        const fetchModalidades = async () => {
-            try {
-                const modalidades = await getModalidades();
-                setDataModalidades(modalidades);
-            } catch (error) {
-                console.error('Erro ao buscar modalidades:', error);
-            }
-        };
-        fetchModalidades();
-    }, []);
+    const { data: dataModalidades = [] } = useGetModalidadesQuery();
 
     const capitalize = (str) => {
         if (typeof str === 'string' && str.length > 0) {

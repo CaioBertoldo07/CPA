@@ -1,47 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-bootstrap/Modal';
+import React, { useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
-import DynamicInputs from '../utils/Dinamico_PadraoResposta';
-import { cadastrarPadraoResposta } from '../../services/padraoRespostaService';
-import { cadastrarAlternativa } from '../../services/alternativasServices';
+import Dinamico_PadraoResposta from '../utils/Dinamico_PadraoResposta';
+import { useAdicionarAlternativaMutation } from '../../hooks/mutations/useAlternativaMutations';
 
 function ModalAddAlternativa({ show, handleClose, paraoNumero, onSuccess }) {
   const [alternativas, setAlternativas] = useState([{ descricao: '' }]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [descricao, setDescricao] = useState('');
 
-  // useEffect(() => {
-  //   if (props.data) {
-  //     setAlternativas(props.data.alternativas);
-  //   }
-  // }, [props.data]);
- 
+  const adicionarMutation = useAdicionarAlternativaMutation();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      for (const alternativa of alternativas) {
-        if (alternativa.descricao) {  // Evita enviar alternativas vazias
-          const newAlternativa = { descricao: alternativa.descricao, id_padrao_resp: paraoNumero };
-          await cadastrarAlternativa(newAlternativa);
-        }
+      const validAlternativas = alternativas.filter(a => a.descricao && a.descricao.trim());
+
+      for (const alternativa of validAlternativas) {
+        const newAlternativa = { descricao: alternativa.descricao, id_padrao_resp: paraoNumero };
+        await adicionarMutation.mutateAsync(newAlternativa);
       }
+
       onSuccess('Alternativas adicionadas com sucesso');
+      setAlternativas([{ descricao: '' }]);
       handleClose();
     } catch (error) {
-      console.error('Erro ao adicionar alternativas:', error);
       setError('Erro ao adicionar alternativas.');
     }
   };
-  const handleAlternativaChange = (index,value) => {
+
+  const handleAlternativaChange = (index, value) => {
     const updatedAlternativas = [...alternativas];
     updatedAlternativas[index].descricao = value;
     setAlternativas(updatedAlternativas);
-  }; 
+  };
 
   const addAlternativaField = () => {
-    setAlternativas([...alternativas, { descricao: ''}]);
+    setAlternativas([...alternativas, { descricao: '' }]);
   };
 
   const removeAlternativaField = (index) => {
@@ -51,7 +46,7 @@ function ModalAddAlternativa({ show, handleClose, paraoNumero, onSuccess }) {
   };
 
 
-  
+
 
   return (
     <Modal show={show} onHide={handleClose} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
@@ -62,10 +57,9 @@ function ModalAddAlternativa({ show, handleClose, paraoNumero, onSuccess }) {
       </Modal.Header>
       <Modal.Body>
         {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
 
         <h6>Alternativas</h6>
-        <DynamicInputs
+        <Dinamico_PadraoResposta
           inputs={alternativas}
           adicionarInput={addAlternativaField}
           removerInput={removeAlternativaField}
@@ -73,8 +67,10 @@ function ModalAddAlternativa({ show, handleClose, paraoNumero, onSuccess }) {
         />
       </Modal.Body>
       <Modal.Footer>
-        <ButtonCancelar >Cancelar</ButtonCancelar>
-        <ButtonCadastrar onClick={handleSubmit} >Cadastrar</ButtonCadastrar>
+        <ButtonCancelar onClick={handleClose} disabled={adicionarMutation.isPending}>Cancelar</ButtonCancelar>
+        <ButtonCadastrar onClick={handleSubmit} disabled={adicionarMutation.isPending}>
+          {adicionarMutation.isPending ? 'Cadastrando...' : 'Cadastrar'}
+        </ButtonCadastrar>
       </Modal.Footer>
     </Modal>
   );

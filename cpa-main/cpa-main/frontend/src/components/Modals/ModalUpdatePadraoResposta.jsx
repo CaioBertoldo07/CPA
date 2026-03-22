@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
-import { editarPadraoResposta } from '../../services/padraoRespostaService';
-import ButtonCancelar from "../Buttons/Button_Cancelar";
-import ButtonSalvar from "../Buttons/Button_Salvar";
+import ButtonCancelar from '../Buttons/Button_Cancelar';
+import ButtonSalvar from '../Buttons/Button_Salvar';
+import { useEditPadraoRespostaMutation } from '../../hooks/mutations/usePadraoRespostaMutations';
+
 const ModalUpdatePadraoResposta = ({ show, handleClose, padraoData, onSuccess }) => {
   const [sigla, setSigla] = useState(padraoData.sigla);
+  const editMutation = useEditPadraoRespostaMutation();
 
   useEffect(() => {
     setSigla(padraoData.sigla);
   }, [padraoData]);
 
-  const handleSubmit = async () => {
-    try {
-      console.log("Padraaaaaaaao:", padraoData)
-      await editarPadraoResposta(padraoData.id, { "sigla": sigla });
-      onSuccess('Padrão de resposta atualizado com sucesso!');
-    } catch (error) {
-      console.error('Error updating padraoResposta', error);
-    }
+  const handleSubmit = () => {
+    editMutation.mutate({ id: padraoData.id, padraoResposta: { sigla } }, {
+      onSuccess: () => {
+        onSuccess('Padrão de resposta atualizado com sucesso!');
+      }
+    });
   };
 
   return (
@@ -38,11 +38,11 @@ const ModalUpdatePadraoResposta = ({ show, handleClose, padraoData, onSuccess })
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <ButtonCancelar variant="secondary" onClick={handleClose}>
+        <ButtonCancelar variant="secondary" onClick={handleClose} disabled={editMutation.isPending}>
           Cancelar
         </ButtonCancelar>
-        <ButtonSalvar variant="primary" onClick={handleSubmit}>
-          Salvar
+        <ButtonSalvar variant="primary" onClick={handleSubmit} disabled={editMutation.isPending}>
+          {editMutation.isPending ? 'Salvando...' : 'Salvar'}
         </ButtonSalvar>
       </Modal.Footer>
     </Modal>

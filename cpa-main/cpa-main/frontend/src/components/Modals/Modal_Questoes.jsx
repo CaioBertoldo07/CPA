@@ -4,71 +4,61 @@ import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 import { Form, Button } from 'react-bootstrap';
 import Modal from "react-bootstrap/Modal";
 import "./Modal_Questoes.css";
-import { getEixos } from "../../services/eixosService";
-import { getModalidades } from '../../services/modalidadesService';
-import { ToggleSlider } from "react-toggle-slider";
-import { CategoryCheckboxes } from "../utils/Check_boxes";
-import { getPadraoResposta } from "../../services/padraoRespostaService";
-import { getDimensoesByEixo } from "../../services/dimensoesService";
-import { cadastrarQuestoes, updateQuestao } from "../../services/questoesService";
+import { ToggleSlider } from 'react-toggle-slider';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
-import { getTiposQuestoes } from "../../services/tiposQuestaoService";
+import { CategoryCheckboxes } from '../utils/Check_boxes';
+import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
+import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
+import { useGetPadraoRespostaQuery } from '../../hooks/queries/usePadraoRespostaQueries';
+import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
+import { useGetTiposQuestoesQuery } from '../../hooks/queries/useTipoQuestaoQueries';
+import { useAdicionarQuestaoMutation, useEditQuestaoMutation } from '../../hooks/mutations/useQuestaoMutations';
 
 function Modal_Questoes(props) {
-    const [dataeixo, setDataEixo] = useState([]);
-    const [datapadraoresposta, setDataPadraoResposta] = useState([]);
-    const [datadimensao, setDatadimensao] = useState([]);
+    const { data: eixos = [] } = useGetEixosQuery();
+    const { data: padraoResposta = [] } = useGetPadraoRespostaQuery();
+    const { data: tiposQuestoes = [] } = useGetTiposQuestoesQuery();
+    const { data: modalidadesRaw = [] } = useGetModalidadesQuery();
+
     const [eixoSelecionado, setEixoSelecionado] = useState('');
+    const { data: dimensoes = [] } = useGetDimensoesByEixoQuery(eixoSelecionado);
+
+    const adicionarMutation = useAdicionarQuestaoMutation();
+    const editarMutation = useEditQuestaoMutation();
+
     const [dimensaoSelecionada, setDimensaoSelecionada] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [categorias, setCategorias] = useState({});
-    const [modalidades, setModalidades] = useState([]);
     const [modalidadeSelecionada, setModalidadeSelecionada] = useState([]);
     const [basica, setBasica] = useState(false);
     const [questao, setQuestao] = useState('');
     const [padraorespostaselecionado, setPadraoRespostaselecionado] = useState('');
     const [tipoQuestao, setTipoQuestao] = useState('');
-    const [tiposQuestoes, setTiposQuestoes] = useState([]);
-    const [questoesAdicionais, setQuestoesAdicionais] = useState([]); // array de strings
+    const [questoesAdicionais, setQuestoesAdicionais] = useState([]);
+
+    const modalidadesOptions = React.useMemo(() =>
+        modalidadesRaw.map(m => ({ value: m.id, label: m.mod_ensino })),
+        [modalidadesRaw]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [eixos, padraoresposta, tipos] = await Promise.all([
-                    getEixos(),
-                    getPadraoResposta(),
-                    getTiposQuestoes(),
-                ]);
-                setDataEixo(eixos);
-                setDataPadraoResposta(padraoresposta);
-                setTiposQuestoes(tipos);
-            } catch (error) {
-                setError('Falha ao carregar os dados');
-            }
-        };
-        fetchData();
-    }, []);
+        if (props.questao && props.show) {
+            setQuestao(props.questao.descricao || '');
+            setEixoSelecionado(props.questao.dimensao?.eixo?.numero || '');
+            setDimensaoSelecionada(props.questao.dimensao?.numero || '');
+            setBasica(props.questao.basica || false);
+            setPadraoRespostaselecionado(props.questao.padraoRespostaId || '');
+            setTipoQuestao(props.questao.tipo_questao_id || '');
+            setQuestoesAdicionais(props.questao.questoesAdicionais?.map(qa => qa.descricao) || []);
 
-    useEffect(() => {
-        const fetchModalidades = async () => {
-            try {
-                const modalidadesData = await getModalidades();
-                if (Array.isArray(modalidadesData)) {
-                    const modalidadeOptions = modalidadesData.map(modalidade => ({
-                        value: modalidade.id,
-                        label: modalidade.mod_ensino,
-                    }));
-                    setModalidades(modalidadeOptions);
-                } else {
-                    console.error("Formato inesperado de modalidades");
-                }
-            } catch (error) {
-                console.error('Erro ao carregar modalidades:', error);
-            }
-        };
-        fetchModalidades();
-    }, []);
+            const cats = {};
+            props.questao.categorias?.forEach(c => cats[c.id] = true);
+            setCategorias(cats);
+
+            setModalidadeSelecionada(props.questao.modalidades?.map(m => m.id) || []);
+        } else if (!props.show) {
+            resetFormState();
+        }
+    }, [props.questao, props.show]);
 
     const resetFormState = () => {
         setQuestao('');
@@ -80,18 +70,14 @@ function Modal_Questoes(props) {
         setPadraoRespostaselecionado('');
         setTipoQuestao('');
         setError('');
-        setSuccess('');
         setQuestoesAdicionais([]);
     };
 
-    const handleQuestaoChange = (event) => {
-        setQuestao(event.target.value);
-    };
+    const handleQuestaoChange = (event) => setQuestao(event.target.value);
 
-    const handleEixoSelect = async (event) => {
-        const selectedValue = event.target.value;
-        setEixoSelecionado(selectedValue);
-        await fetchDimensoes(selectedValue);
+    const handleEixoSelect = (event) => {
+        setEixoSelecionado(event.target.value);
+        setDimensaoSelecionada('');
     };
 
     const handleModalidadesChange = (selectedOptions) => {
@@ -101,37 +87,16 @@ function Modal_Questoes(props) {
 
     const handleCategoriaChange = (event) => {
         const { id } = event.target;
-        setCategorias((prevCategorias) => ({
-            ...prevCategorias,
-            [id]: !prevCategorias[id],
-        }));
+        setCategorias(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
-    const fetchDimensoes = async (eixoNumero) => {
-        try {
-            const dimensoes = await getDimensoesByEixo(eixoNumero);
-            setDatadimensao(dimensoes);
-        } catch (erro) {
-            setError('Failed to fetch dimensions');
-        }
-    };
+    const handleBasica = (event) => setBasica(event);
 
-    const handleBasica = (event) => {
-        setBasica(event);
-    };
+    const handlePadraoRespostaSelect = (event) => setPadraoRespostaselecionado(event.target.value);
 
-    const handlePadraoRespostaSelect = (event) => {
-        setPadraoRespostaselecionado(event.target.value);
-    };
+    const handleTipoQuestaoChange = (event) => setTipoQuestao(event.target.value);
 
-    const handleTipoQuestaoChange = (event) => {
-        setTipoQuestao(event.target.value);
-    };
-
-    // Adiciona uma questão adicional (inicia com uma string vazia)
-    const handleAdicionarQuestaoAdicional = () => {
-        setQuestoesAdicionais([...questoesAdicionais, '']);
-    };
+    const handleAdicionarQuestaoAdicional = () => setQuestoesAdicionais([...questoesAdicionais, '']);
 
     const handleQuestaoAdicionalChange = (index, event) => {
         const newArray = [...questoesAdicionais];
@@ -140,57 +105,42 @@ function Modal_Questoes(props) {
     };
 
     const handleRemoverQuestaoAdicional = (index) => {
-        const newArray = questoesAdicionais.filter((_, i) => i !== index);
-        setQuestoesAdicionais(newArray);
+        setQuestoesAdicionais(questoesAdicionais.filter((_, i) => i !== index));
     };
 
-    const handleCadastrarQuestao = async () => {
+    const handleCadastrarQuestao = () => {
         if (!questao.trim()) {
             setError('A questão não pode estar vazia.');
             return;
         }
-        try {
-            const formattedQuestoesAdicionais = questoesAdicionais.map(item => ({ descricao: item }));
 
-            const questaoData = {
-                questao,
-                dimensaoNumero: dimensaoSelecionada,
-                padraoRespostaId: padraorespostaselecionado,
-                basica,
-                tipo_questao: tipoQuestao,
-                categorias: Object.keys(categorias).filter(key => categorias[key]),
-                modalidades: modalidadeSelecionada,
-                questoesAdicionais: formattedQuestoesAdicionais,
-            };
+        const questaoData = {
+            questao,
+            dimensaoNumero: dimensaoSelecionada,
+            padraoRespostaId: padraorespostaselecionado,
+            basica,
+            tipo_questao: tipoQuestao,
+            categorias: Object.keys(categorias).filter(key => categorias[key]),
+            modalidades: modalidadeSelecionada,
+            questoesAdicionais: questoesAdicionais.filter(q => q.trim()).map(item => ({ descricao: item })),
+        };
 
-            if (props.questao) {
-                await handleUpdateQuestao(props.questao.id, questaoData);
-            } else {
-                await cadastrarQuestoes(questaoData);
+        const mutation = props.questao ? editarMutation : adicionarMutation;
+        const payload = props.questao ? { id: props.questao.id, questao: questaoData } : questaoData;
+
+        mutation.mutate(payload, {
+            onSuccess: () => {
+                resetFormState();
+                props.onHide();
+                if (props.onSuccess) props.onSuccess('Questão salva com sucesso!');
+            },
+            onError: (err) => {
+                setError(err.response?.data?.error || 'Falha ao salvar a questão');
             }
-
-            resetFormState();
-            props.onHide();  // ← fecha o modal ANTES de notificar o pai
-
-            if (props.onSuccess) props.onSuccess('Questão salva com sucesso!');
-
-        } catch (error) {
-            if (error.response?.data?.error) {
-                setError(error.response.data.error);
-            } else {
-                setError('Falha ao salvar a questão');
-            }
-        }
+        });
     };
 
-    const handleUpdateQuestao = async (id, questaoData) => {
-        try {
-            const data = await updateQuestao(id, questaoData);
-            setSuccess(data.message);
-        } catch (error) {
-            console.error('Erro ao atualizar a questão:', error);
-        }
-    };
+    const isLoading = adicionarMutation.isPending || editarMutation.isPending;
 
     return (
         <Modal {...props} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
@@ -201,7 +151,6 @@ function Modal_Questoes(props) {
             </Modal.Header>
             <Modal.Body>
                 {error && <div className="alert alert-danger">{error}</div>}
-                {success && <div className="alert alert-success">{success}</div>}
                 <div className="question-container">
                     <textarea
                         className="input-question"
@@ -221,16 +170,17 @@ function Modal_Questoes(props) {
                             <h6>Eixo</h6>
                             <select className="form-control" value={eixoSelecionado} onChange={handleEixoSelect}>
                                 <option value="" disabled hidden>Selecione um eixo</option>
-                                {dataeixo.map(eixo => (
+                                {eixos.map(eixo => (
                                     <option key={eixo.id} value={eixo.numero}>{eixo.nome}</option>
                                 ))}
                             </select>
                             <Form.Group controlId="modalidades">
                                 <h6>Modalidades:</h6>
                                 <AnimatedMultiSelect
-                                    options={modalidades}
+                                    options={modalidadesOptions}
                                     onChange={handleModalidadesChange}
                                     placeholder="Selecione as modalidades"
+                                    value={modalidadesOptions.filter(o => modalidadeSelecionada.includes(o.value))}
                                 />
                             </Form.Group>
                             <p> </p>
@@ -238,7 +188,7 @@ function Modal_Questoes(props) {
                             <ToggleSlider onToggle={handleBasica} checked={basica} />
                         </div>
                         <div className="input-question3">
-                            {tipoQuestao === '2' && (
+                            {tipoQuestao?.toString() === '2' && (
                                 <div>
                                     <h6>Questões Adicionais:</h6>
                                     {questoesAdicionais.map((qAd, index) => (
@@ -262,14 +212,14 @@ function Modal_Questoes(props) {
                             <h6>Padrão de resposta</h6>
                             <select className="form-control" value={padraorespostaselecionado} onChange={handlePadraoRespostaSelect}>
                                 <option value="" disabled hidden>Selecione um padrão de resposta</option>
-                                {datapadraoresposta.map(padrao => (
+                                {padraoResposta.map(padrao => (
                                     <option key={padrao.id} value={padrao.id}>{padrao.sigla}</option>
                                 ))}
                             </select>
                             <h6>Dimensão</h6>
                             <select className="form-control" value={dimensaoSelecionada} onChange={(e) => setDimensaoSelecionada(e.target.value)}>
                                 <option value="" disabled hidden>Selecione uma dimensão</option>
-                                {datadimensao.map(dimensao => (
+                                {dimensoes.map(dimensao => (
                                     <option key={dimensao.numero} value={dimensao.numero}>{dimensao.nome}</option>
                                 ))}
                             </select>
@@ -280,9 +230,10 @@ function Modal_Questoes(props) {
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarQuestao}>Cadastrar</ButtonCadastrar>
-
+                <ButtonCancelar onClick={props.onHide} disabled={isLoading}>Cancelar</ButtonCancelar>
+                <ButtonCadastrar onClick={handleCadastrarQuestao} disabled={isLoading}>
+                    {isLoading ? (props.questao ? 'Salvando...' : 'Cadastrando...') : (props.questao ? 'Salvar' : 'Cadastrar')}
+                </ButtonCadastrar>
             </Modal.Footer>
         </Modal>
     );

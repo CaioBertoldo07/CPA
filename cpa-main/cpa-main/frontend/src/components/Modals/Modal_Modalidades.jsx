@@ -3,13 +3,15 @@ import ButtonCancelar from '../Buttons/Button_Cancelar';
 import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 import Modal from 'react-bootstrap/Modal';
 import React, { useState } from 'react';
-import { cadastrarModalidades } from '../../services/modalidadesService';
+import { useAdicionarModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 
 function Modal_Modalidades({ show, onHide, onSuccess }) {
     const [modEnsino, setModEnsino] = useState('');
     const [modOferta, setModOferta] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+
+    const mutation = useAdicionarModalidadeMutation();
+    const loading = mutation.isPending;
 
     const resetForm = () => {
         setModEnsino('');
@@ -22,33 +24,18 @@ function Modal_Modalidades({ show, onHide, onSuccess }) {
         onHide();
     };
 
-    const handleCadastrarModalidade = async () => {
-        if (!modEnsino.trim()) {
-            setError('O campo "Modalidade de ensino" é obrigatório.');
-            return;
-        }
-
-        setLoading(true);
+    const handleCadastrarModalidade = () => {
+        if (!modEnsino.trim()) return setError('O campo "Modalidade de ensino" é obrigatório.');
         setError('');
 
-        try {
-            await cadastrarModalidades({
-                mod_ensino: modEnsino.trim(),
-                mod_oferta: modOferta.trim()
-            });
-
-            resetForm();
-            onHide();
-
-            // Notifica o pai para atualizar a lista e exibir toast
-            if (onSuccess) onSuccess('Modalidade cadastrada com sucesso!');
-        } catch (err) {
-            console.error('Erro ao cadastrar modalidade:', err);
-            const msg = err?.response?.data?.error || 'Erro ao cadastrar modalidade.';
-            setError(msg);
-        } finally {
-            setLoading(false);
-        }
+        mutation.mutate({ mod_ensino: modEnsino.trim(), mod_oferta: modOferta.trim() }, {
+            onSuccess: () => {
+                resetForm();
+                onHide();
+                if (onSuccess) onSuccess('Modalidade cadastrada com sucesso!');
+            },
+            onError: (err) => setError(err?.response?.data?.error || 'Erro ao cadastrar modalidade.')
+        });
     };
 
     return (

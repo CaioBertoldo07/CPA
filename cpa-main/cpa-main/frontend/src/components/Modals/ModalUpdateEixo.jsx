@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
-import { editarEixo } from '../../services/eixosService';
-import { updateDimensao } from '../../services/dimensoesService';
+import { Modal, Form, Button } from 'react-bootstrap';
+import { useEditEixoMutation } from '../../hooks/mutations/useEixoMutations';
+import { useEditDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
 
 const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao }) => {
   const [formData, setFormData] = useState({ numero: '', nome: '', numero_eixos: '' });
+
+  const editEixoMutation = useEditEixoMutation();
+  const editDimensaoMutation = useEditDimensaoMutation();
+
+  const isPending = editEixoMutation.isPending || editDimensaoMutation.isPending;
 
   useEffect(() => {
     if (eixoData) {
@@ -22,18 +27,23 @@ const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao
   };
 
   const handleSubmit = async () => {
-    try {
-      if (isEditingDimensao) {
-        await updateDimensao(formData);
-      } else {
-        await editarEixo(formData);
-      }
-      onSuccess('Item atualizado com sucesso'); // Atualiza a tabela após o sucesso
-    } catch (error) {
-      console.error('Erro ao atualizar item', error);
+    if (isEditingDimensao) {
+      editDimensaoMutation.mutate({ numero: formData.numero, data: { nome: formData.nome, numero_eixos: formData.numero_eixos } }, {
+        onSuccess: () => {
+          onSuccess('Dimensão atualizada com sucesso');
+          handleClose();
+        }
+      });
+    } else {
+      editEixoMutation.mutate({ numero: formData.numero, data: { nome: formData.nome } }, {
+        onSuccess: () => {
+          onSuccess('Eixo atualizado com sucesso');
+          handleClose();
+        }
+      });
     }
   };
-  
+
 
   return (
     <Modal show={show} onHide={handleClose}>
@@ -75,11 +85,11 @@ const ModalUpdate = ({ show, handleClose, eixoData, onSuccess, isEditingDimensao
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
+        <Button variant="secondary" onClick={handleClose} disabled={isPending}>
           Cancelar
         </Button>
-        <Button variant="primary" onClick={handleSubmit}>
-          Salvar
+        <Button variant="primary" onClick={handleSubmit} disabled={isPending}>
+          {isPending ? 'Salvando...' : 'Salvar'}
         </Button>
       </Modal.Footer>
     </Modal>

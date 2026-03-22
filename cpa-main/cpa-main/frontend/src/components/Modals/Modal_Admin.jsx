@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import Modal from "react-bootstrap/Modal";
 import ButtonCancelar from "../Buttons/Button_Cancelar";
 import ButtonCadastrar from "../Buttons/Button_Cadastrar";
-import { cadastrarAdmin, updateAdmin } from "../../services/adminService";
+import { useAdicionarAdminMutation, useEditAdminMutation } from "../../hooks/mutations/useAdminMutations";
 
 function Modal_Admin(props) {
     const [nomeAdmin, setNomeAdmin] = useState('');
     const [emailAdmin, setEmailAdmin] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+
+    const adicionarAdminMutation = useAdicionarAdminMutation();
+    const editAdminMutation = useEditAdminMutation();
 
     useEffect(() => {
         if (props.show) {
@@ -23,7 +25,6 @@ function Modal_Admin(props) {
             setNomeAdmin('');
             setEmailAdmin('');
             setError('');
-            setSuccess('');
         }
     }, [props.admin, props.show]);
 
@@ -41,37 +42,31 @@ function Modal_Admin(props) {
             return;
         }
 
-        try {
-            const adminData = {
-                nome: nomeAdmin,
-                email: emailAdmin,
-            };
+        const adminData = {
+            nome: nomeAdmin,
+            email: emailAdmin,
+        };
 
-            if (props.admin) {
-                await handleUpdateAdmin(props.admin.id, adminData);
-            } else {
-                await cadastrarAdmin(adminData);
-            }
-
-            setSuccess('Administrador salvo com sucesso!');
-            props.onHide();
-            props.onSuccess('Administrador salvo com sucesso!');
-        } catch (error) {
-            setSuccess('');
-            if (error.response && error.response.data && error.response.data.error) {
-                setError(error.response.data.error);
-            } else {
-                setError('Erro ao salvar administrador');
-            }
-        }
-    };
-
-    const handleUpdateAdmin = async (id, adminAtualizado) => {
-        try {
-            const data = await updateAdmin(id, adminAtualizado);
-            props.onSuccess(data.message);
-        } catch (error) {
-            console.error('Erro ao atualizar o administrador:', error);
+        if (props.admin) {
+            editAdminMutation.mutate({ id: props.admin.id, ...adminData }, {
+                onSuccess: (data) => {
+                    props.onSuccess(data.message || 'Administrador atualizado com sucesso!');
+                    props.onHide();
+                },
+                onError: (err) => {
+                    setError(err.response?.data?.error || 'Erro ao atualizar administrador');
+                }
+            });
+        } else {
+            adicionarAdminMutation.mutate(adminData, {
+                onSuccess: () => {
+                    props.onSuccess('Administrador cadastrado com sucesso!');
+                    props.onHide();
+                },
+                onError: (err) => {
+                    setError(err.response?.data?.error || 'Erro ao cadastrar administrador');
+                }
+            });
         }
     };
 
@@ -84,7 +79,6 @@ function Modal_Admin(props) {
             </Modal.Header>
             <Modal.Body style={{ padding: '20px' }}>
                 {error && <div className="alert alert-danger">{error}</div>}
-                {success && <div className="alert alert-success">{success}</div>}
                 <h6 style={{ marginBottom: '10px' }}>Nome</h6>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                     <input
@@ -109,9 +103,11 @@ function Modal_Admin(props) {
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={handleCadastrarAdmin}>
-                    {props.admin ? 'Atualizar' : 'Cadastrar'}
+                <ButtonCancelar onClick={props.onHide} disabled={adicionarAdminMutation.isPending || editAdminMutation.isPending}>
+                    Cancelar
+                </ButtonCancelar>
+                <ButtonCadastrar onClick={handleCadastrarAdmin} disabled={adicionarAdminMutation.isPending || editAdminMutation.isPending}>
+                    {adicionarAdminMutation.isPending || editAdminMutation.isPending ? 'Salvando...' : (props.admin ? 'Atualizar' : 'Cadastrar')}
                 </ButtonCadastrar>
             </Modal.Footer>
         </Modal>

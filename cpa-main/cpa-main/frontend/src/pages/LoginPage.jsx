@@ -3,15 +3,15 @@ import './LoginPage.css';
 import Button from '../components/Buttons/Button';
 import Modal from 'react-bootstrap/Modal';
 import logo from '../assets/imgs/cpa_logo.svg';
-import { login } from '../services/authService';
-import { useNavigate } from 'react-router-dom'; // adicione
+import { useNavigate } from 'react-router-dom';
+import { useLoginMutation } from '../hooks/mutations/useAuthMutations';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const [showAdminOptions, setShowAdminOptions] = useState(false);
-  const navigate = useNavigate(); // adicione
+  const navigate = useNavigate();
+  const loginMutation = useLoginMutation();
 
   useEffect(() => {
     document.title = 'CPA - UEA';
@@ -19,18 +19,15 @@ const LoginPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    try {
-      const { token, isAdmin } = await login(email, senha);
-      localStorage.setItem('authToken', token);
-      if (isAdmin) {
-        setShowAdminOptions(true);
-      } else {
-        navigate('/alunos'); // troque window.location.href
+    loginMutation.mutate({ email, senha }, {
+      onSuccess: (data) => {
+        if (data.isAdmin) {
+          setShowAdminOptions(true);
+        } else {
+          navigate('/alunos');
+        }
       }
-    } catch (err) {
-      console.log(err);
-      setErrorMessage(err.message);
-    }
+    });
   };
 
   const handleAreaSelection = (path) => {
@@ -59,8 +56,14 @@ const LoginPage = () => {
           onChange={e => setSenha(e.target.value)}
         />
         <a href="/">Esqueci minha senha</a>
-        <Button>Realizar Login</Button>
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <Button disabled={loginMutation.isPending}>
+          {loginMutation.isPending ? 'Carregando...' : 'Realizar Login'}
+        </Button>
+        {loginMutation.isError && (
+          <p className="error-message">
+            {loginMutation.error.response?.data?.message || loginMutation.error.message || 'Erro ao realizar login'}
+          </p>
+        )}
       </form>
 
       <Modal show={showAdminOptions} onHide={() => setShowAdminOptions(false)} centered>

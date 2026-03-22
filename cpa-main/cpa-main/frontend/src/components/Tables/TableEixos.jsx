@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Accordion, Modal, Button, Spinner } from 'react-bootstrap';
-import { deletarEixo, getEixos, getEixoByNumero } from '../../services/eixosService';
-import { getDimensoesByEixo, getDimensaoByNumero, deletarDimensao } from '../../services/dimensoesService';
 import ModalUpdate from '../Modals/ModalUpdateEixo';
 import ModalUpdateDimensao from '../Modals/ModalUpdateDimensao';
 import ModalAddDimensao from '../Modals/ModalAddDimensao';
 import { Toast } from 'primereact/toast';
 import { FaRegEdit } from 'react-icons/fa';
 import { IoTrashOutline } from 'react-icons/io5';
+import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
+import { useDeleteEixoMutation } from '../../hooks/mutations/useEixoMutations';
+import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
+import { useDeleteDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
 
 const SkeletonRow = () => (
     <tr>
@@ -57,11 +59,54 @@ const actionBtn = (color = '#4a5568') => ({
     transition: 'background 150ms',
 });
 
-const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
-    const [data, setData] = useState([]);
-    const [dimensoes, setDimensoes] = useState({});
-    const [loadingDimensoes, setLoadingDimensoes] = useState({});
-    const [loadingEixos, setLoadingEixos] = useState(true);
+const DimensionList = ({ eixoNumero, onEdit, onDelete, searchQuery }) => {
+    const { data: dimensoes = [], isLoading } = useGetDimensoesByEixoQuery(eixoNumero);
+
+    if (isLoading) return [1, 2, 3].map(i => <SkeletonRow key={i} />);
+
+    const filtered = dimensoes.filter(d => {
+        const q = searchQuery.toLowerCase();
+        return (d.nome || '').toLowerCase().includes(q) || String(d.numero).includes(q);
+    });
+
+    if (filtered.length === 0) return (
+        <tr>
+            <td colSpan={3} style={{ textAlign: 'center', padding: '28px 20px', color: '#94a3b8', fontSize: 13 }}>
+                Nenhuma dimensão encontrada.
+            </td>
+        </tr>
+    );
+
+    return filtered.map((dimensao, di) => (
+        <tr
+            key={dimensao.numero}
+            className="dim-row"
+            style={{ borderBottom: di < filtered.length - 1 ? '1px solid #f1f5f9' : 'none', transition: 'background 150ms' }}
+        >
+            <td style={tdStyle}>
+                <span style={{
+                    fontFamily: 'monospace', fontSize: 12,
+                    background: '#f8fafc', color: '#64748b',
+                    padding: '3px 8px', borderRadius: 6,
+                    border: '1px solid #e2e8f0', fontWeight: 600,
+                }}>{dimensao.numero}</span>
+            </td>
+            <td style={{ ...tdStyle, fontWeight: 500, color: '#374151' }}>{dimensao.nome}</td>
+            <td style={{ ...tdStyle, textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    <button onClick={() => onEdit(dimensao)} style={actionBtn('#4a5568')} title="Editar"><FaRegEdit size={13} /></button>
+                    <button onClick={() => onDelete(dimensao)} style={actionBtn('#ef4444')} title="Excluir"><IoTrashOutline size={14} /></button>
+                </div>
+            </td>
+        </tr>
+    ));
+};
+
+const TableEixos = ({ searchQuery = '', onSuccess }) => {
+    const { data: eixos = [], isLoading: loadingEixos, isError } = useGetEixosQuery();
+    const deleteEixoMutation = useDeleteEixoMutation();
+    const deleteDimensaoMutation = useDeleteDimensaoMutation();
+
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModalUpdate, setShowModalUpdate] = useState(false);
     const [showModalUpdateDimensao, setShowModalUpdateDimensao] = useState(false);
@@ -70,42 +115,23 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
     const [isEditingDimensao, setIsEditingDimensao] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({});
-    const [confirmLoading, setConfirmLoading] = useState(false);
+
     const toast = useRef(null);
+    const showToast = (severity, detail) => toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
 
-    const fetchData = useCallback(async () => {
-        setLoadingEixos(true);
-        try { setData((await getEixos()) || []); }
-        catch { showToast('error', 'Erro ao carregar eixos.'); }
-        finally { setLoadingEixos(false); }
-    }, []);
+    useEffect(() => { if (isError) showToast('error', 'Erro ao carregar eixos.'); }, [isError]);
 
-    useEffect(() => { fetchData(); }, [fetchData, updateTable]);
-
-    const showToast = (severity, detail) =>
-        toast.current?.show({ severity, summary: severity === 'error' ? 'Erro' : 'Sucesso', detail, life: 3000 });
-
-    const filteredData = data.filter(eixo => {
+    const filteredData = eixos.filter(eixo => {
         const q = searchQuery.toLowerCase();
         if (!q) return true;
-        return (eixo.nome || '').toLowerCase().includes(q)
-            || String(eixo.numero).includes(q)
-            || (dimensoes[eixo.numero] || []).some(d =>
-                (d.nome || '').toLowerCase().includes(q) || String(d.numero).includes(q));
+        return (eixo.nome || '').toLowerCase().includes(q) || String(eixo.numero).includes(q);
     });
 
-    const handleEdit = async (item, isDimensao = false) => {
-        try {
-            if (isDimensao) {
-                setIsEditingDimensao(true);
-                setSelectedItem(await getDimensaoByNumero(item.numero));
-                setShowModalUpdateDimensao(true);
-            } else {
-                setIsEditingDimensao(false);
-                setSelectedItem(await getEixoByNumero(item.numero));
-                setShowModalUpdate(true);
-            }
-        } catch { showToast('error', 'Erro ao carregar dados.'); }
+    const handleEdit = (item, isDimensao = false) => {
+        setSelectedItem(item);
+        setIsEditingDimensao(isDimensao);
+        if (isDimensao) setShowModalUpdateDimensao(true);
+        else setShowModalUpdate(true);
     };
 
     const handleDelete = (item, isDimensao = false) => {
@@ -115,20 +141,17 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
                 ? `Excluir a dimensão "${item.nome}"? Esta ação não pode ser desfeita.`
                 : `Excluir o eixo "${item.nome}" e todas as suas dimensões? Esta ação não pode ser desfeita.`,
             onConfirm: async () => {
-                setConfirmLoading(true);
-                try {
-                    if (isDimensao) {
-                        await deletarDimensao(item.numero);
-                        setDimensoes(prev => ({ ...prev, [item.numero_eixos]: (prev[item.numero_eixos] || []).filter(d => d.numero !== item.numero) }));
-                        showToast('success', 'Dimensão excluída.');
-                    } else {
-                        await deletarEixo(item.numero);
-                        setData(prev => prev.filter(d => d.numero !== item.numero));
-                        showToast('success', 'Eixo excluído.');
-                    }
-                    setShowConfirm(false);
-                } catch { showToast('error', 'Erro ao excluir.'); }
-                finally { setConfirmLoading(false); }
+                if (isDimensao) {
+                    deleteDimensaoMutation.mutate(item.numero, {
+                        onSuccess: () => { showToast('success', 'Dimensão excluída.'); setShowConfirm(false); },
+                        onError: () => showToast('error', 'Erro ao excluir dimensão.')
+                    });
+                } else {
+                    deleteEixoMutation.mutate(item.numero, {
+                        onSuccess: () => { showToast('success', 'Eixo excluído.'); setShowConfirm(false); },
+                        onError: () => showToast('error', 'Erro ao excluir eixo.')
+                    });
+                }
             },
         });
         setShowConfirm(true);
@@ -137,19 +160,7 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
     const handleUpdateSuccess = (msg) => {
         showToast('success', msg);
         setShowModalUpdate(false); setShowModalUpdateDimensao(false); setShowModalAddDimensao(false);
-        fetchData(); onSuccess?.(msg);
-    };
-
-    const handleToggle = async (num) => {
-        if (!dimensoes[num]) {
-            setLoadingDimensoes(prev => ({ ...prev, [num]: true }));
-            try {
-                const novasDimensoes = await getDimensoesByEixo(num);
-                setDimensoes(prev => ({ ...prev, [num]: novasDimensoes }));
-            }
-            catch { showToast('error', 'Erro ao carregar dimensões.'); }
-            finally { setLoadingDimensoes(prev => ({ ...prev, [num]: false })); }
-        }
+        onSuccess?.(msg);
     };
 
     return (
@@ -170,102 +181,34 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
             {loadingEixos ? (
                 <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} style={{
-                            height: 54, borderRadius: 12,
-                            background: 'linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)',
-                            backgroundSize: '400% 100%',
-                            animation: `skeletonPulse 1.4s ${i * 0.1}s ease infinite`,
-                        }} />
+                        <div key={i} style={{ height: 54, borderRadius: 12, background: 'linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)', backgroundSize: '400% 100%', animation: `skeletonPulse 1.4s ${i * 0.1}s ease infinite` }} />
                     ))}
                 </div>
             ) : filteredData.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '56px 24px', color: '#718096' }}>
                     <div style={{ fontSize: 44, marginBottom: 14 }}>🔍</div>
-                    <p style={{ margin: 0, fontSize: 14 }}>
-                        {searchQuery ? `Nenhum resultado para "${searchQuery}".` : 'Nenhum eixo cadastrado.'}
-                    </p>
+                    <p style={{ margin: 0, fontSize: 14 }}>{searchQuery ? `Nenhum resultado para "${searchQuery}".` : 'Nenhum eixo cadastrado.'}</p>
                 </div>
             ) : (
                 <div style={{ padding: '12px 16px 16px' }}>
                     <Accordion>
                         {filteredData.map((eixo, idx) => (
-                            <Accordion.Item
-                                eventKey={eixo.numero.toString()}
-                                key={eixo.numero}
-                                className="eixo-item"
-                                style={{ animation: `fadeInUp 350ms ${idx * 50}ms both` }}
-                            >
-                                <Accordion.Header onClick={() => handleToggle(eixo.numero)}>
+                            <Accordion.Item eventKey={eixo.numero.toString()} key={eixo.numero} className="eixo-item" style={{ animation: `fadeInUp 350ms ${idx * 50}ms both` }}>
+                                <Accordion.Header>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', minWidth: 0 }}>
-                                        <span style={{
-                                            flexShrink: 0,
-                                            padding: '3px 11px',
-                                            background: '#e8f5e9', color: '#2e7d32',
-                                            border: '1px solid #a5d6a7',
-                                            borderRadius: 9999,
-                                            fontSize: 11, fontWeight: 700,
-                                        }}>
-                                            Eixo {eixo.numero}
-                                        </span>
-                                        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#1a202c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {eixo.nome}
-                                        </span>
-                                        {dimensoes[eixo.numero] && (
-                                            <span style={{ flexShrink: 0, fontSize: 11, color: '#94a3b8', marginRight: 8 }}>
-                                                {dimensoes[eixo.numero].length} dimensão(ões)
-                                            </span>
-                                        )}
+                                        <span style={{ flexShrink: 0, padding: '3px 11px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7', borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>Eixo {eixo.numero}</span>
+                                        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#1a202c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eixo.nome}</span>
                                     </div>
                                 </Accordion.Header>
-
                                 <Accordion.Body style={{ padding: 0, background: '#fff' }}>
-                                    {/* Barra de ações */}
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center',
-                                        justifyContent: 'space-between', flexWrap: 'wrap',
-                                        gap: 8, padding: '14px 20px 12px',
-                                        borderBottom: '1px solid #f1f5f9',
-                                    }}>
-                                        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
-                                            Dimensões
-                                        </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, padding: '14px 20px 12px', borderBottom: '1px solid #f1f5f9' }}>
+                                        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>Dimensões</span>
                                         <div style={{ display: 'flex', gap: 6 }}>
-                                            <button
-                                                onClick={() => { setCurrentEixoNumero(eixo.numero); setShowModalAddDimensao(true); }}
-                                                style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                                                    padding: '5px 13px', fontSize: 12, fontWeight: 600,
-                                                    background: 'transparent', color: '#1D5E24',
-                                                    border: '1.5px solid #1D5E24', borderRadius: 8, cursor: 'pointer',
-                                                    transition: 'all 150ms',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.background = '#e8f5e9'}
-                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                            >
-                                                + Dimensão
-                                            </button>
-                                            <button
-                                                onClick={() => handleEdit(eixo)}
-                                                style={{ ...actionBtn('#4a5568'), fontSize: 12 }}
-                                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                                title="Editar eixo"
-                                            >
-                                                <FaRegEdit size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(eixo)}
-                                                style={{ ...actionBtn('#ef4444') }}
-                                                onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
-                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                                title="Excluir eixo"
-                                            >
-                                                <IoTrashOutline size={15} />
-                                            </button>
+                                            <button onClick={() => { setCurrentEixoNumero(eixo.numero); setShowModalAddDimensao(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 13px', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#1D5E24', border: '1.5px solid #1D5E24', borderRadius: 8, cursor: 'pointer', transition: 'all 150ms' }} onMouseEnter={e => e.currentTarget.style.background = '#e8f5e9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>+ Dimensão</button>
+                                            <button onClick={() => handleEdit(eixo)} style={{ ...actionBtn('#4a5568'), fontSize: 12 }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} title="Editar eixo"><FaRegEdit size={14} /></button>
+                                            <button onClick={() => handleDelete(eixo)} style={{ ...actionBtn('#ef4444') }} onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'} title="Excluir eixo"><IoTrashOutline size={15} /></button>
                                         </div>
                                     </div>
-
-                                    {/* Tabela de dimensões — largura total */}
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                         <thead>
                                             <tr>
@@ -275,53 +218,12 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {loadingDimensoes[eixo.numero] ? (
-                                                [1, 2, 3].map(i => <SkeletonRow key={i} />)
-                                            ) : !dimensoes[eixo.numero] || dimensoes[eixo.numero].length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={3} style={{ textAlign: 'center', padding: '28px 20px', color: '#94a3b8', fontSize: 13 }}>
-                                                        Nenhuma dimensão cadastrada neste eixo.
-                                                    </td>
-                                                </tr>
-                                            ) : dimensoes[eixo.numero].map((dimensao, di) => (
-                                                <tr
-                                                    key={dimensao.numero}
-                                                    className="dim-row"
-                                                    style={{ borderBottom: di < dimensoes[eixo.numero].length - 1 ? '1px solid #f1f5f9' : 'none', transition: 'background 150ms' }}
-                                                >
-                                                    <td style={tdStyle}>
-                                                        <span style={{
-                                                            fontFamily: 'monospace', fontSize: 12,
-                                                            background: '#f8fafc', color: '#64748b',
-                                                            padding: '3px 8px', borderRadius: 6,
-                                                            border: '1px solid #e2e8f0', fontWeight: 600,
-                                                        }}>
-                                                            {dimensao.numero}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ ...tdStyle, fontWeight: 500, color: '#374151' }}>
-                                                        {dimensao.nome}
-                                                    </td>
-                                                    <td style={{ ...tdStyle, textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                                                            <button
-                                                                onClick={() => handleEdit(dimensao, true)}
-                                                                style={actionBtn('#4a5568')}
-                                                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                                                title="Editar"
-                                                            ><FaRegEdit size={13} /></button>
-                                                            <button
-                                                                onClick={() => handleDelete(dimensao, true)}
-                                                                style={actionBtn('#ef4444')}
-                                                                onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
-                                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                                                title="Excluir"
-                                                            ><IoTrashOutline size={14} /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            <DimensionList
+                                                eixoNumero={eixo.numero}
+                                                onEdit={(dim) => handleEdit(dim, true)}
+                                                onDelete={(dim) => handleDelete(dim, true)}
+                                                searchQuery={searchQuery}
+                                            />
                                         </tbody>
                                     </table>
                                 </Accordion.Body>
@@ -340,7 +242,7 @@ const TableEixos = ({ updateTable, searchQuery = '', onSuccess }) => {
             {showModalAddDimensao && currentEixoNumero && (
                 <ModalAddDimensao show handleClose={() => setShowModalAddDimensao(false)} eixoNumero={currentEixoNumero} onSuccess={handleUpdateSuccess} />
             )}
-            <ConfirmModal show={showConfirm} onConfirm={confirmConfig.onConfirm} onCancel={() => setShowConfirm(false)} title={confirmConfig.title} body={confirmConfig.body} loading={confirmLoading} />
+            <ConfirmModal show={showConfirm} onConfirm={confirmConfig.onConfirm} onCancel={() => setShowConfirm(false)} title={confirmConfig.title} body={confirmConfig.body} loading={deleteEixoMutation.isPending || deleteDimensaoMutation.isPending} />
         </>
     );
 };

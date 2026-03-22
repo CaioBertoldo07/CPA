@@ -11,14 +11,14 @@ import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import NavigationBar from '../components/utils/NavBar';
-import { getAvaliacaoById } from '../services/avaliacoesService';
-import { getRespostasPorAvaliacao } from '../services/respostasService';
+import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
+import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQueries';
 
 const BAR_COLORS = ['#2e7d32', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const STATUS_MAP = {
-    1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
-    2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
+    1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+    2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
     3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
 };
 
@@ -208,38 +208,21 @@ const RelatorioAvaliacao = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const toast = useRef(null);
-    const [avaliacao, setAvaliacao] = useState(null);
-    const [respostas, setRespostas] = useState([]);
-    const [loadingAvaliacao, setLoadingAvaliacao] = useState(true);
-    const [loadingRespostas, setLoadingRespostas] = useState(true);
-    const [errorAvaliacao, setErrorAvaliacao] = useState('');
-    const [errorRespostas, setErrorRespostas] = useState('');
 
-    useEffect(() => {
-        if (!id) { setErrorAvaliacao('ID não informado.'); setLoadingAvaliacao(false); return; }
+    const {
+        data: avaliacao,
+        isLoading: loadingAvaliacao,
+        isError: isErrorAvaliacao
+    } = useGetAvaliacaoByIdQuery(id);
 
-        (async () => {
-            setLoadingAvaliacao(true);
-            try {
-                const data = await getAvaliacaoById(id);
-                if (!data) throw new Error('Não encontrada.');
-                setAvaliacao(data);
-            } catch (err) {
-                setErrorAvaliacao(err?.response?.status === 404 ? `Avaliação #${id} não encontrada.` : 'Erro ao carregar dados.');
-            } finally { setLoadingAvaliacao(false); }
-        })();
+    const {
+        data: respostas = [],
+        isLoading: loadingRespostas,
+        isError: isErrorRespostas
+    } = useGetRespostasPorAvaliacaoQuery(id);
 
-        (async () => {
-            setLoadingRespostas(true);
-            try {
-                const data = await getRespostasPorAvaliacao(id);
-                setRespostas(Array.isArray(data) ? data : []);
-            } catch (err) {
-                if (err?.response?.status !== 404) setErrorRespostas('Erro ao carregar respostas.');
-                setRespostas([]);
-            } finally { setLoadingRespostas(false); }
-        })();
-    }, [id]);
+    const errorAvaliacao = isErrorAvaliacao ? 'Erro ao carregar dados da avaliação.' : '';
+    const errorRespostas = isErrorRespostas ? 'Erro ao carregar respostas.' : '';
 
     const questoesAgrupadas = agruparRespostas(respostas);
 
@@ -296,7 +279,7 @@ const RelatorioAvaliacao = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                         Dashboard Geral
                     </button>
                     <span style={{ color: '#cbd5e1' }}>/</span>

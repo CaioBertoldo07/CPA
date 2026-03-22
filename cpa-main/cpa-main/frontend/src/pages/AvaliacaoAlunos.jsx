@@ -2,47 +2,56 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { Toast } from 'primereact/toast';
-import { getAvaliacaoById, verificarSeUsuarioRespondeu } from '../services/avaliacoesService';
-import { saveRespostas } from '../services/respostasService';
 import logo from '../assets/imgs/cpa_logo.svg';
 import simIcon from '../assets/imgs/yes_emoji.svg';
 import naoIcon from '../assets/imgs/no_emoji.svg';
 import naoSeiIcon from '../assets/imgs/idono_emoji.svg';
 import './AvaliacaoAlunos.css';
+import {
+    useGetAvaliacaoByIdQuery,
+    useGetVerificarRespostaQuery
+} from '../hooks/queries/useAvaliacaoQueries';
+import { useAdicionarRespostaMutation } from '../hooks/mutations/useRespostaMutations';
 
 const AvaliacaoAlunos = () => {
-    const [avaliacao, setAvaliacao] = useState(null);
-    const [respostas, setRespostas] = useState({});
-    const [expandedEixo, setExpandedEixo] = useState(null);
-    const [progresso, setProgresso] = useState(0);
     const { id } = useParams();
     const navigate = useNavigate();
     const token = localStorage.getItem('authToken');
     const toast = useRef(null);
 
+    const {
+        data: avaliacao,
+        isLoading: isLoadingAvaliacao,
+        isError: isErrorAvaliacao
+    } = useGetAvaliacaoByIdQuery(id);
+
+    const {
+        data: jaRespondeu,
+        isLoading: isLoadingVerificacao
+    } = useGetVerificarRespostaQuery(id);
+
+    const adicionarRespostaMutation = useAdicionarRespostaMutation();
+
+    const [respostas, setRespostas] = useState({});
+    const [expandedEixo, setExpandedEixo] = useState(null);
+    const [progresso, setProgresso] = useState(0);
+
     useEffect(() => {
-        const loadAvaliacao = async () => {
-            try {
-                const data = await getAvaliacaoById(id, token);
-                if (!data) throw new Error('Avaliação não encontrada');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
 
-                const jaRespondeu = await verificarSeUsuarioRespondeu(id, token);
-                if (jaRespondeu) {
-                    showToast('Você já respondeu esta avaliação', 'warn');
-                    setTimeout(() => navigate('/alunos'), 3000);
-                    return;
-                }
+        if (jaRespondeu) {
+            showToast('Você já respondeu esta avaliação', 'warn');
+            setTimeout(() => navigate('/alunos'), 3000);
+        }
 
-                setAvaliacao(data);
-            } catch (error) {
-                showToast(error.message, 'error');
-                navigate('/alunos');
-            }
-        };
-
-        if (token) loadAvaliacao();
-        else navigate('/login');
-    }, [id, token, navigate]);
+        if (isErrorAvaliacao) {
+            showToast('Erro ao carregar avaliação', 'error');
+            navigate('/alunos');
+        }
+    }, [id, token, navigate, jaRespondeu, isErrorAvaliacao]);
 
     useEffect(() => {
         const total = avaliacao?.avaliacao_questoes?.reduce((acc, curr) =>
@@ -137,48 +146,50 @@ const AvaliacaoAlunos = () => {
     };
 
     const handleSubmit = async () => {
-        try {
-            // Construir o payload seguindo a estrutura correta
-            const respostasFormatadas = avaliacao.avaliacao_questoes.flatMap((avaliacaoQuestao) => {
-                const questao = avaliacaoQuestao.questoes;
-                const subquestoes = questao.questoesAdicionais || questao.questoes_adicionais || [];
+        // Construir o payload seguindo a estrutura correta
+        const respostasFormatadas = avaliacao.avaliacao_questoes.flatMap((avaliacaoQuestao) => {
+            const questao = avaliacaoQuestao.questoes;
+            const subquestoes = questao.questoesAdicionais || questao.questoes_adicionais || [];
 
-                // Questões com subquestões
-                if (subquestoes.length > 0) {
-                    return subquestoes.map((sub) => {
-                        const key = `${questao.id}-${sub.id}`;
-                        return {
-                            id_avaliacao_questoes: avaliacaoQuestao.id,
-                            adicionalId: sub.id, // Apenas para subquestões
-                            id_alternativa: parseInt(respostas[key], 10)
-                        };
-                    });
-                }
-
-                // Questões sem subquestões
-                return [{
-                    id_avaliacao_questoes: avaliacaoQuestao.id,
-                    id_alternativa: parseInt(respostas[questao.id], 10)
-                }];
-            });
-
-            // Verificar respostas incompletas
-            if (respostasFormatadas.some(resp => !resp.id_alternativa)) {
-                showToast('Responda todas as questões antes de enviar!', 'warn');
-                return;
+            // Questões com subquestões
+            if (subquestoes.length > 0) {
+                return subquestoes.map((sub) => {
+                    const key = `${questao.id}-${sub.id}`;
+                    return {
+                        id_avaliacao_questoes: avaliacaoQuestao.id,
+                        adicionalId: sub.id, // Apenas para subquestões
+                        id_alternativa: parseInt(respostas[key], 10)
+                    };
+                });
             }
 
-            const payload = {
-                idAvaliacao: parseInt(id),
-                respostas: respostasFormatadas
-            };
+            // Questões sem subquestões
+            return [{
+                id_avaliacao_questoes: avaliacaoQuestao.id,
+                id_alternativa: parseInt(respostas[questao.id], 10)
+            }];
+        });
 
-            await saveRespostas(payload, token);
-            showToast('Avaliação enviada com sucesso!', 'success');
-            setTimeout(() => navigate('/alunos'), 2000);
-        } catch (error) {
-            showToast(error.message, 'error');
+        // Verificar respostas incompletas
+        if (respostasFormatadas.some(resp => !resp.id_alternativa)) {
+            showToast('Responda todas as questões antes de enviar!', 'warn');
+            return;
         }
+
+        const payload = {
+            idAvaliacao: parseInt(id),
+            respostas: respostasFormatadas
+        };
+
+        adicionarRespostaMutation.mutate(payload, {
+            onSuccess: () => {
+                showToast('Avaliação enviada com sucesso!', 'success');
+                setTimeout(() => navigate('/alunos'), 2000);
+            },
+            onError: (error) => {
+                showToast(error.message || 'Erro ao enviar avaliação', 'error');
+            }
+        });
     };
 
     const showToast = (message, severity) => {
@@ -190,7 +201,7 @@ const AvaliacaoAlunos = () => {
         });
     };
 
-    if (!avaliacao) return <div className="loading">Carregando...</div>;
+    if (isLoadingAvaliacao || isLoadingVerificacao) return <div className="loading">Carregando...</div>;
 
     return (
         <div className="avaliacao-container">
@@ -249,8 +260,12 @@ const AvaliacaoAlunos = () => {
                     ))}
                 </div>
 
-                <button className="submit-btn" onClick={handleSubmit}>
-                    Enviar Avaliação
+                <button
+                    className="submit-btn"
+                    onClick={handleSubmit}
+                    disabled={adicionarRespostaMutation.isPending}
+                >
+                    {adicionarRespostaMutation.isPending ? 'Enviando...' : 'Enviar Avaliação'}
                 </button>
             </main>
 
