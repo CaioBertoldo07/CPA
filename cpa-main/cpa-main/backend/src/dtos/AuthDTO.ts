@@ -9,7 +9,7 @@ export interface AuthLoginDTO {
 }
 
 export interface UserResponseDTO {
-    id: number;
+    // id: number;
     matricula: string;
     nome: string;
     email: string;

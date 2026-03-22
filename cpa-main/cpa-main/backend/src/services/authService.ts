@@ -76,7 +76,7 @@ class AuthService {
             const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
             const user: UserResponseDTO = {
-                id: 1,
+                // id: 1,
                 nome: usuarioNome,
                 email: normalizedEmail,
                 matricula,
@@ -119,7 +119,7 @@ class AuthService {
         const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
         const user: UserResponseDTO = {
-            id: 1,
+            // id: 1,
             nome: isAdmin ? 'Administrador' : 'Usuário Dev',
             email: normalizedEmail,
             matricula: '1234567',
