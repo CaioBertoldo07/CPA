@@ -158,7 +158,7 @@ const Relatorios = () => {
                 .rel-row:hover td { background:#f8fafc !important; }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: '1600px' }}>
+            <div style={{ width: '100%' }}>
 
                 {/* ── Cabeçalho ── */}
                 <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
