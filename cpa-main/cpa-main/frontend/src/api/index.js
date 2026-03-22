@@ -1,4 +1,3 @@
-// src/services/apiConfig.js
 import axios from 'axios';
 
 const api = axios.create({
@@ -19,7 +18,7 @@ api.interceptors.request.use(
 
 // Interceptor de resposta para lidar com erros de autenticação
 api.interceptors.response.use(
-    (response) => response,
+    (response) => response.data,
     (error) => {
         if (error.response && error.response.status === 401) {
             // Expira a sessão quando o backend retorna 401 (token expirado ou inválido)
