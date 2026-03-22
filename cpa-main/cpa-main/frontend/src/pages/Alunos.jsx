@@ -7,10 +7,11 @@ import logo from '../assets/imgs/cpa_logo.svg';
 import './Alunos.css';
 
 import { useGetAvaliacoesDisponiveisQuery } from '../hooks/queries/useAvaliacaoQueries';
+import { getToken } from '../api/tokenStore'; // Added import for getToken
 
 const Alunos = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem('authToken');
+    const token = getToken(); // Changed to use getToken()
     const { data: avaliacoes = [], isLoading } = useGetAvaliacoesDisponiveisQuery();
     const [usuarioNome, setUsuarioNome] = useState('');
 

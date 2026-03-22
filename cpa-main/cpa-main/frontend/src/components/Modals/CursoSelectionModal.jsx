@@ -1,14 +1,28 @@
-// src/components/Modals/CursoSelectionModal.js
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import { Form, Table, Spinner, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    TextField,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Checkbox,
+    Paper,
+    InputAdornment,
+    Typography,
+    Box,
+    Alert,
+    Button,
+    CircularProgress
+} from '@mui/material';
+import { IoSearchOutline } from 'react-icons/io5';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useGetCursosByUnidadesQuery } from '../../hooks/queries/useCursoQueries';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
 
 function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas }) {
     const [selectedCursos, setSelectedCursos] = useState([]);
-    const [selectAll, setSelectAll] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const unidadesIds = unidadesSelecionadas?.map(u => u.value) || [];
     const {
@@ -18,167 +32,194 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
         error: queryError
     } = useGetCursosByUnidadesQuery(unidadesIds);
 
-    // Normaliza a resposta — pode vir como array direto, ou { data: [] }, ou { cursos: [] }
-    let cursos = [];
-    if (Array.isArray(response)) {
-        cursos = response;
-    } else if (response && Array.isArray(response.data)) {
-        cursos = response.data;
-    } else if (response && Array.isArray(response.cursos)) {
-        cursos = response.cursos;
-    } else if (response && typeof response === 'object') {
-        const firstArray = Object.values(response).find(v => Array.isArray(v));
-        if (firstArray) cursos = firstArray;
-    }
+    // Normaliza a resposta
+    const cursos = useMemo(() => {
+        let raw = [];
+        if (Array.isArray(response)) {
+            raw = response;
+        } else if (response && Array.isArray(response.data)) {
+            raw = response.data;
+        } else if (response && Array.isArray(response.cursos)) {
+            raw = response.cursos;
+        } else if (response && typeof response === 'object') {
+            const firstArray = Object.values(response).find(v => Array.isArray(v));
+            if (firstArray) raw = firstArray;
+        }
+        return raw;
+    }, [response]);
+
+    // Filtragem por busca
+    const filteredCursos = useMemo(() => {
+        if (!searchTerm.trim()) return cursos;
+        const lowerSearch = searchTerm.toLowerCase();
+        return cursos.filter(c =>
+            (c.nome?.toLowerCase().includes(lowerSearch)) ||
+            (c.identificador_api_lyceum?.toString().toLowerCase().includes(lowerSearch)) ||
+            (c.modalidade?.toLowerCase().includes(lowerSearch))
+        );
+    }, [cursos, searchTerm]);
 
     const error = isError ? (queryError?.response?.data?.error || queryError?.message || 'Erro ao carregar cursos.') : '';
 
-    // Reset ao fechar
     useEffect(() => {
         if (!show) {
             setSelectedCursos([]);
-            setSelectAll(false);
+            setSearchTerm('');
         }
     }, [show]);
 
     const handleSelectCurso = (curso) => {
         const key = curso.identificador_api_lyceum ?? curso.id;
-        const jaSelected = selectedCursos.some(
+        const isSelected = selectedCursos.some(
             c => (c.identificador_api_lyceum ?? c.id) === key
         );
-        if (jaSelected) {
-            setSelectedCursos(prev =>
-                prev.filter(c => (c.identificador_api_lyceum ?? c.id) !== key)
-            );
+        if (isSelected) {
+            setSelectedCursos(prev => prev.filter(c => (c.identificador_api_lyceum ?? c.id) !== key));
         } else {
             setSelectedCursos(prev => [...prev, curso]);
         }
     };
 
     const handleSelectAll = () => {
-        if (selectAll) {
+        if (selectedCursos.length === filteredCursos.length) {
             setSelectedCursos([]);
         } else {
-            setSelectedCursos(cursos);
+            setSelectedCursos(filteredCursos);
         }
-        setSelectAll(!selectAll);
     };
-
-    // Sincroniza "selecionar todos" com seleções individuais
-    useEffect(() => {
-        if (cursos.length > 0 && selectedCursos.length === cursos.length) {
-            setSelectAll(true);
-        } else {
-            setSelectAll(false);
-        }
-    }, [selectedCursos, cursos]);
 
     const handleConfirmSelection = () => {
         onCursosSelected(selectedCursos);
-        setSelectedCursos([]);
-        setSelectAll(false);
+        onHide();
     };
 
-    const cursosParaExibir = cursos;
+    const isAllSelected = filteredCursos.length > 0 && selectedCursos.length === filteredCursos.length;
+
+    const modalActions = (
+        <>
+            <Button onClick={onHide} color="inherit" sx={{ fontWeight: 600 }}>
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleConfirmSelection}
+                variant="contained"
+                color="primary"
+                disabled={selectedCursos.length === 0}
+                sx={{ fontWeight: 700, minWidth: '150px' }}
+            >
+                Confirmar Seleção ({selectedCursos.length})
+            </Button>
+        </>
+    );
 
     return (
-        <Modal show={show} onHide={onHide} size="lg" centered>
-            {/* Header com cor diferente para distinguir do modal pai */}
-            <Modal.Header
-                closeButton
-                style={{ backgroundColor: '#0d6efd', color: '#fff' }}
-            >
-                <Modal.Title style={{ color: '#fff' }}>
+        <MuiBaseModal
+            open={show}
+            onClose={onHide}
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     🎓 Selecionar Cursos
                     {selectedCursos.length > 0 && (
-                        <span
-                            className="badge ms-2"
-                            style={{ backgroundColor: '#fff', color: '#0d6efd', fontSize: '0.75rem' }}
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontWeight: 700
+                            }}
                         >
                             {selectedCursos.length} selecionado(s)
-                        </span>
+                        </Typography>
                     )}
-                </Modal.Title>
-            </Modal.Header>
+                </Box>
+            }
+            actions={modalActions}
+            maxWidth="md"
+        >
+            <Box sx={{ mb: 2 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Buscar curso por nome, código ou modalidade..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <IoSearchOutline />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ backgroundColor: 'white' }}
+                />
+            </Box>
 
-            <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            <Box sx={{ maxHeight: '50vh', overflowY: 'auto' }}>
                 {loading ? (
-                    <div className="text-center py-4">
-                        <Spinner animation="border" variant="primary" />
-                        <p className="mt-2 text-muted">Carregando cursos disponíveis...</p>
-                    </div>
+                    <Box sx={{ textAlign: 'center', py: 6 }}>
+                        <CircularProgress size={30} sx={{ mb: 2 }} />
+                        <Typography color="text.secondary">Carregando cursos disponíveis...</Typography>
+                    </Box>
                 ) : error ? (
-                    <Alert variant="danger">
-                        <strong>Erro:</strong> {error}
-                    </Alert>
-                ) : cursosParaExibir.length > 0 ? (
-                    <>
-                        <Form.Check
-                            type="checkbox"
-                            label={<strong>Selecionar Todos ({cursosParaExibir.length})</strong>}
-                            checked={selectAll}
-                            onChange={handleSelectAll}
-                            className="mb-3"
-                        />
-                        <Table striped bordered hover size="sm">
-                            <thead style={{ backgroundColor: '#e8f4ff' }}>
-                                <tr>
-                                    <th style={{ width: 40 }}></th>
-                                    <th>Código</th>
-                                    <th>Curso</th>
-                                    <th>Modalidade</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {cursosParaExibir.map(curso => {
+                    <Alert severity="error">{error}</Alert>
+                ) : filteredCursos.length > 0 ? (
+                    <TableContainer component={Paper} variant="outlined" sx={{ border: 'none' }}>
+                        <Table stickyHeader size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell padding="checkbox" sx={{ bgcolor: 'grey.50' }}>
+                                        <Checkbox
+                                            indeterminate={selectedCursos.length > 0 && selectedCursos.length < filteredCursos.length}
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAll}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Código</TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Curso</TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Modalidade</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filteredCursos.map((curso) => {
                                     const key = curso.identificador_api_lyceum ?? curso.id;
                                     const isSelected = selectedCursos.some(
                                         c => (c.identificador_api_lyceum ?? c.id) === key
                                     );
                                     return (
-                                        <tr
+                                        <TableRow
                                             key={key}
+                                            hover
                                             onClick={() => handleSelectCurso(curso)}
-                                            style={{
-                                                cursor: 'pointer',
-                                                backgroundColor: isSelected ? '#dbeafe' : undefined,
-                                            }}
+                                            selected={isSelected}
+                                            sx={{ cursor: 'pointer' }}
                                         >
-                                            <td onClick={e => e.stopPropagation()}>
-                                                <Form.Check
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleSelectCurso(curso)}
-                                                />
-                                            </td>
-                                            <td>{curso.identificador_api_lyceum ?? curso.id ?? '—'}</td>
-                                            <td>{curso.nome ?? curso.name ?? '—'}</td>
-                                            <td>{curso.modalidade ?? '—'}</td>
-                                        </tr>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox checked={isSelected} size="small" />
+                                            </TableCell>
+                                            <TableCell>{curso.identificador_api_lyceum ?? curso.id ?? '—'}</TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{curso.nome ?? curso.name ?? '—'}</TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" sx={{ px: 1, py: 0.25, bgcolor: 'grey.200', borderRadius: 1 }}>
+                                                    {curso.modalidade ?? '—'}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
                                     );
                                 })}
-                            </tbody>
+                            </TableBody>
                         </Table>
-                    </>
+                    </TableContainer>
                 ) : (
-                    <div>
-                        <Alert variant="warning">
-                            Nenhum curso encontrado para as unidades selecionadas.
-                        </Alert>
-                    </div>
+                    <Alert severity="info">
+                        {searchTerm ? 'Nenhum curso corresponde à sua busca.' : 'Nenhum curso encontrado para as unidades selecionadas.'}
+                    </Alert>
                 )}
-            </Modal.Body>
-
-            <Modal.Footer>
-                <ButtonCancelar onClick={onHide}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar
-                    onClick={handleConfirmSelection}
-                    disabled={selectedCursos.length === 0}
-                >
-                    Confirmar Seleção ({selectedCursos.length})
-                </ButtonCadastrar>
-            </Modal.Footer>
-        </Modal>
+            </Box>
+        </MuiBaseModal>
     );
 }
 

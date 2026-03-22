@@ -4,8 +4,8 @@ import { asyncHandler } from '../middleware/errorMiddleware';
 import { createEixoSchema, updateEixoSchema } from '../validators/eixosValidator';
 
 const postEixos = asyncHandler(async (req: Request, res: Response) => {
-  await createEixoSchema.validate(req.body, { abortEarly: false });
-  await eixosService.create(req.body);
+  const validatedData = await createEixoSchema.validate(req.body, { abortEarly: false });
+  await eixosService.create(validatedData as any);
   res.status(200).json({ message: 'Eixo e dimensões cadastrados com sucesso.' });
 });
 

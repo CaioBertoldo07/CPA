@@ -21,9 +21,9 @@ const getQuestaoById = asyncHandler(async (req: Request, res: Response) => {
 
 const postQuestoes = asyncHandler(async (req: Request, res: Response) => {
     // Validação com Yup
-    await createQuestaoSchema.validate(req.body, { abortEarly: false });
+    const validatedData = await createQuestaoSchema.validate(req.body, { abortEarly: false });
 
-    const newQuestao = await questoesService.create(req.body);
+    const newQuestao = await questoesService.create(validatedData as any);
     res.status(201).json({
         message: 'Questão criada com sucesso!',
         questao: newQuestao
@@ -34,9 +34,9 @@ const updateQuestoes = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
 
     // Validação com Yup
-    await updateQuestaoSchema.validate(req.body, { abortEarly: false });
+    const validatedData = await updateQuestaoSchema.validate(req.body, { abortEarly: false });
 
-    const updatedQuestao = await questoesService.update(id, req.body);
+    const updatedQuestao = await questoesService.update(id, validatedData as any);
     res.status(200).json({
         message: 'Questão atualizada com sucesso!',
         questao: updatedQuestao

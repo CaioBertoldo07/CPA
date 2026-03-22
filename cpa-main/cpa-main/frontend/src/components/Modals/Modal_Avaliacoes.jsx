@@ -1,12 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Form, Row, Col, Spinner, Button } from 'react-bootstrap';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    Grid,
+    TextField,
+    MenuItem,
+    Typography,
+    Box,
+    Button,
+    Alert,
+    Paper,
+    Badge,
+    InputAdornment
+} from '@mui/material';
+import {
+    IoCalendarOutline,
+    IoAddOutline,
+    IoSchoolOutline,
+    IoListOutline
+} from 'react-icons/io5';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useAdicionarAvaliacaoMutation } from '../../hooks/mutations/useAvaliacaoMutations';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useGetMunicipiosQuery } from '../../hooks/queries/useMunicipioQueries';
 import { useGetUnidadesByMunicipiosQuery } from '../../hooks/queries/useUnidadeQueries';
-import { CategoryCheckboxes } from "../utils/Check_boxes";
+import { useGetCategoriasQuery } from '../../hooks/queries/useCategoriaQueries';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import CursoSelectionModal from './CursoSelectionModal';
 import QuestaoSelectionModal from './QuestaoSelectionModal';
@@ -17,8 +33,8 @@ function Modal_Avaliacoes(props) {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [municipiosVinculo, setMunicipiosVinculo] = useState([]);
-    const [unidadeSelecionada, setUnidadeSelecionada] = useState(null);
-    const [categorias, setCategorias] = useState({});
+    const [unidadeSelecionada, setUnidadeSelecionada] = useState([]);
+    const [categoriasSelecionadas, setCategoriasSelecionadas] = useState([]);
     const [modalidadeSelecionada, setModalidadeSelecionada] = useState([]);
     const [curso, setCurso] = useState('');
     const [cursosSelecionados, setCursosSelecionados] = useState([]);
@@ -29,6 +45,7 @@ function Modal_Avaliacoes(props) {
 
     const { data: municipiosData = [] } = useGetMunicipiosQuery();
     const { data: modalidadesData = [] } = useGetModalidadesQuery();
+    const { data: categoriasData = [] } = useGetCategoriasQuery();
 
     const municipiosNomes = municipiosVinculo.map(m => m.label.split(' - ')[0]);
     const { data: unidadesData = [] } = useGetUnidadesByMunicipiosQuery(municipiosNomes);
@@ -36,25 +53,29 @@ function Modal_Avaliacoes(props) {
     const adicionarAvaliacaoMutation = useAdicionarAvaliacaoMutation();
     const loading = adicionarAvaliacaoMutation.isPending;
 
-    const municipios = municipiosData.map(m => ({ value: m.id, label: `${m.nome} - ${m.UF}` }));
-    const modalidades = modalidadesData.map(m => ({ value: m.id, label: m.mod_ensino }));
-    const unidades = unidadesData.map(u => ({ value: u.id, label: `${u.nome} - ${u.sigla}` }));
+    const municipiosOptions = useMemo(() =>
+        municipiosData.map(m => ({ value: m.id, label: `${m.nome} - ${m.UF}` })), [municipiosData]);
+    const modalidadesOptions = useMemo(() =>
+        modalidadesData.map(m => ({ value: m.id, label: m.mod_ensino })), [modalidadesData]);
+    const unidadesOptions = useMemo(() =>
+        unidadesData.map(u => ({ value: u.id, label: `${u.nome} - ${u.sigla}` })), [unidadesData]);
+    const categoriasOptions = useMemo(() =>
+        categoriasData.map(c => ({ value: c.id, label: c.nome })), [categoriasData]);
 
     useEffect(() => {
         if (!props.show) {
             setAno(''); setPeriodo('');
             setStartDate(new Date().toISOString().split('T')[0]);
             setEndDate(new Date().toISOString().split('T')[0]);
-            setMunicipiosVinculo([]); setUnidadeSelecionada(null);
-            setCategorias({}); setModalidadeSelecionada([]);
+            setMunicipiosVinculo([]); setUnidadeSelecionada([]);
+            setCategoriasSelecionadas([]); setModalidadeSelecionada([]);
             setCurso(''); setCursosSelecionados([]);
             setQuestoesSelecionadas([]); setError('');
         }
     }, [props.show]);
 
-    const handleCategoriaChange = (event) => {
-        const { id } = event.target;
-        setCategorias(prev => ({ ...prev, [id]: !prev[id] }));
+    const handleCategoriasChange = (selected) => {
+        setCategoriasSelecionadas(selected.map(s => s.value));
     };
 
     const handleCursoSelect = (selected) => {
@@ -80,7 +101,7 @@ function Modal_Avaliacoes(props) {
         const avaliacaoData = {
             unidade: unidadeSelecionada.map(q => q.value),
             cursos: cursosSelecionados.map(c => c.value ?? c.identificador_api_lyceum),
-            categorias: Object.keys(categorias).filter(id => categorias[id]).map(id => parseInt(id, 10)),
+            categorias: categoriasSelecionadas,
             modalidade: modalidadeSelecionada.map(q => q.value),
             questoes: questoesSelecionadas,
             periodo_letivo: `${ano}.${periodo}`,
@@ -91,161 +112,200 @@ function Modal_Avaliacoes(props) {
         };
 
         adicionarAvaliacaoMutation.mutate(avaliacaoData, {
-            onSuccess: () => props.onClose?.(),
-            onError: (err) => setError(err?.response?.data?.error || 'Erro ao criar avaliação.')
+            onSuccess: () => props.onSuccess?.('Avaliação criada com sucesso!'),
+            onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao criar avaliação.')
         });
     };
 
+    const modalActions = (
+        <>
+            <Button onClick={props.onHide} color="inherit" disabled={loading} sx={{ fontWeight: 600 }}>
+                Cancelar
+            </Button>
+            <Button
+                onClick={salvarAvaliacao}
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{ fontWeight: 700, minWidth: '150px' }}
+            >
+                {loading ? 'Salvando...' : 'Criar Avaliação'}
+            </Button>
+        </>
+    );
+
     return (
-        <Modal {...props} size="lg" aria-labelledby="modal-avaliacao-title" centered>
-            <Modal.Header closeButton>
-                <Modal.Title id="modal-avaliacao-title">Nova avaliação</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                {error && <div className="alert alert-danger">{error}</div>}
+        <MuiBaseModal
+            open={props.show}
+            onClose={props.onHide}
+            title="Nova Avaliação"
+            actions={modalActions}
+            isLoading={loading}
+            maxWidth="md"
+        >
+            <Box sx={{ mt: 1 }}>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
 
-                <Row>
-                    <Col md={6}>
-                        <Form.Group controlId="anoPeriodo">
-                            <Form.Label>Período letivo: <span style={{ color: 'red' }}>*</span></Form.Label>
-                            <div className="d-flex justify-content-between">
-                                <input
-                                    type="text"
-                                    className="form-control me-2"
-                                    placeholder="Ano (ex: 2024)"
-                                    value={ano}
-                                    onChange={e => setAno(e.target.value)}
-                                />
-                                <select
-                                    className="form-control"
-                                    value={periodo}
-                                    onChange={e => setPeriodo(e.target.value)}
-                                >
-                                    <option value="" disabled hidden>Semestre</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                </select>
-                            </div>
-                        </Form.Group>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Group controlId="inicio">
-                            <Form.Label>Início:</Form.Label>
-                            <input type="date" className="form-control" value={startDate}
-                                onChange={e => setStartDate(e.target.value)} />
-                        </Form.Group>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Group controlId="fim">
-                            <Form.Label>Fim:</Form.Label>
-                            <input type="date" className="form-control" value={endDate}
-                                onChange={e => setEndDate(e.target.value)} />
-                        </Form.Group>
-                    </Col>
-                </Row>
+                <Grid container spacing={2}>
+                    {/* Linha 1: Período e Datas */}
+                    <Grid item xs={12} sm={4}>
+                        <TextField
+                            fullWidth
+                            label="Ano"
+                            placeholder="Ex: 2024"
+                            value={ano}
+                            onChange={e => setAno(e.target.value)}
+                            size="small"
+                            disabled={loading}
+                            required
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={2}>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Semestre"
+                            value={periodo}
+                            onChange={e => setPeriodo(e.target.value)}
+                            size="small"
+                            disabled={loading}
+                            required
+                            InputLabelProps={{ shrink: true }}
+                        >
+                            <MenuItem value="1">1º Semestre</MenuItem>
+                            <MenuItem value="2">2º Semestre</MenuItem>
+                        </TextField>
+                    </Grid>
+                    <Grid item xs={6} sm={3}>
+                        <TextField
+                            fullWidth
+                            label="Data Início"
+                            type="date"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            size="small"
+                            disabled={loading}
+                            required
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={3}>
+                        <TextField
+                            fullWidth
+                            label="Data Fim"
+                            type="date"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                            size="small"
+                            disabled={loading}
+                            required
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
 
-                <Row className="mt-3">
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Municípios vínculo:</Form.Label>
-                            <AnimatedMultiSelect
-                                options={municipios}
-                                onChange={setMunicipiosVinculo}
-                                placeholder="Selecione os municípios"
-                            />
-                        </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Unidade: <span style={{ color: 'red' }}>*</span></Form.Label>
-                            <AnimatedMultiSelect
-                                options={unidades}
-                                onChange={setUnidadeSelecionada}
-                                placeholder={municipiosVinculo.length === 0
-                                    ? 'Selecione um município primeiro'
-                                    : 'Selecione a unidade'}
-                            />
-                        </Form.Group>
-                    </Col>
-                </Row>
+                    {/* Linha 2: Municípios e Unidades */}
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Municípios Vínculo
+                        </Typography>
+                        <AnimatedMultiSelect
+                            options={municipiosOptions}
+                            onChange={setMunicipiosVinculo}
+                            placeholder="Selecione os municípios"
+                            value={municipiosVinculo}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Unidade Responsável
+                        </Typography>
+                        <AnimatedMultiSelect
+                            options={unidadesOptions}
+                            onChange={setUnidadeSelecionada}
+                            placeholder={municipiosVinculo.length === 0 ? 'Selecione um município primeiro' : 'Selecione a unidade'}
+                            value={unidadeSelecionada}
+                            disabled={municipiosVinculo.length === 0}
+                        />
+                    </Grid>
 
-                <Row className="mt-3">
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Modalidades:</Form.Label>
-                            <AnimatedMultiSelect
-                                options={modalidades}
-                                onChange={setModalidadeSelecionada}
-                                placeholder="Selecione as modalidades"
-                            />
-                        </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Categoria:</Form.Label>
-                            <CategoryCheckboxes categorias={categorias} onChange={handleCategoriaChange} />
-                        </Form.Group>
-                    </Col>
-                </Row>
+                    {/* Linha 3: Modalidades e Categorias */}
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Modalidades
+                        </Typography>
+                        <AnimatedMultiSelect
+                            options={modalidadesOptions}
+                            onChange={setModalidadeSelecionada}
+                            placeholder="Selecione as modalidades"
+                            value={modalidadeSelecionada}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Público Alvo (Categorias)
+                        </Typography>
+                        <AnimatedMultiSelect
+                            options={categoriasOptions}
+                            onChange={handleCategoriasChange}
+                            placeholder="Selecione as categorias"
+                            value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
+                        />
+                    </Grid>
 
-                <Row className="mt-3">
-                    <Col md={12}>
-                        <Form.Group>
-                            <Form.Label>
-                                Cursos: <span style={{ color: 'red' }}>*</span>
-                                {cursosSelecionados.length > 0 && (
-                                    <span className="badge bg-success ms-2">
-                                        {cursosSelecionados.length} selecionado(s)
-                                    </span>
-                                )}
-                            </Form.Label>
-                            <div className="d-flex align-items-center gap-2">
-                                <Form.Control
-                                    type="text"
-                                    value={curso}
-                                    readOnly
-                                    placeholder="Clique em 'Adicionar Curso' para selecionar"
-                                    style={{ flex: 1 }}
-                                />
+                    {/* Linha 4: Cursos */}
+                    <Grid item xs={12}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                                <Box>
+                                    <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
+                                        <IoSchoolOutline /> Cursos Selecionados
+                                        {cursosSelecionados.length > 0 && (
+                                            <Badge badgeContent={cursosSelecionados.length} color="success" sx={{ ml: 1 }} />
+                                        )}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                        {cursosSelecionados.length > 0
+                                            ? curso
+                                            : "Nenhum curso selecionado ainda."}
+                                    </Typography>
+                                </Box>
                                 <Button
+                                    variant="outlined"
+                                    startIcon={<IoAddOutline />}
                                     onClick={() => setShowCursoModal(true)}
                                     disabled={!unidadeSelecionada || unidadeSelecionada.length === 0}
-                                    style={{ backgroundColor: '#1d6b2f', borderColor: '#28a745', color: '#fff', whiteSpace: 'nowrap' }}
+                                    sx={{ fontWeight: 600 }}
                                 >
-                                    Adicionar Curso
+                                    Selecionar Cursos
                                 </Button>
-                            </div>
-                            {(!unidadeSelecionada || unidadeSelecionada.length === 0) && (
-                                <small className="text-muted">Selecione uma unidade para ver os cursos disponíveis.</small>
-                            )}
-                        </Form.Group>
-                    </Col>
-                </Row>
+                            </Box>
+                        </Paper>
+                    </Grid>
 
-                <div className="text-end mt-3">
-                    <Button
-                        onClick={() => setShowQuestaoModal(true)}
-                        style={{ backgroundColor: '#1d6b2f', borderColor: '#28a745', color: '#fff' }}
-                    >
-                        + Incluir Questões
-                        {questoesSelecionadas.length > 0 && (
-                            <span className="badge bg-light text-dark ms-2">
-                                {questoesSelecionadas.length}
-                            </span>
-                        )}
-                    </Button>
-                </div>
-            </Modal.Body>
-
-            <Modal.Footer>
-                <ButtonCancelar onClick={props.onHide} disabled={loading}>Cancelar</ButtonCancelar>
-                <ButtonCadastrar onClick={salvarAvaliacao} disabled={loading}>
-                    {loading
-                        ? <><Spinner size="sm" animation="border" className="me-2" />Salvando...</>
-                        : 'Salvar avaliação'
-                    }
-                </ButtonCadastrar>
-            </Modal.Footer>
+                    {/* Linha 5: Questões */}
+                    <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<IoListOutline />}
+                                onClick={() => setShowQuestaoModal(true)}
+                                sx={{ fontWeight: 700 }}
+                            >
+                                Incluir Questões
+                                {questoesSelecionadas.length > 0 && (
+                                    <Badge badgeContent={questoesSelecionadas.length} color="default" sx={{ ml: 2, '& .MuiBadge-badge': { bgcolor: 'white', color: 'success.main', fontWeight: 800 } }} />
+                                )}
+                            </Button>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Box>
 
             {showCursoModal && (
                 <CursoSelectionModal
@@ -263,7 +323,7 @@ function Modal_Avaliacoes(props) {
                     onQuestoesSelected={handleQuestoesSelect}
                 />
             )}
-        </Modal>
+        </MuiBaseModal>
     );
 }
 

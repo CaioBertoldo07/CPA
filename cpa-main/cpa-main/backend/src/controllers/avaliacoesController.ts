@@ -9,8 +9,8 @@ import { createAvaliacaoSchema } from '../validators/avaliacoesValidator';
  */
 
 const createAvaliacao = asyncHandler(async (req: Request, res: Response) => {
-    await createAvaliacaoSchema.validate(req.body, { abortEarly: false });
-    const avaliacao = await avaliacoesService.create(req.body);
+    const validatedData = await createAvaliacaoSchema.validate(req.body, { abortEarly: false });
+    const avaliacao = await avaliacoesService.create(validatedData as any);
     res.status(201).json({ message: 'Avaliação criada com sucesso!', avaliacao });
 });
 

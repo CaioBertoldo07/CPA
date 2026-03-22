@@ -127,6 +127,7 @@ class QuestoesService {
             descricao: questao?.descricao,
             basica: questao?.basica,
             tipo: questao?.tipo_questao?.descricao || 'Não informado',
+            tipoId: questao?.tipo_questao?.id || questao?.id_questoes_tipo,
             idPadraoResposta: questao?.id_padrao_resposta,
             dimensao: {
                 nome: questao?.dimensoes?.nome || 'Não informado',

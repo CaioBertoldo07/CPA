@@ -1,37 +1,68 @@
 import React from 'react';
+import { Box, TextField, IconButton, Tooltip } from '@mui/material';
 import { BiPlus, BiMinus } from "react-icons/bi";
-import '../Modals/modalStyles.css'; // Importe o CSS
 
 function DynamicInputs({ inputs, adicionarInput, removerInput, handleNumeroChange, handleNomeChange }) {
   return (
-    <div>
+    <Box sx={{ mt: 1 }}>
       {inputs.map((input, index) => (
-        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          <input
-            type="text"
+        <Box
+          key={index}
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 2,
+            mb: 2
+          }}
+        >
+          <TextField
+            label="Número"
+            type="number"
+            size="small"
             value={input.numero}
             onChange={(e) => handleNumeroChange(index, e.target.value)}
-            className="input-field"
-            style={{ width: '80px' }} // Pequena caixa para número da dimensão
-            placeholder="Número"
+            placeholder="Ex: 1"
+            sx={{ width: '100px' }}
+            variant="outlined"
+            InputLabelProps={{ shrink: true }}
           />
-          <input
-            type="text"
+          <TextField
+            label="Nome da Dimensão"
+            size="small"
+            fullWidth
             value={input.nome}
             onChange={(e) => handleNomeChange(index, e.target.value)}
-            className="input-field"
-            style={{ width: '200px' }} // Caixa maior para nome da dimensão
-            placeholder="Nome"
+            placeholder="Ex: Ensino, Pesquisa..."
+            variant="outlined"
+            InputLabelProps={{ shrink: true }}
           />
-          {index > 0 && (
-            <BiMinus onClick={() => removerInput(index)} style={{ cursor: 'pointer', fontSize: '20px' }} />
-          )}
-          {index === 0 && (
-            <BiPlus onClick={adicionarInput} style={{ cursor: 'pointer', fontSize: '20px' }} />
-          )}
-        </div>
+          <Box sx={{ pt: 0.5, display: 'flex', gap: 1 }}>
+            {index > 0 ? (
+              <Tooltip title="Remover dimensão">
+                <IconButton
+                  onClick={() => removerInput(index)}
+                  color="error"
+                  size="small"
+                >
+                  <BiMinus />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title="Adicionar dimensão">
+                <IconButton
+                  onClick={adicionarInput}
+                  color="primary"
+                  size="small"
+                  sx={{ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.main', color: 'white' } }}
+                >
+                  <BiPlus />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 }
 

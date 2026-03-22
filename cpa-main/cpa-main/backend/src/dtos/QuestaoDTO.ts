@@ -6,6 +6,7 @@ export interface QuestaoResponseDTO {
     descricao: string;
     basica: boolean;
     tipo: string;
+    tipoId: number;
     idPadraoResposta: number;
     dimensao: {
         nome: string;

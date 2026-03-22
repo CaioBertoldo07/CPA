@@ -1,74 +1,116 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form } from 'react-bootstrap';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonSalvar from '../Buttons/Button_Salvar';
+import { TextField, Button, Box, Alert } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useEditDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
-import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
 
 const ModalUpdateDimensao = ({ show, handleClose, dimensaoData, onSuccess }) => {
     const [novoNumero, setNovoNumero] = useState('');
     const [nome, setNome] = useState('');
-    const [numeroEixos, setNumeroEixos] = useState('');
+    const [error, setError] = useState('');
 
     const editDimensaoMutation = useEditDimensaoMutation();
+    const loading = editDimensaoMutation.isPending;
 
     useEffect(() => {
         if (dimensaoData) {
-            setNovoNumero(dimensaoData.numero);
-            setNome(dimensaoData.nome);
-            setNumeroEixos(dimensaoData.numero_eixos);
+            setNovoNumero(dimensaoData.numero || '');
+            setNome(dimensaoData.nome || '');
+            setError('');
         }
     }, [dimensaoData]);
 
     const handleUpdate = async () => {
-        if (!numeroEixos) return;
+        if (!novoNumero.trim() || !nome.trim()) {
+            return setError('Todos os campos são obrigatórios.');
+        }
+        setError('');
+
         editDimensaoMutation.mutate({
             numero: dimensaoData.numero,
-            data: { numero: novoNumero, nome, numero_eixos: numeroEixos }
+            data: { numero: novoNumero.trim(), nome: nome.trim(), numero_eixos: dimensaoData.numero_eixos }
         }, {
             onSuccess: () => {
-                onSuccess('Dimensão atualizada com sucesso');
+                if (onSuccess) onSuccess('Dimensão atualizada com sucesso');
                 handleClose();
+            },
+            onError: (err) => {
+                setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao atualizar dimensão.');
             }
         });
     };
 
+    const modalActions = (
+        <>
+            <Button
+                onClick={handleClose}
+                color="inherit"
+                disabled={loading}
+                sx={{ fontWeight: 600 }}
+            >
+                Fechar
+            </Button>
+            <Button
+                onClick={handleUpdate}
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{
+                    fontWeight: 700,
+                    minWidth: '100px'
+                }}
+            >
+                {loading ? 'Salvando...' : 'Atualizar'}
+            </Button>
+        </>
+    );
+
     return (
-        <Modal show={show} onHide={handleClose} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Editar Dimensão</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
-                    <Form.Group controlId="formNumero">
-                        <Form.Label>Número</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Digite o número da dimensão"
-                            value={novoNumero}
-                            onChange={(e) => setNovoNumero(e.target.value)}
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="formNome">
-                        <Form.Label>Nome</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Digite o nome da dimensão"
-                            value={nome}
-                            onChange={(e) => setNome(e.target.value)}
-                        />
-                    </Form.Group>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <ButtonCancelar onClick={handleClose} disabled={editDimensaoMutation.isPending}>
-                    Fechar
-                </ButtonCancelar>
-                <ButtonSalvar onClick={handleUpdate} disabled={editDimensaoMutation.isPending}>
-                    {editDimensaoMutation.isPending ? 'Salvando...' : 'Atualizar'}
-                </ButtonSalvar>
-            </Modal.Footer>
-        </Modal>
+        <MuiBaseModal
+            open={show}
+            onClose={handleClose}
+            title="Editar Dimensão"
+            actions={modalActions}
+            isLoading={loading}
+            maxWidth="sm"
+        >
+            <Box component="form" noValidate sx={{ mt: 1 }}>
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="edit-num-dimensao"
+                    label="Número da Dimensão"
+                    name="numero"
+                    value={novoNumero}
+                    onChange={(e) => setNovoNumero(e.target.value)}
+                    disabled={loading}
+                    variant="outlined"
+                    InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="edit-nome-dimensao"
+                    label="Nome da Dimensão"
+                    name="nome"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    disabled={loading}
+                    variant="outlined"
+                    autoFocus
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ mt: 2 }}
+                />
+            </Box>
+        </MuiBaseModal>
     );
 };
 

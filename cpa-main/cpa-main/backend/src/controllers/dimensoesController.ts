@@ -4,8 +4,8 @@ import { asyncHandler } from '../middleware/errorMiddleware';
 import { createDimensaoSchema, updateDimensaoSchema } from '../validators/dimensoesValidator';
 
 const postDimensoes = asyncHandler(async (req: Request, res: Response) => {
-    await createDimensaoSchema.validate(req.body);
-    const novaDimensao = await dimensoesService.create(req.body);
+    const validatedData = await createDimensaoSchema.validate(req.body);
+    const novaDimensao = await dimensoesService.create(validatedData as any);
     res.json(novaDimensao);
 });
 
@@ -34,8 +34,8 @@ const getDimensoesByEixo = asyncHandler(async (req: Request, res: Response) => {
 
 const updateDimensao = asyncHandler(async (req: Request, res: Response) => {
     const numero = parseInt(req.params.numero as string, 10);
-    await updateDimensaoSchema.validate(req.body);
-    const dimensaoAtualizada = await dimensoesService.update(numero, req.body);
+    const validatedData = await updateDimensaoSchema.validate(req.body);
+    const dimensaoAtualizada = await dimensoesService.update(numero, validatedData as any);
     res.json(dimensaoAtualizada);
 });
 

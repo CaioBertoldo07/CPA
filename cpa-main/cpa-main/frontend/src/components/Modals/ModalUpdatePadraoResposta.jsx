@@ -1,52 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonSalvar from '../Buttons/Button_Salvar';
+import { TextField, Button, Box, Alert } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useEditPadraoRespostaMutation } from '../../hooks/mutations/usePadraoRespostaMutations';
 
-const ModalUpdatePadraoResposta = ({ show, handleClose, padraoData, onSuccess }) => {
-  const [sigla, setSigla] = useState(padraoData.sigla);
+function ModalUpdatePadraoResposta({ show, handleClose, padraoData, onSuccess }) {
+  const [sigla, setSigla] = useState('');
+  const [error, setError] = useState('');
+
   const editMutation = useEditPadraoRespostaMutation();
+  const loading = editMutation.isPending;
 
   useEffect(() => {
-    setSigla(padraoData.sigla);
-  }, [padraoData]);
+    if (padraoData && show) {
+      setSigla(padraoData.sigla || '');
+      setError('');
+    }
+  }, [padraoData, show]);
 
   const handleSubmit = () => {
-    editMutation.mutate({ id: padraoData.id, padraoResposta: { sigla } }, {
+    if (!sigla.trim()) {
+      return setError('A sigla não pode estar vazia.');
+    }
+
+    editMutation.mutate({ id: padraoData.id, padraoResposta: { sigla: sigla.trim() } }, {
       onSuccess: () => {
-        onSuccess('Padrão de resposta atualizado com sucesso!');
+        if (onSuccess) onSuccess('Padrão de resposta atualizado com sucesso!');
+        handleClose();
+      },
+      onError: (err) => {
+        setError(err.response?.data?.error || 'Erro ao atualizar padrão de resposta.');
       }
     });
   };
 
-  return (
-    <Modal show={show} onHide={handleClose} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Editar Padrão de Resposta</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group controlId="formSigla">
-            <Form.Label>Sigla</Form.Label>
-            <Form.Control
-              type="text"
-              value={sigla}
-              onChange={(e) => setSigla(e.target.value)}
-            />
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <ButtonCancelar variant="secondary" onClick={handleClose} disabled={editMutation.isPending}>
-          Cancelar
-        </ButtonCancelar>
-        <ButtonSalvar variant="primary" onClick={handleSubmit} disabled={editMutation.isPending}>
-          {editMutation.isPending ? 'Salvando...' : 'Salvar'}
-        </ButtonSalvar>
-      </Modal.Footer>
-    </Modal>
+  const modalActions = (
+    <>
+      <Button
+        onClick={handleClose}
+        color="inherit"
+        disabled={loading}
+        sx={{ fontWeight: 600 }}
+      >
+        Cancelar
+      </Button>
+      <Button
+        onClick={handleSubmit}
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        sx={{
+          fontWeight: 700,
+          minWidth: '100px'
+        }}
+      >
+        {loading ? 'Salvando...' : 'Salvar'}
+      </Button>
+    </>
   );
-};
+
+  return (
+    <MuiBaseModal
+      open={show}
+      onClose={handleClose}
+      title="Editar Padrão de Resposta"
+      actions={modalActions}
+      isLoading={loading}
+      maxWidth="xs"
+    >
+      <Box sx={{ mt: 1 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <TextField
+          fullWidth
+          label="Sigla / Nome"
+          value={sigla}
+          onChange={(e) => setSigla(e.target.value)}
+          disabled={loading}
+          variant="outlined"
+          autoFocus
+          margin="normal"
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
+    </MuiBaseModal>
+  );
+}
 
 export default ModalUpdatePadraoResposta;

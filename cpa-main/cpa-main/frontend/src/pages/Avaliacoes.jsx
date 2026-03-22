@@ -1,10 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import TableAvaliacao from '../components/Tables/Table_Avaliacao';
 import ModalAvaliacoes from '../components/Modals/Modal_Avaliacoes';
-import { Toast } from 'primereact/toast';
-import 'primereact/resources/themes/saga-blue/theme.css';
-import 'primereact/resources/primereact.min.css';
-import 'primeicons/primeicons.css';
+import { useNotification } from '../context/NotificationContext';
 
 // Filtros de status
 const FILTROS = [
@@ -18,16 +15,15 @@ const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const toast = useRef(null);
+    const showNotification = useNotification();
 
-    const handleAvaliacaoCriada = () => {
+    const handleSuccess = (message) => {
         setModalShow(false);
-        toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Avaliação criada com sucesso!', life: 3000 });
+        showNotification(message || 'Avaliação criada com sucesso!', 'success');
     };
 
     return (
         <>
-            <Toast ref={toast} />
             <style>{`
                 @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes skeletonPulse { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
@@ -111,7 +107,7 @@ const Avaliacoes = () => {
             <ModalAvaliacoes
                 show={modalShow}
                 onHide={() => setModalShow(false)}
-                onClose={handleAvaliacaoCriada}
+                onSuccess={handleSuccess}
             />
         </>
     );

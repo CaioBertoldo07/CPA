@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from 'react-bootstrap';
-import ButtonCancelar from '../Buttons/Button_Cancelar';
-import ButtonCadastrar from '../Buttons/Button_Cadastrar';
+import { TextField, Button, Box, Alert } from '@mui/material';
+import MuiBaseModal from '../utils/MuiBaseModal';
 import { useEditAlternativaMutation } from '../../hooks/mutations/useAlternativaMutations';
 
 function ModalUpdateAlternativa({ show, handleClose, onSuccess, alternativa }) {
@@ -9,59 +8,97 @@ function ModalUpdateAlternativa({ show, handleClose, onSuccess, alternativa }) {
   const [error, setError] = useState('');
 
   const editMutation = useEditAlternativaMutation();
+  const loading = editMutation.isPending;
 
   useEffect(() => {
-    if (alternativa && alternativa.descricao) {
+    if (alternativa && alternativa.descricao && show) {
       setDescricao(alternativa.descricao);
+      setError('');
     }
-  }, [alternativa]);
+  }, [alternativa, show]);
 
   const handleSave = () => {
     if (!alternativa?.id) return;
+    if (!descricao.trim()) {
+      return setError('A descrição da alternativa não pode estar vazia.');
+    }
+    setError('');
 
-    editMutation.mutate({ id: alternativa.id, alternativa: { ...alternativa, descricao } }, {
+    editMutation.mutate({
+      id: alternativa.id,
+      alternativa: { ...alternativa, descricao: descricao.trim() }
+    }, {
       onSuccess: () => {
         onSuccess("Alternativa atualizada com sucesso!");
         handleClose();
       },
-      onError: () => {
-        setError("Erro ao atualizar alternativa.");
+      onError: (err) => {
+        setError(err?.response?.data?.message || err?.response?.data?.error || "Erro ao atualizar alternativa.");
       }
     });
   };
 
+  const modalActions = (
+    <>
+      <Button
+        onClick={handleClose}
+        color="inherit"
+        disabled={loading}
+        sx={{ fontWeight: 600 }}
+      >
+        Cancelar
+      </Button>
+      <Button
+        onClick={handleSave}
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        sx={{
+          fontWeight: 700,
+          minWidth: '100px'
+        }}
+      >
+        {loading ? 'Salvando...' : 'Salvar'}
+      </Button>
+    </>
+  );
 
   return (
-    <Modal show={show} onHide={handleClose} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
-      <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">
-          Nova Alternativa
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && <div className="alert alert-danger">{error}</div>}
+    <MuiBaseModal
+      open={show}
+      onClose={handleClose}
+      title="Editar Alternativa"
+      actions={modalActions}
+      isLoading={loading}
+      maxWidth="sm"
+    >
+      <Box component="form" noValidate sx={{ mt: 1 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-        <h6>Alternativas</h6>
-        <input
-          type="text"
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          id="desc-alternativa"
+          label="Descrição da Alternativa"
+          name="descricao"
+          autoFocus
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
-          style={{
-            border: '1px solid',
-            borderRadius: '4px',
-            padding: '8px',
-            boxSizing: 'border-box',
-            margin: '5px 0'
-          }}
+          disabled={loading}
+          variant="outlined"
+          placeholder="Ex: Concordo totalmente"
+          InputLabelProps={{ shrink: true }}
+          multiline
+          rows={3}
         />
-      </Modal.Body>
-      <Modal.Footer>
-        <ButtonCancelar onClick={handleClose} disabled={editMutation.isPending}>Cancelar</ButtonCancelar>
-        <ButtonCadastrar onClick={handleSave} disabled={editMutation.isPending}>
-          {editMutation.isPending ? 'Salvando...' : 'Salvar'}
-        </ButtonCadastrar>
-      </Modal.Footer>
-    </Modal>
+      </Box>
+    </MuiBaseModal>
   );
 }
+
 export default ModalUpdateAlternativa;
