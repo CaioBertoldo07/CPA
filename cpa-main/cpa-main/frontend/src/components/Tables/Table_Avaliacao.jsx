@@ -176,6 +176,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
         <>
             <style>{`
                 @keyframes skeletonPulse { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+                @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
                 .av-row:hover td { background:#f8fafc !important; }
             `}</style>
             <Toast ref={toast} />
@@ -209,11 +210,11 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '' }) => {
                                     : 'Nenhuma avaliação encontrada.'}
                             </td>
                         </tr>
-                    ) : paginated.map(item => (
+                    ) : paginated.map((item, idx) => (
                         <tr
                             key={item.id}
                             className="av-row"
-                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}
+                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms', animation: `fadeInUp 300ms ${idx * 40}ms both` }}
                         >
                             {/* Código */}
                             <td style={tdStyle}>

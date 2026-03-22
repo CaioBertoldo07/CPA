@@ -34,8 +34,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
     const navItems = [
         { path: '/relatorios', icon: <RiDashboardLine size={20} />, label: 'Dashboard' },
-        { path: '/eixos', icon: <MdOutlineAccountTree size={20} />, label: 'Eixos' },
-        { path: '/modalidades', icon: <HiOutlineBuildingOffice2 size={20} />, label: 'Dimensões' },
+        { path: '/eixos', icon: <MdOutlineAccountTree size={20} />, label: 'Eixos/Dimensões' },
+        { path: '/modalidades', icon: <HiOutlineBuildingOffice2 size={20} />, label: 'Modalidades' },
         { path: '/categorias', icon: <TbCategory size={20} />, label: 'Categorias' },
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
