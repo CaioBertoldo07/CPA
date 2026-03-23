@@ -1,6 +1,6 @@
 // src/components/Tables/Table_Avaliacao.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Form, Button, Spinner } from 'react-bootstrap';
+import { Modal, Form, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa6';
 import { IoEyeOutline } from 'react-icons/io5';
 import { BsUpload } from 'react-icons/bs';
@@ -12,7 +12,8 @@ import {
     useEnviarAvaliacaoMutation,
     useProrrogarAvaliacaoMutation
 } from '../../hooks/mutations/useAvaliacaoMutations';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales'
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const STATUS_MAP = {

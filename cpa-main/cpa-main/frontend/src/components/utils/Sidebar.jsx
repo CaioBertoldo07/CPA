@@ -8,7 +8,8 @@ import {
 import {
     MdOutlineAccountTree,
     MdOutlineQuiz,
-    MdOutlineAssignment
+    MdOutlineAssignment,
+    MdOutlineListAlt
 } from 'react-icons/md';
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import { TbCategory } from 'react-icons/tb';
@@ -37,6 +38,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { path: '/eixos', icon: <MdOutlineAccountTree size={20} />, label: 'Eixos/Dimensões' },
         { path: '/modalidades', icon: <HiOutlineBuildingOffice2 size={20} />, label: 'Modalidades' },
         { path: '/categorias', icon: <TbCategory size={20} />, label: 'Categorias' },
+        { path: '/padraoresposta', icon: <MdOutlineListAlt size={20} />, label: 'Padrões de Resposta' },
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
         { path: '/admin', icon: <RiAdminLine size={20} />, label: 'Admins' },

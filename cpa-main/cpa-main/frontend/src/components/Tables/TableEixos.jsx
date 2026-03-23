@@ -11,7 +11,8 @@ import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
 import { useDeleteEixoMutation } from '../../hooks/mutations/useEixoMutations';
 import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
 import { useDeleteDimensaoMutation } from '../../hooks/mutations/useDimensaoMutations';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales'
 import {
     Box,
     IconButton,
@@ -20,7 +21,8 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Button as MuiButton
+    Button as MuiButton,
+    Chip
 } from '@mui/material';
 import { MdExpandMore } from 'react-icons/md';
 

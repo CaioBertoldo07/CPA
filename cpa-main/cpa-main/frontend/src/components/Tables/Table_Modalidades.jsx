@@ -7,7 +7,8 @@ import { FaRegEdit } from "react-icons/fa";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales'
 import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
 
 const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {

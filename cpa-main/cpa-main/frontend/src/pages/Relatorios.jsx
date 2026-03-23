@@ -4,7 +4,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Legend,
+    Tooltip, ResponsiveContainer
 } from 'recharts';
 
 /* ───────── Icons ───────── */
@@ -319,8 +319,6 @@ const Relatorios = () => {
         { icon: <IconLock />, label: 'Encerradas', value: encerradas, topColor: '#ef4444', iconBg: '#fee2e2', delay: 140 },
         { icon: <IconDraft />, label: 'Rascunhos', value: rascunhos, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 210 },
     ];
-
-    const hasData = !loading && avaliacoes.length > 0;
 
     return (
         <>

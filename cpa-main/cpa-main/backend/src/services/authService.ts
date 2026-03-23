@@ -109,38 +109,38 @@ class AuthService {
     /**
      * Login de Desenvolvimento (Falso) para testes rápidos
      */
-    async loginDev(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
-        const { email } = data;
-        const normalizedEmail = email.trim().toLowerCase();
+    // async loginDev(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
+    //     const { email } = data;
+    //     const normalizedEmail = email.trim().toLowerCase();
 
-        const admin = await adminRepository.findByEmail(normalizedEmail);
-        const isAdmin = !!admin;
-        const role = isAdmin ? 'admin' : 'user';
-        const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
+    //     const admin = await adminRepository.findByEmail(normalizedEmail);
+    //     const isAdmin = !!admin;
+    //     const role = isAdmin ? 'admin' : 'user';
+    //     const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
-        const user: UserResponseDTO = {
-            // id: 1,
-            nome: isAdmin ? 'Administrador' : 'Usuário Dev',
-            email: normalizedEmail,
-            matricula: '1234567',
-            curso: 'CURSO_TESTE', // Usando TESTE em vez de DEV para ficar mais claro
-            unidade: 'UNIDADE_TESTE',
-            categoria: isAdmin ? 'ADMIN' : 'DISCENTE',
-            oberonPerfilNome: isAdmin ? 'ADMIN' : 'DISCENTE',
-            usuarioNome: normalizedEmail.split('@')[0],
-            role,
-            isAdmin,
-            permissions,
-            universityToken: 'fake-token-dev',
-            token: '',
-        };
+    //     const user: UserResponseDTO = {
+    //         // id: 1,
+    //         nome: isAdmin ? 'Administrador' : 'Usuário Dev',
+    //         email: normalizedEmail,
+    //         matricula: '1234567',
+    //         curso: 'CURSO_TESTE', // Usando TESTE em vez de DEV para ficar mais claro
+    //         unidade: 'UNIDADE_TESTE',
+    //         categoria: isAdmin ? 'ADMIN' : 'DISCENTE',
+    //         oberonPerfilNome: isAdmin ? 'ADMIN' : 'DISCENTE',
+    //         usuarioNome: normalizedEmail.split('@')[0],
+    //         role,
+    //         isAdmin,
+    //         permissions,
+    //         universityToken: 'fake-token-dev',
+    //         token: '',
+    //     };
 
-        const jwtSecret = process.env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
-        const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
-        user.token = token;
+    //     const jwtSecret = process.env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
+    //     const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
+    //     user.token = token;
 
-        return { token, user };
-    }
+    //     return { token, user };
+    // }
 
     /**
      * Verifica e atualiza os dados do usuário a partir do seu token JWT

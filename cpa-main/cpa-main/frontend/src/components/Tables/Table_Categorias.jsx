@@ -7,7 +7,8 @@ import { FaRegEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
 import ModalCategorias from '../Modals/Modal_Categorias';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales'
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 
 const Table_Categorias = ({ searchQuery = '', onSuccess }) => {

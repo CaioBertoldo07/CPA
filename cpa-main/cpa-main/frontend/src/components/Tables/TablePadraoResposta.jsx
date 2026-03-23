@@ -1,6 +1,6 @@
 // src/components/Tables/TablePadraoResposta.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Button, Spinner } from 'react-bootstrap';
+// import { Modal, Button, Spinner } from 'react-bootstrap';
 import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from 'react-icons/fa';
 import { useNotification } from '../../context/NotificationContext';
@@ -13,7 +13,8 @@ import { useDeletePadraoRespostaMutation } from '../../hooks/mutations/usePadrao
 import { useGetAlternativasByPadraoRespostaIdQuery } from '../../hooks/queries/useAlternativaQueries';
 import { useDeleteAlternativaMutation } from '../../hooks/mutations/useAlternativaMutations';
 import { getAlternativasByPadraoRespostaId } from '../../api/alternativas';
-import { DataGrid, ptBR } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import { ptBR } from '@mui/x-data-grid/locales'
 import {
     Box,
     IconButton,
@@ -28,7 +29,7 @@ import {
 import { MdExpandMore } from 'react-icons/md';
 
 const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
-    const { data: dataAlternativas = [], isLoading, isError } = useGetAlternativasByPadraoRespostaIdQuery(padraoId);
+    const { data: dataAlternativas = [], isLoading } = useGetAlternativasByPadraoRespostaIdQuery(padraoId);
 
     const columns = [
         {
