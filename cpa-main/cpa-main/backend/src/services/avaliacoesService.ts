@@ -10,6 +10,17 @@ const httpsAgent = new https.Agent({
 });
 
 class AvaliacoesService {
+    private mapAvaliacao(avaliacao: any): AvaliacaoResponseDTO {
+        return {
+            ...avaliacao,
+            titulo: `Avaliação CPA - ${avaliacao.periodo_letivo}`,
+            questoes: (avaliacao.avaliacao_questoes || []).map((aq: any) => ({
+                ...aq.questoes,
+                id_avaliacao_questao: aq.id
+            }))
+        } as unknown as AvaliacaoResponseDTO;
+    }
+
     async create(data: CreateAvaliacaoDTO): Promise<AvaliacaoResponseDTO> {
         const {
             unidade,
@@ -35,7 +46,7 @@ class AvaliacoesService {
 
         if (uExist.length !== unidade.length) throw new AppError('Uma ou mais unidades não encontradas.', 404);
         if (cExist.length !== cursos.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
-        if (catExist.length !== categorias.length) throw new AppError('Uma ou mais categorias não encontradas.', 404);
+        if (catExist.length !== categorias.length) throw new AppError('Uma ou mais categorias não encontrados.', 404);
         if (modExist.length !== modalidade.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
         if (qExist.length !== questoes.length) throw new AppError('Uma ou mais questões não encontradas.', 404);
 
@@ -56,11 +67,12 @@ class AvaliacoesService {
             categorias: { connect: categorias.map(id => ({ id })) },
         });
 
-        return (avaliacao as unknown) as AvaliacaoResponseDTO;
+        return this.mapAvaliacao(avaliacao);
     }
 
     async getAll(): Promise<AvaliacaoResponseDTO[]> {
-        return (await avaliacaoRepository.findMany() as unknown) as AvaliacaoResponseDTO[];
+        const avaliacoes = await avaliacaoRepository.findMany();
+        return avaliacoes.map(a => this.mapAvaliacao(a));
     }
 
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
@@ -74,7 +86,7 @@ class AvaliacoesService {
 
         const avaliacoesNaoRespondidas = avaliacoes.filter(a => !respondidasIds.has(a.id));
 
-        return (avaliacoesNaoRespondidas as unknown) as AvaliacaoResponseDTO[];
+        return avaliacoesNaoRespondidas.map(a => this.mapAvaliacao(a));
     }
 
     async getById(id: number, user?: UserResponseDTO): Promise<AvaliacaoResponseDTO> {
@@ -110,7 +122,12 @@ class AvaliacoesService {
             }
         }
 
-        return (avaliacao as unknown) as AvaliacaoResponseDTO;
+        return this.mapAvaliacao(avaliacao);
+    }
+
+    async hasUserResponded(matricula: string, idAvaliacao: number): Promise<boolean> {
+        const resposta = await avaliacaoRepository.findRespostaDoAvaliador(matricula, idAvaliacao);
+        return !!resposta;
     }
 
     async switchStatus(id: number, newStatus: number): Promise<AvaliacaoResponseDTO> {
