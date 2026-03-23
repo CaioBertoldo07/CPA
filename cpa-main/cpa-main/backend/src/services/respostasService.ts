@@ -85,7 +85,9 @@ class RespostasService {
             include: {
                 questoes: {
                     include: {
-                        dimensoes: true,
+                        dimensoes: {
+                            include: { eixos: true }
+                        },
                         questoes_adicionais: true
                     }
                 }
@@ -110,29 +112,45 @@ class RespostasService {
         ]).size;
 
         const relatorio: any = {};
+        const questionMap: Record<number, any> = {};
 
-        // 3. Inicializar a estrutura a partir das questões da avaliação
+        // 3. Inicializar a estrutura Hierárquica: Eixo -> Dimensão -> Questões
         avaliacaoQuestoes.forEach((aq: any) => {
             const questao = aq.questoes;
             if (!questao) return;
 
-            const eixoNome = questao.dimensoes?.nome || 'Sem Eixo';
-            const questaoDescricao = questao.descricao;
+            const eixo = questao.dimensoes?.eixos;
+            const dimensao = questao.dimensoes;
 
-            if (!relatorio[eixoNome]) {
-                relatorio[eixoNome] = { questoes: [] };
+            const eixoKey = eixo ? `${eixo.numero} - ${eixo.nome}` : 'Sem Eixo';
+            const dimensaoKey = dimensao ? `${dimensao.numero} - ${dimensao.nome}` : 'Sem Dimensão';
+
+            if (!relatorio[eixoKey]) {
+                relatorio[eixoKey] = {
+                    nome: eixo?.nome || 'Sem Eixo',
+                    numero: eixo?.numero || 0,
+                    dimensoes: {}
+                };
+            }
+
+            if (!relatorio[eixoKey].dimensoes[dimensaoKey]) {
+                relatorio[eixoKey].dimensoes[dimensaoKey] = {
+                    nome: dimensao?.nome || 'Sem Dimensão',
+                    numero: dimensao?.numero || 0,
+                    questoes: []
+                };
             }
 
             const qData: any = {
                 id_avaliacao_questoes: aq.id,
-                descricao: questaoDescricao,
+                descricao: questao.descricao,
                 tipo: questao.id_questoes_tipo,
+                dimensao: dimensao?.nome || 'Sem Dimensão',
                 respostas: {},
                 totalRespostas: 0,
                 adicionais: {}
             };
 
-            // Inicializar sub-itens se for grade (tipo 2)
             if (questao.id_questoes_tipo === 2 && questao.questoes_adicionais) {
                 questao.questoes_adicionais.forEach((qa: any) => {
                     qData.adicionais[qa.descricao] = {
@@ -143,63 +161,56 @@ class RespostasService {
                 });
             }
 
-            relatorio[eixoNome].questoes.push(qData);
+            relatorio[eixoKey].dimensoes[dimensaoKey].questoes.push(qData);
+            questionMap[aq.id] = qData;
         });
 
         // 4. Preencher com respostas padrão
         respostasPadrao.forEach((r: any) => {
-            // Encontrar a questão no relatório
-            Object.values(relatorio).forEach((eixo: any) => {
-                const q = eixo.questoes.find((q: any) => q.id_avaliacao_questoes === r.id_avaliacao_questoes);
-                if (q) {
-                    const alternativa = r.resposta;
-                    if (!q.respostas[alternativa]) {
-                        q.respostas[alternativa] = { absoluto: 0, porcentagem: "0.00" };
-                    }
-                    q.respostas[alternativa].absoluto += 1;
-                    q.totalRespostas += 1;
+            const q = questionMap[r.id_avaliacao_questoes];
+            if (q) {
+                const alternativa = r.resposta;
+                if (!q.respostas[alternativa]) {
+                    q.respostas[alternativa] = { absoluto: 0, porcentagem: "0.00" };
                 }
-            });
+                q.respostas[alternativa].absoluto += 1;
+                q.totalRespostas += 1;
+            }
         });
 
         // 5. Preencher com respostas grade
         respostasGrade.forEach((rg: any) => {
-            Object.values(relatorio).forEach((eixo: any) => {
-                const q = eixo.questoes.find((q: any) => q.id_avaliacao_questoes === rg.id_avaliacao_questoes);
-                if (q && q.tipo === 2) {
-                    const alternativa = rg.resposta;
-                    const adicionalId = rg.adicionalId;
+            const q = questionMap[rg.id_avaliacao_questoes];
+            if (q && q.tipo === 2) {
+                const alternativa = rg.resposta;
+                const adicionalId = rg.adicionalId;
 
-                    // Encontrar o sub-item pelo ID (precisamos do nome na estrutura)
-                    const subItemNome = Object.keys(q.adicionais).find(name => q.adicionais[name].id === adicionalId);
-                    if (subItemNome) {
-                        const grupo = q.adicionais[subItemNome];
-                        if (!grupo.respostas[alternativa]) {
-                            grupo.respostas[alternativa] = { absoluto: 0, porcentagem: "0.00" };
-                        }
-                        grupo.respostas[alternativa].absoluto += 1;
-                        grupo.totalRespostas += 1;
+                const subItemNome = Object.keys(q.adicionais).find(name => q.adicionais[name].id === adicionalId);
+                if (subItemNome) {
+                    const grupo = q.adicionais[subItemNome];
+                    if (!grupo.respostas[alternativa]) {
+                        grupo.respostas[alternativa] = { absoluto: 0, porcentagem: "0.00" };
                     }
+                    grupo.respostas[alternativa].absoluto += 1;
+                    grupo.totalRespostas += 1;
                 }
-            });
+            }
         });
 
         // 6. Calcular porcentagens
-        Object.values(relatorio).forEach((eixo: any) => {
-            eixo.questoes.forEach((q: any) => {
-                if (q.totalRespostas > 0) {
-                    Object.keys(q.respostas).forEach(alt => {
-                        q.respostas[alt].porcentagem = ((q.respostas[alt].absoluto / q.totalRespostas) * 100).toFixed(2);
+        Object.values(questionMap).forEach((q: any) => {
+            if (q.totalRespostas > 0) {
+                Object.keys(q.respostas).forEach(alt => {
+                    q.respostas[alt].porcentagem = ((q.respostas[alt].absoluto / q.totalRespostas) * 100).toFixed(2);
+                });
+            }
+            Object.keys(q.adicionais).forEach(sub => {
+                const g = q.adicionais[sub];
+                if (g.totalRespostas > 0) {
+                    Object.keys(g.respostas).forEach(alt => {
+                        g.respostas[alt].porcentagem = ((g.respostas[alt].absoluto / g.totalRespostas) * 100).toFixed(2);
                     });
                 }
-                Object.keys(q.adicionais).forEach(sub => {
-                    const g = q.adicionais[sub];
-                    if (g.totalRespostas > 0) {
-                        Object.keys(g.respostas).forEach(alt => {
-                            g.respostas[alt].porcentagem = ((g.respostas[alt].absoluto / g.totalRespostas) * 100).toFixed(2);
-                        });
-                    }
-                });
             });
         });
 

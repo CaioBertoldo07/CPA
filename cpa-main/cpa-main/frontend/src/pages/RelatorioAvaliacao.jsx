@@ -6,6 +6,10 @@ import {
 } from 'recharts';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQueries';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 /* ─────────────────────────── constants ─────────────────────────── */
 
@@ -28,56 +32,8 @@ const fmt = d => {
     return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
 };
 
-/**
- * O backend agora retorna os dados já processados e agrupados por eixo.
- * Esta função apenas achata o relatório para uma lista de questões se necessário,
- * ou adapta o formato para o componente QuestaoCard.
- */
 
-const processarQuestoes = (data) => {
-    if (!data || !data.relatorio) return [];
 
-    const questoesAchatadas = [];
-    Object.keys(data.relatorio).forEach(eixoNome => {
-        const eixo = data.relatorio[eixoNome];
-        eixo.questoes.forEach(q => {
-            // Adapta o formato pré-processado do backend para o que o QuestaoCard espera
-            // Se for do tipo grade, precisamos consolidar as respostas dos subitens para o gráfico geral da questão
-            const alternativasConsolidadas = { ...q.respostas };
-            let totalGeral = q.totalRespostas;
-
-            if (Object.keys(q.adicionais || {}).length > 0) {
-                Object.values(q.adicionais).forEach((subitem) => {
-                    totalGeral += subitem.totalRespostas;
-                    Object.entries(subitem.respostas).forEach(([label, info]) => {
-                        if (!alternativasConsolidadas[label]) {
-                            alternativasConsolidadas[label] = 0;
-                        }
-                        alternativasConsolidadas[label] += info.absoluto;
-                    });
-                });
-            } else {
-                // Para questões padrão, converte o objeto { 'Sim': { absoluto: 1, ... } } para { 'Sim': 1 }
-                Object.keys(alternativasConsolidadas).forEach(label => {
-                    alternativasConsolidadas[label] = alternativasConsolidadas[label].absoluto;
-                });
-            }
-
-            questoesAchatadas.push({
-                id: q.id || Math.random(),
-                descricao: q.descricao,
-                dimensao: eixoNome,
-                tipo: q.tipo === 2 ? 'grade' : 'padrao',
-                total: totalGeral,
-                alternativas: alternativasConsolidadas,
-                adicionais: q.adicionais || {}, // Preserva as subquestões
-                original: q
-            });
-        });
-    });
-
-    return questoesAchatadas;
-};
 
 /* ─────────────────────────── shared UI ─────────────────────────── */
 
@@ -203,8 +159,13 @@ const DonutLegend = ({ data }) => (
 /* ─────────────────────────── QuestaoCard ─────────────────────────── */
 
 const QuestaoCard = ({ questao, idx }) => {
-    const rawEntries = Object.entries(questao.alternativas)
-        .map(([alt, count]) => ({ name: alt, count }))
+    // Busca as respostas consolidadas (padrao ou grade consolidada)
+    const resps = questao.respostas || {};
+    const rawEntries = Object.entries(resps)
+        .map(([alt, info]) => ({ 
+            name: alt, 
+            count: typeof info === 'object' ? info.absoluto : info 
+        }))
         .sort((a, b) => b.count - a.count);
 
     const top = rawEntries.slice(0, 5);
@@ -312,11 +273,11 @@ const QuestaoCard = ({ questao, idx }) => {
                     {/* Se for grade, mostra as subquestões detalhadas cada uma com seu próprio layout de 3 colunas ou adaptado */}
                     {questao.tipo === 'grade' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                            {Object.entries(questao.adicionais).map(([subNome, subDados], sIdx) => {
-                                const subChartData = Object.entries(subDados.respostas).map(([alt, info]) => ({
+                            {Object.entries(questao.adicionais || {}).map(([subNome, subDados], sIdx) => {
+                                const subChartData = Object.entries(subDados?.respostas || {}).map(([alt, info]) => ({
                                     name: alt,
-                                    count: info.absoluto,
-                                    pct: info.porcentagem
+                                    count: info?.absoluto || 0,
+                                    pct: info?.porcentagem || 0
                                 })).sort((a, b) => b.count - a.count);
 
                                 return (
@@ -396,46 +357,88 @@ const RelatorioAvaliacao = () => {
     const { data: avaliacao, isLoading: loadingAvaliacao, isError: isErrorAvaliacao } = useGetAvaliacaoByIdQuery(id);
     const { data: reportData, isLoading: loadingRespostas, isError: isErrorRespostas } = useGetRespostasPorAvaliacaoQuery(id);
 
-    const questoesProcessadas = useMemo(() => processarQuestoes(reportData), [reportData]);
+    const questoesAchatadas = useMemo(() => {
+        if (!reportData?.relatorio) return [];
+        const flat = [];
+        Object.values(reportData.relatorio).forEach(eixo => {
+            Object.values(eixo.dimensoes).forEach(dim => {
+                dim.questoes.forEach(q => {
+                    const alternativasConsolidadas = { ...q.respostas };
+                    let totalGeral = q.totalRespostas;
+                    if (Object.keys(q.adicionais || {}).length > 0) {
+                        Object.values(q.adicionais).forEach((subitem) => {
+                            Object.entries(subitem.respostas || {}).forEach(([alt, resp]) => {
+                                if (!alternativasConsolidadas[alt]) {
+                                    alternativasConsolidadas[alt] = { absoluto: 0, porcentagem: "0.00" };
+                                }
+                                alternativasConsolidadas[alt].absoluto += resp.absoluto;
+                            });
+                        });
+                        totalGeral = Object.values(alternativasConsolidadas).reduce((sum, curr) => sum + curr.absoluto, 0);
+                        if (totalGeral > 0) {
+                            Object.keys(alternativasConsolidadas).forEach(alt => {
+                                alternativasConsolidadas[alt].porcentagem = ((alternativasConsolidadas[alt].absoluto / totalGeral) * 100).toFixed(2);
+                            });
+                        }
+                    }
+                    flat.push({ ...q, total: totalGeral, dimensao: dim.nome, tipo: q.tipo === 2 ? 'grade' : 'padrao' });
+                });
+            });
+        });
+        return flat;
+    }, [reportData]);
 
     const totalRespostas = useMemo(
-        () => questoesProcessadas.reduce((acc, q) => acc + q.total, 0),
-        [questoesProcessadas],
+        () => questoesAchatadas.reduce((acc, q) => acc + q.total, 0),
+        [questoesAchatadas],
     );
 
-    // /api/avaliacoes/:id pode incluir avaliacao_questoes se o endpoint retornar esse relacionamento
     const totalQuestoesAvaliacao = avaliacao?.avaliacao_questoes?.length ?? null;
 
     const dimensaoData = useMemo(() => {
         const counts = {};
-        questoesProcessadas.forEach(q => {
+        questoesAchatadas.forEach(q => {
             const dim = q.dimensao || '—';
             counts[dim] = (counts[dim] || 0) + q.total;
         });
         return Object.entries(counts)
             .map(([name, total]) => ({ name, total }))
             .sort((a, b) => b.total - a.total);
-    }, [questoesProcessadas]);
+    }, [questoesAchatadas]);
 
     const tipoData = useMemo(() => [
-        { name: 'Padrão', value: questoesProcessadas.filter(q => q.tipo === 'padrao').length, color: TIPO_COLORS.padrao },
-        { name: 'Grade', value: questoesProcessadas.filter(q => q.tipo === 'grade').length, color: TIPO_COLORS.grade },
-    ].filter(d => d.value > 0), [questoesProcessadas]);
+        { name: 'Padrão', value: questoesAchatadas.filter(q => q.tipo === 1).length, color: TIPO_COLORS.padrao },
+        { name: 'Grade', value: questoesAchatadas.filter(q => q.tipo === 2).length, color: TIPO_COLORS.grade },
+    ].filter(d => d.value > 0), [questoesAchatadas]);
+
+    const questoesRespondidas = questoesAchatadas.filter(q => q.total > 0).length;
+
+    const stats = [
+        { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
+        { icon: '✅', label: 'Questões Respondidas', value: questoesRespondidas, topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70 },
+        ...(totalQuestoesAvaliacao !== null
+            ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
+            : []),
+    ];
 
     /* ── loading / error states ── */
 
-    if (loadingAvaliacao) return (
-        <>
-            <style>{`@keyframes skeletonPulse{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
-            <div style={{ width: '100%', maxWidth: '1600px', paddingTop: 32 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 680 }}>
-                    <SkeletonBlock h={32} w="50%" />
-                    <SkeletonBlock h={16} w="35%" />
+    if (loadingAvaliacao || loadingRespostas) return (
+        <div style={{ width: '100%', maxWidth: '1600px', margin: '0 auto', paddingTop: 32 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <SkeletonBlock h={40} w="60%" />
+                <SkeletonBlock h={20} w="40%" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
+                    <SkeletonBlock h={120} />
                     <SkeletonBlock h={120} />
                     <SkeletonBlock h={120} />
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 16 }}>
+                    <SkeletonBlock h={300} />
+                    <SkeletonBlock h={300} />
+                </div>
             </div>
-        </>
+        </div>
     );
 
     if (isErrorAvaliacao) return (
@@ -451,18 +454,6 @@ const RelatorioAvaliacao = () => {
             </div>
         </div>
     );
-
-    const questoesRespondidas = questoesProcessadas.filter(q => q.total > 0).length;
-
-    const stats = [
-
-        { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
-        { icon: '✅', label: 'Questões Respondidas', value: questoesProcessadas.length, topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70 },
-
-        ...(totalQuestoesAvaliacao !== null
-            ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
-            : []),
-    ];
 
     return (
         <>
@@ -656,15 +647,90 @@ const RelatorioAvaliacao = () => {
                         <div style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 14, padding: 20, color: '#92400e', fontSize: 13 }}>
                             Não foi possível carregar as respostas desta avaliação.
                         </div>
-                    ) : questoesProcessadas.length === 0 ? (
+                    ) : Object.keys(reportData?.relatorio || {}).length === 0 ? (
                         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '48px 24px', textAlign: 'center', color: '#718096' }}>
                             <div style={{ fontSize: 40, marginBottom: 12 }}>📝</div>
                             <p style={{ margin: 0, fontSize: 14 }}>Esta avaliação ainda não possui respostas registradas.</p>
                         </div>
                     ) : (
-                        <div className="questoes-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                            {questoesProcessadas.map((q, idx) => (
-                                <QuestaoCard key={q.id ?? idx} questao={q} idx={idx} />
+                        <div className="eixos-container" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                            {Object.entries(reportData.relatorio).sort((a, b) => a[1].numero - b[1].numero).map(([eixoKey, eixo]) => (
+                                <Accordion 
+                                    key={eixoKey} 
+                                    defaultExpanded 
+                                    sx={{ 
+                                        borderRadius: '16px !important', 
+                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)',
+                                        border: '1px solid #e2e8f0',
+                                        '&:before': { display: 'none' }
+                                    }}
+                                >
+                                    <AccordionSummary 
+                                        expandIcon={<ExpandMoreIcon />}
+                                        sx={{ 
+                                            background: '#f8fafc', 
+                                            borderRadius: '16px 16px 0 0',
+                                            padding: '12px 24px',
+                                            '& .MuiAccordionSummary-content': { margin: '12px 0' }
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{ background: '#2e7d32', color: '#fff', width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>
+                                                {eixo.numero}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: 14, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Eixo {eixo.numero}</div>
+                                                <div style={{ fontSize: 18, fontWeight: 700, color: '#1a202c' }}>{eixo.nome}</div>
+                                            </div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails sx={{ padding: '24px', background: '#fff', borderRadius: '0 0 16px 16px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                            {Object.entries(eixo.dimensoes).sort((a, b) => a[1].numero - b[1].numero).map(([dimKey, dim]) => (
+                                                <div key={dimKey}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 10, borderBottom: '1.5px solid #f1f5f9' }}>
+                                                        <div style={{ fontSize: 15, fontWeight: 700, color: '#2e7d32' }}>Dimensão {dim.numero}:</div>
+                                                        <div style={{ fontSize: 15, fontWeight: 600, color: '#4a5568' }}>{dim.nome}</div>
+                                                    </div>
+                                                    <div className="questoes-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                                                        {dim.questoes.map((q, qIdx) => {
+                                                            // Adaptar formato para QuestaoCard localmente
+                                                            const alternativasConsolidadas = { ...q.respostas };
+                                                            let totalGeral = q.totalRespostas;
+
+                                                            if (Object.keys(q.adicionais || {}).length > 0) {
+                                                                Object.values(q.adicionais).forEach((subitem) => {
+                                                                    Object.entries(subitem.respostas || {}).forEach(([alt, resp]) => {
+                                                                        if (!alternativasConsolidadas[alt]) {
+                                                                            alternativasConsolidadas[alt] = { absoluto: 0, porcentagem: "0.00" };
+                                                                        }
+                                                                        alternativasConsolidadas[alt].absoluto += resp.absoluto;
+                                                                    });
+                                                                });
+
+                                                                totalGeral = Object.values(alternativasConsolidadas).reduce((sum, curr) => sum + curr.absoluto, 0);
+                                                                if (totalGeral > 0) {
+                                                                    Object.keys(alternativasConsolidadas).forEach(alt => {
+                                                                        alternativasConsolidadas[alt].porcentagem = ((alternativasConsolidadas[alt].absoluto / totalGeral) * 100).toFixed(2);
+                                                                    });
+                                                                }
+                                                            }
+
+                                                            const qProcessada = {
+                                                                ...q,
+                                                                respostas: alternativasConsolidadas,
+                                                                total: totalGeral,
+                                                                tipo: q.tipo === 2 ? 'grade' : 'padrao'
+                                                            };
+
+                                                            return <QuestaoCard key={q.id_avaliacao_questoes ?? qIdx} questao={qProcessada} idx={qIdx} />;
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
                             ))}
                         </div>
                     )}
