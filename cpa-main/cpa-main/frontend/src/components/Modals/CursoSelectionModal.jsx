@@ -1,0 +1,226 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    TextField,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Checkbox,
+    Paper,
+    InputAdornment,
+    Typography,
+    Box,
+    Alert,
+    Button,
+    CircularProgress
+} from '@mui/material';
+import { IoSearchOutline } from 'react-icons/io5';
+import MuiBaseModal from '../utils/MuiBaseModal';
+import { useGetCursosByUnidadesQuery } from '../../hooks/queries/useCursoQueries';
+
+function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas }) {
+    const [selectedCursos, setSelectedCursos] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const unidadesIds = unidadesSelecionadas?.map(u => u.value) || [];
+    const {
+        data: response = [],
+        isLoading: loading,
+        isError,
+        error: queryError
+    } = useGetCursosByUnidadesQuery(unidadesIds);
+
+    // Normaliza a resposta
+    const cursos = useMemo(() => {
+        let raw = [];
+        if (Array.isArray(response)) {
+            raw = response;
+        } else if (response && Array.isArray(response.data)) {
+            raw = response.data;
+        } else if (response && Array.isArray(response.cursos)) {
+            raw = response.cursos;
+        } else if (response && typeof response === 'object') {
+            const firstArray = Object.values(response).find(v => Array.isArray(v));
+            if (firstArray) raw = firstArray;
+        }
+        return raw;
+    }, [response]);
+
+    // Filtragem por busca
+    const filteredCursos = useMemo(() => {
+        if (!searchTerm.trim()) return cursos;
+        const lowerSearch = searchTerm.toLowerCase();
+        return cursos.filter(c =>
+            (c.nome?.toLowerCase().includes(lowerSearch)) ||
+            (c.identificador_api_lyceum?.toString().toLowerCase().includes(lowerSearch)) ||
+            (c.modalidade?.toLowerCase().includes(lowerSearch))
+        );
+    }, [cursos, searchTerm]);
+
+    const error = isError ? (queryError?.response?.data?.error || queryError?.message || 'Erro ao carregar cursos.') : '';
+
+    useEffect(() => {
+        if (!show) {
+            setSelectedCursos([]);
+            setSearchTerm('');
+        }
+    }, [show]);
+
+    const handleSelectCurso = (curso) => {
+        const key = curso.identificador_api_lyceum ?? curso.id;
+        const isSelected = selectedCursos.some(
+            c => (c.identificador_api_lyceum ?? c.id) === key
+        );
+        if (isSelected) {
+            setSelectedCursos(prev => prev.filter(c => (c.identificador_api_lyceum ?? c.id) !== key));
+        } else {
+            setSelectedCursos(prev => [...prev, curso]);
+        }
+    };
+
+    const handleSelectAll = () => {
+        if (selectedCursos.length === filteredCursos.length) {
+            setSelectedCursos([]);
+        } else {
+            setSelectedCursos(filteredCursos);
+        }
+    };
+
+    const handleConfirmSelection = () => {
+        onCursosSelected(selectedCursos);
+        onHide();
+    };
+
+    const isAllSelected = filteredCursos.length > 0 && selectedCursos.length === filteredCursos.length;
+
+    const modalActions = (
+        <>
+            <Button onClick={onHide} color="inherit" sx={{ fontWeight: 600 }}>
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleConfirmSelection}
+                variant="contained"
+                color="primary"
+                disabled={selectedCursos.length === 0}
+                sx={{ fontWeight: 700, minWidth: '150px' }}
+            >
+                Confirmar Seleção ({selectedCursos.length})
+            </Button>
+        </>
+    );
+
+    return (
+        <MuiBaseModal
+            open={show}
+            onClose={onHide}
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    🎓 Selecionar Cursos
+                    {selectedCursos.length > 0 && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontWeight: 700
+                            }}
+                        >
+                            {selectedCursos.length} selecionado(s)
+                        </Typography>
+                    )}
+                </Box>
+            }
+            actions={modalActions}
+            maxWidth="md"
+        >
+            <Box sx={{ mb: 2 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Buscar curso por nome, código ou modalidade..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <IoSearchOutline />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ backgroundColor: 'white' }}
+                />
+            </Box>
+
+            <Box sx={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                {loading ? (
+                    <Box sx={{ textAlign: 'center', py: 6 }}>
+                        <CircularProgress size={30} sx={{ mb: 2 }} />
+                        <Typography color="text.secondary">Carregando cursos disponíveis...</Typography>
+                    </Box>
+                ) : error ? (
+                    <Alert severity="error">{error}</Alert>
+                ) : filteredCursos.length > 0 ? (
+                    <TableContainer component={Paper} variant="outlined" sx={{ border: 'none' }}>
+                        <Table stickyHeader size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell padding="checkbox" sx={{ bgcolor: 'grey.50' }}>
+                                        <Checkbox
+                                            indeterminate={selectedCursos.length > 0 && selectedCursos.length < filteredCursos.length}
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAll}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Código</TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Curso</TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Modalidade</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filteredCursos.map((curso) => {
+                                    const key = curso.identificador_api_lyceum ?? curso.id;
+                                    const isSelected = selectedCursos.some(
+                                        c => (c.identificador_api_lyceum ?? c.id) === key
+                                    );
+                                    return (
+                                        <TableRow
+                                            key={key}
+                                            hover
+                                            onClick={() => handleSelectCurso(curso)}
+                                            selected={isSelected}
+                                            sx={{ cursor: 'pointer' }}
+                                        >
+                                            <TableCell padding="checkbox">
+                                                <Checkbox checked={isSelected} size="small" />
+                                            </TableCell>
+                                            <TableCell>{curso.identificador_api_lyceum ?? curso.id ?? '—'}</TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{curso.nome ?? curso.name ?? '—'}</TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" sx={{ px: 1, py: 0.25, bgcolor: 'grey.200', borderRadius: 1 }}>
+                                                    {curso.modalidade ?? '—'}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                ) : (
+                    <Alert severity="info">
+                        {searchTerm ? 'Nenhum curso corresponde à sua busca.' : 'Nenhum curso encontrado para as unidades selecionadas.'}
+                    </Alert>
+                )}
+            </Box>
+        </MuiBaseModal>
+    );
+}
+
+export default CursoSelectionModal;

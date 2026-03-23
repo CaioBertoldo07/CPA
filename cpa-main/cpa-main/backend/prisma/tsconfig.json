@@ -1,0 +1,14 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "..",
+        "outDir": "../dist-seed",
+        "noEmit": true,
+        "types": [
+            "node"
+        ]
+    },
+    "include": [
+        "seed.ts"
+    ]
+}
