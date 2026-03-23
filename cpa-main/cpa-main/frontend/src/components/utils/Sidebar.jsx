@@ -3,7 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
     RiDashboardLine,
     RiAdminLine,
-    RiSettings4Line
+    RiSettings4Line,
+    RiCalendarLine
 } from 'react-icons/ri';
 import {
     MdOutlineAccountTree,
@@ -41,6 +42,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { path: '/padraoresposta', icon: <MdOutlineListAlt size={20} />, label: 'Padrões de Resposta' },
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
+        { path: '/agenda', icon: <RiCalendarLine size={20} />, label: 'Agenda' },
         { path: '/admin', icon: <RiAdminLine size={20} />, label: 'Admins' },
     ];
 
