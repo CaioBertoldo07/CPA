@@ -91,9 +91,11 @@ const AvaliacaoAlunos = () => {
     }, [avaliacaoId, token, navigate, jaRespondeu, isErrorAvaliacao, showNotification]);
 
     useEffect(() => {
-        const total = avaliacao?.avaliacao_questoes?.reduce((acc, curr) =>
-            acc + (curr.questoes.questoesAdicionais?.length || 1), 0) || 0;
-        const respondidas = Object.keys(respostas).length;
+        const total = avaliacao?.avaliacao_questoes?.reduce((acc, curr) => {
+            const sub = curr.questoes.questoesAdicionais || curr.questoes.questoes_adicionais || [];
+            return acc + (sub.length > 0 ? sub.length : 1);
+        }, 0) || 0;
+        const respondidas = Object.values(respostas).filter(v => v !== undefined && v !== null).length;
         setProgresso(total > 0 ? Math.round((respondidas / total) * 100) : 0);
     }, [respostas, avaliacao]);
 
