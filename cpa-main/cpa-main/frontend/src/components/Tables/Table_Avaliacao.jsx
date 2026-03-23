@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa6';
-import { IoEyeOutline } from 'react-icons/io5';
+import { IoEyeOutline, IoSearchOutline } from 'react-icons/io5';
 import { BsUpload } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../context/NotificationContext';
@@ -44,7 +44,7 @@ const StatusBadge = ({ status }) => {
 
 const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes }) => {
     const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
@@ -152,7 +152,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 350,
+            width: 420,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
@@ -160,7 +160,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
             renderCell: (params) => (
                 <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: '80px 110px 80px',
+                    gridTemplateColumns: '100px 80px 110px 80px',
                     gap: 1,
                     height: '100%',
                     alignItems: 'center',
@@ -168,6 +168,29 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                     width: '100%',
                     pr: 1
                 }}>
+                    {/* Ver Detalhes */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <Tooltip title="Ver detalhes">
+                            <MuiButton
+                                size="small"
+                                variant="text"
+                                startIcon={<IoSearchOutline size={15} />}
+                                onClick={() => onVerDetalhes?.(params.row.id)}
+                                sx={{
+                                    color: '#7c3aed',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    minWidth: 'auto',
+                                    '&:hover': { bgcolor: '#ede9fe' }
+                                }}
+                            >
+                                Detalhes
+                            </MuiButton>
+                        </Tooltip>
+                    </Box>
+
+                    {/* Ver relatório */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                         <Tooltip title="Ver relatório">
                             <MuiButton

@@ -54,6 +54,25 @@ const Agenda = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [filterStatus, setFilterStatus] = useState(null);
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo] = useState('');
+    const [filterAno, setFilterAno] = useState(null);
+    const [filterSemestre, setFilterSemestre] = useState(null);
+
+    const hasActiveFilters = filterStatus !== null || filterDateFrom || filterDateTo || filterAno;
+
+    const clearAllFilters = () => {
+        setFilterStatus(null);
+        setFilterDateFrom('');
+        setFilterDateTo('');
+        setFilterAno(null);
+        setFilterSemestre(null);
+    };
+
+    const handleAnoClick = (ano) => {
+        if (filterAno === ano) { setFilterAno(null); setFilterSemestre(null); }
+        else { setFilterAno(ano); setFilterSemestre(null); }
+    };
 
     // Converte data_inicio/data_fim que podem vir como:
     //   "YYYY-MM-DD"                 → sem "T", adiciona "T00:00:00" (horário local)
@@ -81,15 +100,34 @@ const Agenda = () => {
             );
         }
 
+        const from = filterDateFrom ? new Date(filterDateFrom + 'T00:00:00') : null;
+        const to   = filterDateTo   ? new Date(filterDateTo   + 'T23:59:59') : null;
+
         return avaliacoes
             .filter(a => {
                 const status = Number(a.status);
                 return filterStatus ? status === filterStatus : true;
             })
             .filter(a => {
+                if (!filterAno) return true;
+                const [ano, sem] = (a.periodo_letivo || '').split('.');
+                if (ano !== filterAno) return false;
+                if (filterSemestre && sem !== filterSemestre) return false;
+                return true;
+            })
+            .filter(a => {
                 const start = parseDate(a.data_inicio);
                 const end   = parseDate(a.data_fim, true);
                 return start !== null && end !== null;
+            })
+            .filter(a => {
+                if (!from && !to) return true;
+                const start = parseDate(a.data_inicio);
+                const end   = parseDate(a.data_fim, true);
+                // sobreposição: o evento começa antes do fim do range E termina depois do início
+                if (from && end < from) return false;
+                if (to   && start > to) return false;
+                return true;
             })
             .map(a => {
                 const status = Number(a.status);
@@ -107,7 +145,7 @@ const Agenda = () => {
                     modalidades,
                 };
             });
-    }, [avaliacoes, filterStatus]);
+    }, [avaliacoes, filterStatus, filterAno, filterSemestre, filterDateFrom, filterDateTo]);
 
     const eventStyleGetter = (event) => {
         const s = STATUS_MAP[event.status] || STATUS_MAP[1];
@@ -139,6 +177,23 @@ const Agenda = () => {
         enviada:   avaliacoes.filter(a => Number(a.status) === 2).length,
         encerrada: avaliacoes.filter(a => Number(a.status) === 3).length,
     }), [avaliacoes]);
+
+    // Períodos letivos únicos → mapa { ano: [semestres] } → lista de anos
+    const { semestresPorAno, anos } = useMemo(() => {
+        const map = {};
+        avaliacoes.forEach(a => {
+            const p = a.periodo_letivo;
+            if (!p) return;
+            const [ano, sem] = p.split('.');
+            if (!ano) return;
+            if (!map[ano]) map[ano] = [];
+            if (sem && !map[ano].includes(sem)) map[ano].push(sem);
+        });
+        // ordena os semestres dentro de cada ano
+        Object.values(map).forEach(sems => sems.sort());
+        const anosOrdenados = Object.keys(map).sort((a, b) => b.localeCompare(a));
+        return { semestresPorAno: map, anos: anosOrdenados };
+    }, [avaliacoes]);
 
     return (
         <>
@@ -224,6 +279,175 @@ const Agenda = () => {
                     ))}
                 </div>
 
+                {/* ── Filtros de data e período ── */}
+                <div style={{
+                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
+                    padding: '14px 18px', marginBottom: 18,
+                    display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}>
+                    {/* ── Ícone + label ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                        </svg>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>Filtros</span>
+                    </div>
+
+                    <div style={{ width: 1, height: 24, background: '#e2e8f0', flexShrink: 0 }} />
+
+                    {/* ── Data de ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', whiteSpace: 'nowrap', marginBottom: 0, textTransform: 'uppercase' }}>Período a ser Avaliado:</p>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>De</span>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: '#f8fafc', border: `1.5px solid ${filterDateFrom ? '#1D5E24' : '#e2e8f0'}`,
+                            borderRadius: 8, padding: '5px 10px', transition: 'border-color 150ms',
+                        }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={filterDateFrom ? '#1D5E24' : '#94a3b8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            <input
+                                type="date"
+                                value={filterDateFrom}
+                                max={filterDateTo || undefined}
+                                onChange={e => setFilterDateFrom(e.target.value)}
+                                style={{
+                                    border: 'none', outline: 'none', background: 'transparent',
+                                    fontSize: 12, color: '#1a202c', fontFamily: 'inherit', cursor: 'pointer',
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* ── Data até ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>Até</span>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: '#f8fafc', border: `1.5px solid ${filterDateTo ? '#1D5E24' : '#e2e8f0'}`,
+                            borderRadius: 8, padding: '5px 10px', transition: 'border-color 150ms',
+                        }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={filterDateTo ? '#1D5E24' : '#94a3b8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" />
+                            </svg>
+                            <input
+                                type="date"
+                                value={filterDateTo}
+                                min={filterDateFrom || undefined}
+                                onChange={e => setFilterDateTo(e.target.value)}
+                                style={{
+                                    border: 'none', outline: 'none', background: 'transparent',
+                                    fontSize: 12, color: '#1a202c', fontFamily: 'inherit', cursor: 'pointer',
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* ── Período letivo (hierárquico) ── */}
+                    {anos.length > 0 && (
+                        <>
+                            <div style={{ width: 1, height: 24, background: '#e2e8f0', flexShrink: 0 }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                                {/* Linha de anos */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                                        Ano
+                                    </span>
+                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                        {anos.map(ano => {
+                                            const ativo = filterAno === ano;
+                                            return (
+                                                <button
+                                                    key={ano}
+                                                    onClick={() => handleAnoClick(ano)}
+                                                    style={{
+                                                        padding: '4px 13px', fontSize: 12, fontWeight: 700,
+                                                        borderRadius: 9999, cursor: 'pointer', transition: 'all 150ms',
+                                                        border: `1.5px solid ${ativo ? '#1D5E24' : '#e2e8f0'}`,
+                                                        background: ativo ? '#1D5E24' : '#f8fafc',
+                                                        color: ativo ? '#fff' : '#64748b',
+                                                        boxShadow: ativo ? '0 2px 8px rgba(29,94,36,0.2)' : 'none',
+                                                    }}
+                                                    onMouseEnter={e => { if (!ativo) { e.currentTarget.style.borderColor = '#a5d6a7'; e.currentTarget.style.color = '#2e7d32'; } }}
+                                                    onMouseLeave={e => { if (!ativo) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; } }}
+                                                >
+                                                    {ano}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Linha de semestres — só aparece quando um ano está selecionado */}
+                                {filterAno && (semestresPorAno[filterAno] || []).length > 0 && (
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                        paddingLeft: 2,
+                                        animation: 'fadeInUp 180ms both',
+                                    }}>
+                                        {/* conector visual */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 0, color: '#cbd5e1', flexShrink: 0 }}>
+                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                                <path d="M4 2 v7 q0 4 4 4 h6" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                                            </svg>
+                                        </div>
+                                        <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                                            Semestre
+                                        </span>
+                                        <div style={{ display: 'flex', gap: 5 }}>
+                                            {(semestresPorAno[filterAno] || []).map(sem => {
+                                                const ativo = filterSemestre === sem;
+                                                const label = sem === '1' ? '1º Semestre' : sem === '2' ? '2º Semestre' : `${sem}º Semestre`;
+                                                return (
+                                                    <button
+                                                        key={sem}
+                                                        onClick={() => setFilterSemestre(ativo ? null : sem)}
+                                                        style={{
+                                                            padding: '4px 13px', fontSize: 11, fontWeight: 600,
+                                                            borderRadius: 9999, cursor: 'pointer', transition: 'all 150ms',
+                                                            border: `1.5px solid ${ativo ? '#2563eb' : '#e2e8f0'}`,
+                                                            background: ativo ? '#dbeafe' : '#f8fafc',
+                                                            color: ativo ? '#1d4ed8' : '#64748b',
+                                                        }}
+                                                        onMouseEnter={e => { if (!ativo) { e.currentTarget.style.borderColor = '#93c5fd'; e.currentTarget.style.color = '#2563eb'; } }}
+                                                        onMouseLeave={e => { if (!ativo) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; } }}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+                        </>
+                    )}
+
+                    {/* ── Limpar tudo ── */}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearAllFilters}
+                            style={{
+                                marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+                                padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                                color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5',
+                                borderRadius: 8, cursor: 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            Limpar filtros
+                        </button>
+                    )}
+                </div>
+
                 {/* Legenda */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Legenda:</span>
@@ -233,14 +457,10 @@ const Agenda = () => {
                             <span style={{ fontSize: 12, color: '#64748b' }}>{s.label}</span>
                         </div>
                     ))}
-                    {filterStatus !== null && (
-                        <button
-                            onClick={() => setFilterStatus(null)}
-                            className="agenda-filter-clear"
-                            style={{ marginLeft: 'auto', fontSize: 12, color: '#1D5E24', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                        >
-                            Limpar filtro ×
-                        </button>
+                    {hasActiveFilters && (
+                        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#1D5E24', fontWeight: 600 }}>
+                            {events.length} avaliação{events.length !== 1 ? 'ões' : ''} encontrada{events.length !== 1 ? 's' : ''}
+                        </span>
                     )}
                 </div>
 
