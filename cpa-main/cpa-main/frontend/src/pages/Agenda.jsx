@@ -55,23 +55,56 @@ const Agenda = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [filterStatus, setFilterStatus] = useState(null);
 
+    // Converte data_inicio/data_fim que podem vir como:
+    //   "YYYY-MM-DD"                 → sem "T", adiciona "T00:00:00" (horário local)
+    //   "YYYY-MM-DDTHH:mm:ss.sssZ"  → já tem "T", usa new Date() diretamente
+    //   Date                        → retorna como está
+    // Se o resultado for inválido retorna null.
+    const parseDate = (value, endOfDay = false) => {
+        if (!value) return null;
+        if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+        const str = String(value);
+        const d = str.includes('T')
+            ? new Date(str)
+            : new Date(str + (endOfDay ? 'T23:59:59' : 'T00:00:00'));
+        return isNaN(d.getTime()) ? null : d;
+    };
+
     const events = useMemo(() => {
+        // Debug: inspeciona o primeiro item para verificar tipos em runtime
+        if (avaliacoes.length > 0) {
+            const a0 = avaliacoes[0];
+            console.debug(
+                '[Agenda] amostra data_inicio →', typeof a0.data_inicio, a0.data_inicio,
+                '| parse →', parseDate(a0.data_inicio),
+                '| typeof status →', typeof a0.status, a0.status,
+            );
+        }
+
         return avaliacoes
-            .filter(a => filterStatus ? a.status === filterStatus : true)
-            .filter(a => a.data_inicio && a.data_fim)
+            .filter(a => {
+                const status = Number(a.status);
+                return filterStatus ? status === filterStatus : true;
+            })
+            .filter(a => {
+                const start = parseDate(a.data_inicio);
+                const end   = parseDate(a.data_fim, true);
+                return start !== null && end !== null;
+            })
             .map(a => {
+                const status = Number(a.status);
                 const modalidades = (a.modalidades || []).map(m => m.mod_ensino).join(', ') || 'Sem modalidade';
                 return {
                     id: a.id,
                     title: modalidades,
-                    start: new Date(a.data_inicio + 'T00:00:00'),
-                    end: new Date(a.data_fim + 'T23:59:59'),
-                    status: a.status,
+                    start: parseDate(a.data_inicio),
+                    end: parseDate(a.data_fim, true),
+                    status,
                     ano: a.ano,
                     periodo_letivo: a.periodo_letivo,
                     data_inicio: a.data_inicio,
                     data_fim: a.data_fim,
-                    modalidades: modalidades,
+                    modalidades,
                 };
             });
     }, [avaliacoes, filterStatus]);
@@ -91,13 +124,20 @@ const Agenda = () => {
         };
     };
 
-    const fmt = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    // Para exibição no modal: extrai a parte YYYY-MM-DD antes de qualquer "T"
+    // para evitar interpretação UTC que desloca o dia.
+    const fmt = d => {
+        if (!d) return '—';
+        const datePart = String(d).split('T')[0];
+        const date = new Date(datePart + 'T00:00:00');
+        return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
+    };
 
     const counts = useMemo(() => ({
         total: avaliacoes.length,
-        rascunho: avaliacoes.filter(a => a.status === 1).length,
-        enviada: avaliacoes.filter(a => a.status === 2).length,
-        encerrada: avaliacoes.filter(a => a.status === 3).length,
+        rascunho:  avaliacoes.filter(a => Number(a.status) === 1).length,
+        enviada:   avaliacoes.filter(a => Number(a.status) === 2).length,
+        encerrada: avaliacoes.filter(a => Number(a.status) === 3).length,
     }), [avaliacoes]);
 
     return (

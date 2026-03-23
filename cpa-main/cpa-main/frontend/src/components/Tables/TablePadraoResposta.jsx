@@ -29,7 +29,24 @@ import {
 import { MdExpandMore } from 'react-icons/md';
 
 const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
-    const { data: dataAlternativas = [], isLoading } = useGetAlternativasByPadraoRespostaIdQuery(padraoId);
+    const showNotification = useNotification();
+    const {
+        data: dataAlternativas,
+        isLoading,
+        isError,
+        error,
+    } = useGetAlternativasByPadraoRespostaIdQuery(padraoId);
+
+    console.debug('[AlternativasDataGrid] padraoId:', padraoId, '| isLoading:', isLoading, '| isError:', isError, '| rows:', dataAlternativas);
+
+    useEffect(() => {
+        if (isError) {
+            console.error('[AlternativasDataGrid] Erro ao carregar alternativas para padraoId', padraoId, error);
+            showNotification('Erro ao carregar alternativas.', 'error');
+        }
+    }, [isError, padraoId, error, showNotification]);
+
+    const rows = Array.isArray(dataAlternativas) ? dataAlternativas : [];
 
     const columns = [
         {
@@ -70,12 +87,21 @@ const AlternativasDataGrid = ({ padraoId, onEdit, onDelete }) => {
         }
     ];
 
+    if (isError) {
+        return (
+            <Box sx={{ p: 2, color: '#ef4444' }}>
+                <Typography variant="body2">Não foi possível carregar as alternativas. Tente recarregar a página.</Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ width: '100%', height: 300, mt: 1 }}>
             <DataGrid
-                rows={dataAlternativas}
+                rows={rows}
                 columns={columns}
                 loading={isLoading}
+                getRowId={(row) => row.id}
                 pageSizeOptions={[5, 10]}
                 initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
                 density="compact"

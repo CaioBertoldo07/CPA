@@ -23,6 +23,8 @@
     z-index: 1000;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Evita que o aside inteiro “estoure” e empurre o footer para fora */
+    overflow: hidden;
 }
 
 .sidebar-header {
@@ -73,6 +75,23 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* Permite scroll quando há muitos itens */
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 6px; /* pequena folga pra barra de scroll */
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(113, 128, 150, 0.35);
+    border-radius: 999px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .nav-item {
@@ -118,6 +137,8 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* Mantém Logout visível; o scroll fica apenas no nav */
+    flex-shrink: 0;
 }
 
 .user-info {
