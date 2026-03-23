@@ -70,7 +70,7 @@ const processarQuestoes = (data) => {
                 tipo: q.tipo === 2 ? 'grade' : 'padrao',
                 total: totalGeral,
                 alternativas: alternativasConsolidadas,
-                // Mantemos os dados originais para uso detalhado se necessário
+                adicionais: q.adicionais || {}, // Preserva as subquestões
                 original: q
             });
         });
@@ -243,66 +243,130 @@ const QuestaoCard = ({ questao, idx }) => {
                 </span>
             </div>
 
-            {chartData.length === 0 ? (
+            {chartData.length === 0 && Object.keys(questao.adicionais).length === 0 ? (
                 <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>Sem respostas registradas.</p>
             ) : (
-                <div className="questao-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-                    {/* Pie chart */}
-                    <div>
-                        <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
-                            Proporção
-                        </p>
-                        <ResponsiveContainer width="100%" height={150}>
-                            <PieChart>
-                                <Pie data={chartData} dataKey="pct" nameKey="name" cx="50%" cy="50%" outerRadius={60}>
-                                    {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip content={<QuestaoTooltip />} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                    {/* Se for padrão, mostra o layout de 3 colunas */}
+                    {questao.tipo === 'padrao' && (
+                        <div className="questao-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+                            {/* Pie chart */}
+                            <div>
+                                <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
+                                    Proporção
+                                </p>
+                                <ResponsiveContainer width="100%" height={150}>
+                                    <PieChart>
+                                        <Pie data={chartData} dataKey="pct" nameKey="name" cx="50%" cy="50%" outerRadius={60}>
+                                            {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
+                                        </Pie>
+                                        <Tooltip content={<QuestaoTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
 
-                    {/* Bar chart */}
-                    <div>
-                        <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
-                            Distribuição
-                        </p>
-                        <ResponsiveContainer width="100%" height={150}>
-                            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -14, bottom: 4 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#718096' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 10, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} tickFormatter={v => `${v}%`} />
-                                <Tooltip content={<QuestaoTooltip />} />
-                                <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
-                                    {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                            {/* Bar chart */}
+                            <div>
+                                <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
+                                    Distribuição
+                                </p>
+                                <ResponsiveContainer width="100%" height={150}>
+                                    <BarChart data={chartData} margin={{ top: 4, right: 8, left: -14, bottom: 4 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#718096' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 10, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} tickFormatter={v => `${v}%`} />
+                                        <Tooltip content={<QuestaoTooltip />} />
+                                        <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
+                                            {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
 
-                    {/* Progress bars */}
-                    <div>
-                        <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
-                            Detalhamento
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {chartData.map((item, i) => (
-                                <div key={i}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                        <span style={{ fontSize: 12, color: '#4a5568', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }}>
-                                            {item.name}
-                                        </span>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: BAR_COLORS[i % BAR_COLORS.length], flexShrink: 0 }}>
-                                            {item.pct}% <span style={{ color: '#718096', fontWeight: 400 }}>({item.count})</span>
-                                        </span>
-                                    </div>
-                                    <div style={{ height: 7, background: '#e2e8f0', borderRadius: 9999, overflow: 'hidden' }}>
-                                        <div style={{ height: '100%', borderRadius: 9999, width: `${item.pct}%`, background: BAR_COLORS[i % BAR_COLORS.length], transition: 'width 0.6s ease' }} />
-                                    </div>
+                            {/* Progress bars */}
+                            <div>
+                                <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
+                                    Detalhamento
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {chartData.map((item, i) => (
+                                        <div key={i}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <span style={{ fontSize: 12, color: '#4a5568', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }}>
+                                                    {item.name}
+                                                </span>
+                                                <span style={{ fontSize: 12, fontWeight: 600, color: BAR_COLORS[i % BAR_COLORS.length], flexShrink: 0 }}>
+                                                    {item.pct}% <span style={{ color: '#718096', fontWeight: 400 }}>({item.count})</span>
+                                                </span>
+                                            </div>
+                                            <div style={{ height: 7, background: '#e2e8f0', borderRadius: 9999, overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', borderRadius: 9999, width: `${item.pct}%`, background: BAR_COLORS[i % BAR_COLORS.length], transition: 'width 0.6s ease' }} />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Se for grade, mostra as subquestões detalhadas cada uma com seu próprio layout de 3 colunas ou adaptado */}
+                    {questao.tipo === 'grade' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                            {Object.entries(questao.adicionais).map(([subNome, subDados], sIdx) => {
+                                const subChartData = Object.entries(subDados.respostas).map(([alt, info]) => ({
+                                    name: alt,
+                                    count: info.absoluto,
+                                    pct: info.porcentagem
+                                })).sort((a, b) => b.count - a.count);
+
+                                return (
+                                    <div key={sIdx} style={{ padding: '24px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: '#334155', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <span style={{ width: 4, height: 18, background: '#3b82f6', borderRadius: 2 }} />
+                                            {subNome}
+                                        </p>
+                                        <div className="questao-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+                                            {/* Bar Chart para subquestão */}
+                                            <div>
+                                                <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', margin: '0 0 8px' }}>Distribuição</p>
+                                                <ResponsiveContainer width="100%" height={120}>
+                                                    <BarChart data={subChartData} margin={{ top: 0, right: 8, left: -22, bottom: 0 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#718096' }} axisLine={false} tickLine={false} />
+                                                        <YAxis tick={{ fontSize: 9, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                                        <Tooltip content={<QuestaoTooltip />} />
+                                                        <Bar dataKey="pct" radius={[3, 3, 0, 0]}>
+                                                            {subChartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+
+                                            {/* Progress bars para subquestão */}
+                                            <div style={{ gridColumn: 'span 2' }}>
+                                                <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', margin: '0 0 8px' }}>Detalhamento</p>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                    {subChartData.map((item, i) => (
+                                                        <div key={i}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                                                <span style={{ fontSize: 12, color: '#4a5568', fontWeight: 500 }}>{item.name}</span>
+                                                                <span style={{ fontSize: 12, fontWeight: 700, color: BAR_COLORS[i % BAR_COLORS.length] }}>
+                                                                    {item.pct}% <span style={{ color: '#94a3b8', fontWeight: 400, fontSize: 11 }}>({item.count} resp.)</span>
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ height: 6, background: '#e2e8f0', borderRadius: 9999, overflow: 'hidden' }}>
+                                                                <div style={{ height: '100%', borderRadius: 9999, width: `${item.pct}%`, background: BAR_COLORS[i % BAR_COLORS.length] }} />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
