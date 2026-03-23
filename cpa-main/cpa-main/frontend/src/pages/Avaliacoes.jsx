@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TableAvaliacao from '../components/Tables/Table_Avaliacao';
 import ModalAvaliacoes from '../components/Modals/Modal_Avaliacoes';
+import DrawerAvaliacaoDetalhes from '../components/DrawerAvaliacaoDetalhes';
 import { useNotification } from '../context/NotificationContext';
 
 // Filtros de status
@@ -15,7 +16,14 @@ const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [drawerAvaliacaoId, setDrawerAvaliacaoId] = useState(null);
     const showNotification = useNotification();
+
+    const handleVerDetalhes = (id) => {
+        setDrawerAvaliacaoId(id);
+        setDrawerOpen(true);
+    };
 
     const handleSuccess = (message) => {
         setModalShow(false);
@@ -100,6 +108,7 @@ const Avaliacoes = () => {
                     <TableAvaliacao
                         filtroStatus={filtroStatus}
                         searchQuery={searchQuery}
+                        onVerDetalhes={handleVerDetalhes}
                     />
                 </div>
             </div>
@@ -108,6 +117,12 @@ const Avaliacoes = () => {
                 show={modalShow}
                 onHide={() => setModalShow(false)}
                 onSuccess={handleSuccess}
+            />
+
+            <DrawerAvaliacaoDetalhes
+                avaliacaoId={drawerAvaliacaoId}
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
             />
         </>
     );
