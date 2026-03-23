@@ -7,8 +7,7 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "migrate": "npx prisma migrate deploy",
-    "seed-respostas": "npx ts-node src/seed_respostas.ts"
+    "migrate": "npx prisma migrate deploy"
   },
   "keywords": [],
   "author": "",

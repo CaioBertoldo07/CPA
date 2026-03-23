@@ -94,7 +94,6 @@ class RespostasService {
 
         // 2. Buscar todas as respostas vinculadas a esta avaliação
         const aqIds = avaliacaoQuestoes.map(aq => aq.id);
-        console.log(`[DEBUG] Report for ID ${idAvaliacao}. AQ IDs:`, aqIds);
 
         const [respostasPadrao, respostasGrade] = await Promise.all([
             prisma.respostas.findMany({
@@ -104,8 +103,6 @@ class RespostasService {
                 where: { id_avaliacao_questoes: { in: aqIds } }
             })
         ]);
-
-        console.log(`[DEBUG] Found ${respostasPadrao.length} padrao and ${respostasGrade.length} grade responses.`);
 
         const avaliadoresUnicos = new Set([
             ...respostasPadrao.map((r: any) => r.avaliador_matricula),
