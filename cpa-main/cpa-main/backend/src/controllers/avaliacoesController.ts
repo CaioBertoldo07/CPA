@@ -55,7 +55,15 @@ const deleteAvaliacao = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const verificarSeUsuarioRespondeu = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({ respondido: false });
+    const { idAvaliacao } = req.params;
+    const matricula = req.user?.matricula;
+
+    if (!matricula) {
+        return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const respondeu = await avaliacoesService.hasUserResponded(matricula, parseInt(idAvaliacao, 10));
+    res.status(200).json({ respondeu });
 });
 
 export {
