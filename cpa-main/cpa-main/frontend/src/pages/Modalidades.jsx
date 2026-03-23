@@ -16,7 +16,7 @@ const Modalidades = () => {
         <>
             <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            <div style={{ width: '100%', maxWidth: '1600px' }}>
+            <div style={{ width: '100%' }}>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
                     <div>

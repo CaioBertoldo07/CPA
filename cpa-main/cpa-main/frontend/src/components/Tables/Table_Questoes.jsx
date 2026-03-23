@@ -9,8 +9,8 @@ import { IoTrashOutline } from "react-icons/io5";
 import ModalQuestoes from '../Modals/Modal_Questoes';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { DataGrid } from '@mui/x-data-grid';
-import { ptBR } from '@mui/x-data-grid/locales'
-import { Box, IconButton, Tooltip, Typography, Chip } from '@mui/material';
+import { ptBR } from '@mui/x-data-grid/locales';
+import { Box, IconButton, Tooltip, Typography, Chip, Button } from '@mui/material';
 
 const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
     const { data: dataQuestoes = [], isLoading: loadingTable, isError } = useGetQuestoesQuery();
@@ -140,30 +140,48 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 110,
+            width: 200,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-end', width: '100%' }}>
                     <Tooltip title="Editar">
-                        <IconButton
+                        <Button
                             size="small"
+                            variant="text"
+                            startIcon={<FaRegEdit size={14} />}
                             onClick={() => handleEditQuestion(params.row)}
-                            sx={{ color: '#1D5E24', '&:hover': { bgcolor: '#e8f5e9' } }}
+                            sx={{
+                                color: '#1D5E24',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                minWidth: 'auto',
+                                '&:hover': { bgcolor: '#e8f5e9' }
+                            }}
                         >
-                            <FaRegEdit size={16} />
-                        </IconButton>
+                            Editar
+                        </Button>
                     </Tooltip>
                     <Tooltip title="Excluir">
-                        <IconButton
+                        <Button
                             size="small"
+                            variant="text"
+                            color="error"
+                            startIcon={<IoTrashOutline size={15} />}
                             onClick={() => handleDeleteRequest(params.row)}
-                            sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
+                            sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                minWidth: 'auto',
+                                '&:hover': { bgcolor: '#fee2e2' }
+                            }}
                         >
-                            <IoTrashOutline size={16} />
-                        </IconButton>
+                            Excluir
+                        </Button>
                     </Tooltip>
                 </Box>
             )
@@ -181,6 +199,7 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
                 initialState={{
                     pagination: { paginationModel: { pageSize: 10 } },
                 }}
+                density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
                 sx={{

@@ -5,11 +5,13 @@ export interface AvaliacaoResponseDTO {
     data_fim: Date;
     status: number;
     ano: string;
+    titulo?: string;
     unidade?: any[];
     cursos?: any[];
     categorias?: any[];
     modalidades?: any[];
     avaliacao_questoes?: any[];
+    questoes?: any[];
 }
 
 export interface CreateAvaliacaoDTO {

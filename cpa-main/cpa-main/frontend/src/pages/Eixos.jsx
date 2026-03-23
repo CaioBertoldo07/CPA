@@ -24,7 +24,7 @@ const Eixos = () => {
                 }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: '1600px' }}>
+            <div style={{ width: '100%' }}>
                 {/* ── Cabeçalho ── */}
                 <div style={{
                     display: 'flex', alignItems: 'center',

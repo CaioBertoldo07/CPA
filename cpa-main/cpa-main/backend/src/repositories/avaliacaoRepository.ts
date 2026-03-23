@@ -21,7 +21,16 @@ const create = (data: Prisma.AvaliacaoCreateInput) => {
 const findMany = () => {
     return prisma.avaliacao.findMany({
         include: {
-            questoes: { include: { questoes_adicionais: true } },
+            avaliacao_questoes: {
+                include: {
+                    questoes: {
+                        include: {
+                            questoes_adicionais: true,
+                            dimensoes: { include: { eixos: true } }
+                        }
+                    }
+                }
+            },
             unidade: true,
             categorias: true,
             cursos: true,
@@ -82,7 +91,17 @@ const findDisponiveis = (cursoIdentificador: string, dataAtual: Date) => {
             data_inicio: { lte: dataAtual },
             data_fim: { gte: dataAtual },
         },
-        include: { questoes: true },
+        include: {
+            avaliacao_questoes: {
+                include: {
+                    questoes: {
+                        include: {
+                            dimensoes: { include: { eixos: true } }
+                        }
+                    }
+                }
+            }
+        },
     });
 };
 
