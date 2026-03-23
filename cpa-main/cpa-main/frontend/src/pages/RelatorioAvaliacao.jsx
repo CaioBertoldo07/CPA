@@ -29,44 +29,55 @@ const fmt = d => {
 };
 
 /**
- * Converte o array retornado por /api/avaliacoes/:id/respostas para
- * o formato consumido por QuestaoCard.
- *
- * Formato do backend:
- *   tipo='padrao' → { id, descricao, dimensao, respostas: [{valor, comentario}],     tipo }
- *   tipo='grade'  → { id, descricao, dimensao, respostas: {[adicionalId]: [{valor}]}, tipo }
+ * O backend agora retorna os dados já processados e agrupados por eixo.
+ * Esta função apenas achata o relatório para uma lista de questões se necessário,
+ * ou adapta o formato para o componente QuestaoCard.
  */
-const processarQuestoes = (respostas = []) =>
-    respostas.map(item => {
-        const alternativas = {};
-        let total = 0;
 
-        if (item.tipo === 'padrao') {
-            for (const r of (item.respostas || [])) {
-                const val = r.valor || 'Sem resposta';
-                alternativas[val] = (alternativas[val] || 0) + 1;
-                total += 1;
-            }
-        } else {
-            // grade: respostas é { [adicionalId]: [{valor, comentario}] }
-            for (const subList of Object.values(item.respostas || {})) {
-                for (const r of (subList || [])) {
-                    const val = r.valor || 'Sem resposta';
-                    alternativas[val] = (alternativas[val] || 0) + 1;
-                    total += 1;
-                }
-            }
-        }
+const processarQuestoes = (data) => {
+    if (!data || !data.relatorio) return [];
 
-        return {
-            id:        item.id,
-            descricao: item.descricao || `Questão ${item.id}`,
-            dimensao:  item.dimensao  || '—',
-            tipo:      item.tipo,
-            total,
-            alternativas,
-        };
+    const questoesAchatadas = [];
+    Object.keys(data.relatorio).forEach(eixoNome => {
+        const eixo = data.relatorio[eixoNome];
+        eixo.questoes.forEach(q => {
+            // Adapta o formato pré-processado do backend para o que o QuestaoCard espera
+            // Se for do tipo grade, precisamos consolidar as respostas dos subitens para o gráfico geral da questão
+            const alternativasConsolidadas = { ...q.respostas };
+            let totalGeral = q.totalRespostas;
+
+            if (Object.keys(q.adicionais || {}).length > 0) {
+                Object.values(q.adicionais).forEach((subitem) => {
+                    totalGeral += subitem.totalRespostas;
+                    Object.entries(subitem.respostas).forEach(([label, info]) => {
+                        if (!alternativasConsolidadas[label]) {
+                            alternativasConsolidadas[label] = 0;
+                        }
+                        alternativasConsolidadas[label] += info.absoluto;
+                    });
+                });
+            } else {
+                // Para questões padrão, converte o objeto { 'Sim': { absoluto: 1, ... } } para { 'Sim': 1 }
+                Object.keys(alternativasConsolidadas).forEach(label => {
+                    alternativasConsolidadas[label] = alternativasConsolidadas[label].absoluto;
+                });
+            }
+
+            questoesAchatadas.push({
+                id: q.id || Math.random(),
+                descricao: q.descricao,
+                dimensao: eixoNome,
+                tipo: q.tipo === 2 ? 'grade' : 'padrao',
+                total: totalGeral,
+                alternativas: alternativasConsolidadas,
+                // Mantemos os dados originais para uso detalhado se necessário
+                original: q
+            });
+        });
     });
+
+    return questoesAchatadas;
+};
 
 /* ─────────────────────────── shared UI ─────────────────────────── */
 
@@ -319,27 +330,9 @@ const RelatorioAvaliacao = () => {
     const navigate = useNavigate();
 
     const { data: avaliacao, isLoading: loadingAvaliacao, isError: isErrorAvaliacao } = useGetAvaliacaoByIdQuery(id);
-    const { data: respostas = [], isLoading: loadingRespostas, isError: isErrorRespostas } = useGetRespostasPorAvaliacaoQuery(id);
+    const { data: reportData, isLoading: loadingRespostas, isError: isErrorRespostas } = useGetRespostasPorAvaliacaoQuery(id);
 
-    const questoesProcessadas = useMemo(() => {
-        const processadas = processarQuestoes(respostas);
-        const processadasMap = Object.fromEntries(processadas.map(q => [q.id, q]));
-        const baseQuestoes = avaliacao?.questoes || [];
-
-        // Se o backend já retornou todas as questões no array respostas, usa direto.
-        // Caso contrário, garante que toda questão da avaliação apareça no relatório
-        // (com alternativas={} / total=0 → "Sem respostas registradas").
-        if (baseQuestoes.length === 0) return processadas;
-
-        return baseQuestoes.map(q => processadasMap[q.id] ?? {
-            id:        q.id,
-            descricao: q.descricao || `Questão ${q.id}`,
-            dimensao:  q.dimensoes?.nome || '—',
-            tipo:      q.id_questoes_tipo === 2 ? 'grade' : 'padrao',
-            total:     0,
-            alternativas: {},
-        });
-    }, [avaliacao, respostas]);
+    const questoesProcessadas = useMemo(() => processarQuestoes(reportData), [reportData]);
 
     const totalRespostas = useMemo(
         () => questoesProcessadas.reduce((acc, q) => acc + q.total, 0),
@@ -398,8 +391,10 @@ const RelatorioAvaliacao = () => {
     const questoesRespondidas = questoesProcessadas.filter(q => q.total > 0).length;
 
     const stats = [
-        { icon: '📊', label: 'Total de Respostas',    value: totalRespostas,         topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0   },
-        { icon: '✅', label: 'Questões Respondidas',  value: questoesRespondidas,    topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70  },
+
+        { icon: '👥', label: 'Total de Avaliadores',  value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0   },
+        { icon: '✅', label: 'Questões Respondidas',  value: questoesProcessadas.length,  topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70  },
+
         ...(totalQuestoesAvaliacao !== null
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
             : []),
