@@ -33,6 +33,7 @@ const fmt = d => {
  * Esta função apenas achata o relatório para uma lista de questões se necessário,
  * ou adapta o formato para o componente QuestaoCard.
  */
+
 const processarQuestoes = (data) => {
     if (!data || !data.relatorio) return [];
 
@@ -176,11 +177,12 @@ const ChartTooltip = ({ active, payload, label, formatter }) => {
 
 const QuestaoTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
+    const p = payload[0];
     return (
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 14px', boxShadow: '0 4px 14px rgba(0,0,0,0.09)', fontSize: 13 }}>
-            <p style={{ margin: 0, fontWeight: 600 }}>{payload[0]?.payload?.name}</p>
-            <p style={{ margin: '2px 0', color: payload[0]?.fill }}>
-                {payload[0]?.value} resp. ({payload[0]?.payload?.pct}%)
+            <p style={{ margin: 0, fontWeight: 600 }}>{p?.payload?.name}</p>
+            <p style={{ margin: '2px 0', color: p?.fill || p?.color }}>
+                {p?.payload?.pct}% <span style={{ color: '#718096', fontWeight: 400 }}>({p?.payload?.count} resp.)</span>
             </p>
         </div>
     );
@@ -201,10 +203,18 @@ const DonutLegend = ({ data }) => (
 /* ─────────────────────────── QuestaoCard ─────────────────────────── */
 
 const QuestaoCard = ({ questao, idx }) => {
-    const chartData = Object.entries(questao.alternativas).map(([alt, count]) => ({
-        name: alt,
-        value: count,
-        pct: questao.total > 0 ? Math.round((count / questao.total) * 100) : 0,
+    const rawEntries = Object.entries(questao.alternativas)
+        .map(([alt, count]) => ({ name: alt, count }))
+        .sort((a, b) => b.count - a.count);
+
+    const top = rawEntries.slice(0, 5);
+    const rest = rawEntries.slice(5);
+    const chartData = (rest.length > 0
+        ? [...top, { name: 'Outras', count: rest.reduce((s, x) => s + x.count, 0) }]
+        : top
+    ).map(d => ({
+        ...d,
+        pct: questao.total > 0 ? Math.round((d.count / questao.total) * 100) : 0,
     }));
 
     return (
@@ -236,19 +246,34 @@ const QuestaoCard = ({ questao, idx }) => {
             {chartData.length === 0 ? (
                 <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>Sem respostas registradas.</p>
             ) : (
-                <div className="questao-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div className="questao-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+                    {/* Pie chart */}
+                    <div>
+                        <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
+                            Proporção
+                        </p>
+                        <ResponsiveContainer width="100%" height={150}>
+                            <PieChart>
+                                <Pie data={chartData} dataKey="pct" nameKey="name" cx="50%" cy="50%" outerRadius={60}>
+                                    {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
+                                </Pie>
+                                <Tooltip content={<QuestaoTooltip />} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
                     {/* Bar chart */}
                     <div>
                         <p style={{ fontSize: 11, color: '#718096', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>
                             Distribuição
                         </p>
                         <ResponsiveContainer width="100%" height={150}>
-                            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -22, bottom: 4 }}>
+                            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -14, bottom: 4 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#718096' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 10, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <YAxis tick={{ fontSize: 10, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} tickFormatter={v => `${v}%`} />
                                 <Tooltip content={<QuestaoTooltip />} />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
                                     {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
                                 </Bar>
                             </BarChart>
@@ -268,7 +293,7 @@ const QuestaoCard = ({ questao, idx }) => {
                                             {item.name}
                                         </span>
                                         <span style={{ fontSize: 12, fontWeight: 600, color: BAR_COLORS[i % BAR_COLORS.length], flexShrink: 0 }}>
-                                            {item.pct}% <span style={{ color: '#718096', fontWeight: 400 }}>({item.value})</span>
+                                            {item.pct}% <span style={{ color: '#718096', fontWeight: 400 }}>({item.count})</span>
                                         </span>
                                     </div>
                                     <div style={{ height: 7, background: '#e2e8f0', borderRadius: 9999, overflow: 'hidden' }}>
@@ -363,9 +388,13 @@ const RelatorioAvaliacao = () => {
         </div>
     );
 
+    const questoesRespondidas = questoesProcessadas.filter(q => q.total > 0).length;
+
     const stats = [
+
         { icon: '👥', label: 'Total de Avaliadores',  value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0   },
         { icon: '✅', label: 'Questões Respondidas',  value: questoesProcessadas.length,  topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70  },
+
         ...(totalQuestoesAvaliacao !== null
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
             : []),
