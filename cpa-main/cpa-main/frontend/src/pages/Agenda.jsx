@@ -168,6 +168,22 @@ const Agenda = () => {
                 .rbc-agenda-table tbody > tr > td { border-top: 1px solid #f1f5f9 !important; }
                 .rbc-agenda-table thead { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
                 .rbc-agenda-table thead > tr > th { padding: 8px 14px !important; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+                /* ── Agenda filter buttons hover ── */
+                .agenda-filter-button {
+                    transition: all 150ms !important;
+                }
+                .agenda-filter-button:hover {
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 6px 18px rgba(0,0,0,0.12) !important;
+                }
+                .agenda-filter-button:active {
+                    transform: translateY(0) !important;
+                }
+                .agenda-filter-clear:hover {
+                    color: #256428 !important;
+                    text-decoration: underline;
+                }
             `}</style>
 
             <div style={{ width: '100%', maxWidth: '1600px', animation: 'fadeInUp 400ms both' }}>
@@ -191,6 +207,7 @@ const Agenda = () => {
                         <button
                             key={card.label}
                             onClick={() => setFilterStatus(filterStatus === card.status ? null : (card.status ?? null))}
+                            className="agenda-filter-button"
                             style={{
                                 background: filterStatus === (card.status ?? null) && card.status !== undefined ? card.bg : '#fff',
                                 border: `1.5px solid ${filterStatus === card.status && card.status !== undefined ? card.dot : '#e2e8f0'}`,
@@ -219,6 +236,7 @@ const Agenda = () => {
                     {filterStatus !== null && (
                         <button
                             onClick={() => setFilterStatus(null)}
+                            className="agenda-filter-clear"
                             style={{ marginLeft: 'auto', fontSize: 12, color: '#1D5E24', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                         >
                             Limpar filtro ×
