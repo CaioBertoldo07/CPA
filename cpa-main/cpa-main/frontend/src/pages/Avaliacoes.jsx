@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import TableAvaliacao from '../components/Tables/Table_Avaliacao';
 import ModalAvaliacoes from '../components/Modals/Modal_Avaliacoes';
 import { useNotification } from '../context/NotificationContext';
+import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
 
 // Filtros de status
 const FILTROS = [
@@ -15,12 +16,39 @@ const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filtroMunicipio, setFiltroMunicipio] = useState('');
+    const [filtroUnidade, setFiltroUnidade] = useState('');
     const showNotification = useNotification();
+    const { data: avaliacoes = [] } = useGetAvaliacoesQuery();
+
+    // Derive available municipalities and units from loaded evaluations
+    const municipiosDisponiveis = useMemo(() => {
+        const map = new Map();
+        avaliacoes.forEach(a => {
+            (a.cursos || []).forEach(c => {
+                if (c.municipio) map.set(c.municipio.id, c.municipio.nome);
+            });
+        });
+        return Array.from(map.entries()).map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome));
+    }, [avaliacoes]);
+
+    const unidadesDisponiveis = useMemo(() => {
+        const map = new Map();
+        avaliacoes.forEach(a => {
+            (a.unidade || []).forEach(u => {
+                if (u && u.id) map.set(u.id, u);
+            });
+        });
+        return Array.from(map.values()).sort((a, b) => a.sigla.localeCompare(b.sigla));
+    }, [avaliacoes]);
 
     const handleSuccess = (message) => {
         setModalShow(false);
         showNotification(message || 'Avaliação criada com sucesso!', 'success');
     };
+
+    const hasActiveFilters = filtroMunicipio || filtroUnidade;
+    const clearFilters = () => { setFiltroMunicipio(''); setFiltroUnidade(''); };
 
     return (
         <>
@@ -86,6 +114,57 @@ const Avaliacoes = () => {
                             </button>
                         )}
                     </div>
+
+                    {/* Filtro Município */}
+                    {municipiosDisponiveis.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '6px 12px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" />
+                            </svg>
+                            <select
+                                value={filtroMunicipio}
+                                onChange={e => setFiltroMunicipio(e.target.value)}
+                                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: filtroMunicipio ? '#1a202c' : '#9ca3af', fontFamily: 'inherit', cursor: 'pointer', fontWeight: filtroMunicipio ? 600 : 400 }}
+                            >
+                                <option value="">Município</option>
+                                {municipiosDisponiveis.map(m => (
+                                    <option key={m.id} value={m.nome}>{m.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Filtro Unidade */}
+                    {unidadesDisponiveis.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '6px 12px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6M9 12h6M9 15h4" />
+                            </svg>
+                            <select
+                                value={filtroUnidade}
+                                onChange={e => setFiltroUnidade(e.target.value)}
+                                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: filtroUnidade ? '#1a202c' : '#9ca3af', fontFamily: 'inherit', cursor: 'pointer', fontWeight: filtroUnidade ? 600 : 400 }}
+                            >
+                                <option value="">Unidade</option>
+                                {unidadesDisponiveis.map(u => (
+                                    <option key={u.id} value={u.id}>{u.sigla} – {u.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Limpar filtros */}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearFilters}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'transparent', border: '1.5px solid #fca5a5', borderRadius: 10, fontSize: 12, fontWeight: 600, color: '#ef4444', cursor: 'pointer', transition: 'all 150ms' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            Limpar filtros
+                        </button>
+                    )}
                 </div>
 
                 {/* ── Tabela ── */}
@@ -100,6 +179,8 @@ const Avaliacoes = () => {
                     <TableAvaliacao
                         filtroStatus={filtroStatus}
                         searchQuery={searchQuery}
+                        filtroMunicipio={filtroMunicipio}
+                        filtroUnidade={filtroUnidade}
                     />
                 </div>
             </div>

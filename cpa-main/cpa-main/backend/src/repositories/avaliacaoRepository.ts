@@ -33,7 +33,9 @@ const findMany = () => {
             },
             unidade: true,
             categorias: true,
-            cursos: true,
+            cursos: {
+                include: { municipio: true }
+            },
             modalidades: true,
         },
     });

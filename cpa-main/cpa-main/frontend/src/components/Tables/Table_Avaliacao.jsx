@@ -15,6 +15,8 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Modal_Detalhes_Avaliacao from '../Modals/Modal_Detalhes_Avaliacao';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -44,7 +46,7 @@ const StatusBadge = ({ status }) => {
 
 const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', filtroMunicipio = '', filtroUnidade = '', onSuccess }) => {
     const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
@@ -56,6 +58,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
     const [showProrrogar, setShowProrrogar] = useState(false);
     const [avaliacaoAlvo, setAvaliacaoAlvo] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
+    const [detalhesAvaliacao, setDetalhesAvaliacao] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => { if (isError) showNotification('Erro ao carregar avaliações.', 'error'); }, [isError, showNotification]);
@@ -98,6 +101,14 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
         return avaliacoes
             .filter(a => filtroStatus ? a.status === filtroStatus : true)
             .filter(a => {
+                if (!filtroMunicipio) return true;
+                return (a.cursos || []).some(c => c.municipio?.nome === filtroMunicipio);
+            })
+            .filter(a => {
+                if (!filtroUnidade) return true;
+                return (a.unidade || []).some(u => u.id === Number(filtroUnidade));
+            })
+            .filter(a => {
                 if (!searchQuery) return true;
                 const q = searchQuery.toLowerCase();
                 return String(a.id).includes(q)
@@ -105,7 +116,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                     || (a.ano || '').toLowerCase().includes(q)
                     || (a.modalidades || []).some(m => (m.mod_ensino || '').toLowerCase().includes(q));
             });
-    }, [avaliacoes, filtroStatus, searchQuery]);
+    }, [avaliacoes, filtroStatus, filtroMunicipio, filtroUnidade, searchQuery]);
 
     const columns = [
         {
@@ -124,7 +135,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
             field: 'modalidades',
             headerName: 'Modalidades',
             flex: 1,
-            minWidth: 200,
+            minWidth: 160,
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {params.value?.map((m, i) => (
@@ -139,20 +150,54 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                 </Box>
             )
         },
-        { field: 'periodo_letivo', headerName: 'Período', width: 120, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
-        { field: 'ano', headerName: 'Ano', width: 80 },
-        { field: 'data_inicio', headerName: 'Início', width: 110, valueFormatter: (value) => fmt(value) },
-        { field: 'data_fim', headerName: 'Fim', width: 110, valueFormatter: (value) => fmt(value) },
+        {
+            field: 'unidade',
+            headerName: 'Unidades',
+            flex: 1,
+            minWidth: 140,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(params.value || []).map((u, i) => (
+                        <Chip
+                            key={i}
+                            label={u.sigla}
+                            size="small"
+                            variant="outlined"
+                            sx={{ bgcolor: '#f0fdf4', borderColor: '#bbf7d0', color: '#15803d', fontSize: '0.65rem' }}
+                        />
+                    ))}
+                </Box>
+            )
+        },
+        {
+            field: 'questoes',
+            headerName: 'Questões',
+            width: 100,
+            renderCell: (params) => {
+                const count = (params.value || []).length;
+                return (
+                    <Chip
+                        label={count}
+                        size="small"
+                        sx={{ bgcolor: count > 0 ? '#dbeafe' : '#f1f5f9', color: count > 0 ? '#1d4ed8' : '#94a3b8', fontWeight: 700, fontSize: '0.7rem' }}
+                    />
+                );
+            }
+        },
+        { field: 'periodo_letivo', headerName: 'Período', width: 100, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
+        { field: 'ano', headerName: 'Ano', width: 70 },
+        { field: 'data_inicio', headerName: 'Início', width: 100, valueFormatter: (value) => fmt(value) },
+        { field: 'data_fim', headerName: 'Fim', width: 100, valueFormatter: (value) => fmt(value) },
         {
             field: 'status',
             headerName: 'Status',
-            width: 130,
+            width: 120,
             renderCell: (params) => <StatusBadge status={params.value} />
         },
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 350,
+            width: 370,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
@@ -160,7 +205,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
             renderCell: (params) => (
                 <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: '80px 110px 80px',
+                    gridTemplateColumns: '80px 90px 110px 80px',
                     gap: 1,
                     height: '100%',
                     alignItems: 'center',
@@ -168,6 +213,27 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                     width: '100%',
                     pr: 1
                 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <Tooltip title="Ver detalhes">
+                            <MuiButton
+                                size="small"
+                                variant="text"
+                                startIcon={<InfoOutlinedIcon sx={{ fontSize: '16px !important' }} />}
+                                onClick={() => setDetalhesAvaliacao(params.row)}
+                                sx={{
+                                    color: '#64748b',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    minWidth: 'auto',
+                                    '&:hover': { bgcolor: '#f1f5f9' }
+                                }}
+                            >
+                                Detalhes
+                            </MuiButton>
+                        </Tooltip>
+                    </Box>
+
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                         <Tooltip title="Ver relatório">
                             <MuiButton
@@ -290,6 +356,13 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess }) => {
                         }
                     }
                 }}
+            />
+
+            {/* Detalhes Modal */}
+            <Modal_Detalhes_Avaliacao
+                avaliacao={detalhesAvaliacao}
+                open={!!detalhesAvaliacao}
+                onClose={() => setDetalhesAvaliacao(null)}
             />
 
             <Modal show={showEnviar} onHide={() => setShowEnviar(false)} centered size="sm">
