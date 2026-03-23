@@ -12,8 +12,8 @@ import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQu
 const BAR_COLORS = ['#2e7d32', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
 const STATUS_MAP = {
-    1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
-    2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
+    1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+    2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
     3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
 };
 
@@ -118,7 +118,7 @@ const StatCard = ({ icon, label, value, topColor, iconBg, loading, delay = 0 }) 
             transition: 'box-shadow 200ms, transform 200ms',
         }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.11)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';  e.currentTarget.style.transform = 'translateY(0)'; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
     >
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: topColor, borderRadius: '14px 14px 0 0' }} />
         <div style={{ width: 46, height: 46, borderRadius: 12, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
@@ -369,7 +369,7 @@ const QuestaoCard = ({ questao, idx }) => {
                     )}
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 
@@ -419,7 +419,7 @@ const RelatorioAvaliacao = () => {
 
     const tipoData = useMemo(() => [
         { name: 'Padrão', value: questoesProcessadas.filter(q => q.tipo === 'padrao').length, color: TIPO_COLORS.padrao },
-        { name: 'Grade',  value: questoesProcessadas.filter(q => q.tipo === 'grade').length,  color: TIPO_COLORS.grade  },
+        { name: 'Grade', value: questoesProcessadas.filter(q => q.tipo === 'grade').length, color: TIPO_COLORS.grade },
     ].filter(d => d.value > 0), [questoesProcessadas]);
 
     /* ── loading / error states ── */
@@ -456,8 +456,8 @@ const RelatorioAvaliacao = () => {
 
     const stats = [
 
-        { icon: '👥', label: 'Total de Avaliadores',  value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0   },
-        { icon: '✅', label: 'Questões Respondidas',  value: questoesProcessadas.length,  topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70  },
+        { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
+        { icon: '✅', label: 'Questões Respondidas', value: questoesProcessadas.length, topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70 },
 
         ...(totalQuestoesAvaliacao !== null
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
@@ -515,7 +515,7 @@ const RelatorioAvaliacao = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 20 }}>
                         {[
                             { label: 'Início', value: fmt(avaliacao?.data_inicio) },
-                            { label: 'Fim',    value: fmt(avaliacao?.data_fim)    },
+                            { label: 'Fim', value: fmt(avaliacao?.data_fim) },
                         ].map(({ label, value }) => (
                             <div key={label}>
                                 <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', marginBottom: 3 }}>{label}</div>
