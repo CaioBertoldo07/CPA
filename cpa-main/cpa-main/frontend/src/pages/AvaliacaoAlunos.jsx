@@ -91,9 +91,24 @@ const AvaliacaoAlunos = () => {
     }, [avaliacaoId, token, navigate, jaRespondeu, isErrorAvaliacao, showNotification]);
 
     useEffect(() => {
-        const total = avaliacao?.avaliacao_questoes?.reduce((acc, curr) =>
-            acc + (curr.questoes.questoesAdicionais?.length || 1), 0) || 0;
-        const respondidas = Object.keys(respostas).length;
+        let total = 0;
+        let respondidas = 0;
+
+        avaliacao?.avaliacao_questoes?.forEach((aq) => {
+            const questao = aq.questoes;
+            const sub = questao?.questoesAdicionais || questao?.questoes_adicionais || [];
+
+            if (sub.length > 0) {
+                total += sub.length;
+                sub.forEach(s => {
+                    if (respostas[`${questao.id}-${s.id}`]) respondidas++;
+                });
+            } else {
+                total += 1;
+                if (respostas[questao.id]) respondidas++;
+            }
+        });
+
         setProgresso(total > 0 ? Math.round((respondidas / total) * 100) : 0);
     }, [respostas, avaliacao]);
 
@@ -261,7 +276,7 @@ const AvaliacaoAlunos = () => {
             }];
         });
 
-        if (respostasFormatadas.some(resp => !resp.id_alternativa)) {
+        if (respostasFormatadas.some(resp => !resp.id_alternativa || isNaN(resp.id_alternativa))) {
             showNotification('Por favor, responda todas as questões antes de enviar!', 'warning');
             setShowConfirm(false);
             return;
