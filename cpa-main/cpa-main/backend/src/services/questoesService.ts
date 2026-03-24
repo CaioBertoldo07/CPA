@@ -165,7 +165,25 @@ class QuestoesService {
         if (!questao) {
             throw new AppError('Questão não encontrada.', 404);
         }
-        await questoesRepository.remove(id);
+
+        const usage = await questoesRepository.getQuestionUsage(id);
+
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+
+            if (hasActiveOrDraft) {
+                // Bloqueia a exclusão pois afetaria uma avaliação em rascunho ou ativa
+                throw new AppError('Não é possível excluir esta questão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
+            } else {
+                // Apenas desativa (soft delete) pois só existe em avaliações encerradas
+                console.log(`[questoesService.delete] Desativando questão ID: ${id} (soft-delete)`);
+                await questoesRepository.update(id, { ativo: false });
+            }
+        } else {
+            // Não está em nenhuma avaliação, pode deletar de verdade
+            console.log(`[questoesService.delete] Removendo questão ID: ${id} (hard-delete)`);
+            await questoesRepository.remove(id);
+        }
     }
 
     private mapToDTO(questao: any): QuestaoResponseDTO {
