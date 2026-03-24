@@ -15,7 +15,11 @@ class QuestoesService {
         if (!questao) {
             throw new AppError('Questão não encontrada.', 404);
         }
-        return this.mapToDTO(questao);
+        const usage = await questoesRepository.getQuestionUsage(id);
+        return {
+            ...this.mapToDTO(questao),
+            isUsed: usage.length > 0
+        };
     }
 
     async create(data: CreateQuestaoDTO): Promise<QuestaoResponseDTO> {
@@ -76,6 +80,32 @@ class QuestoesService {
             throw new AppError('Questão não encontrada para atualizar.', 404);
         }
 
+        const usage = await questoesRepository.getQuestionUsage(id);
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+
+            // Clonagem (Versionamento)
+            const mergedData: CreateQuestaoDTO = {
+                questao: data.questao ?? existingQuestao.descricao,
+                dimensaoNumero: data.dimensaoNumero ?? existingQuestao.numero_dimensoes,
+                categorias: data.categorias ?? (existingQuestao.Questoes_categorias?.map((qc: any) => qc.id_categorias) || []),
+                modalidades: data.modalidades ?? (existingQuestao.questoes_modalidades?.map((qm: any) => qm.id_modalidades) || []),
+                padraoRespostaId: data.padraoRespostaId ?? existingQuestao.id_padrao_resposta,
+                basica: data.basica ?? existingQuestao.basica,
+                tipo_questao: data.tipo_questao ?? (existingQuestao.id_questoes_tipo || 1),
+                questoesAdicionais: data.questoesAdicionais ?? (existingQuestao.questoes_adicionais?.map((qa: any) => ({ descricao: qa.descricao })) || [])
+            };
+
+            const newQuestao = await this.create(mergedData);
+
+            // Somente desativa a original se não houver nenhuma avaliação Rascunho ou Ativa usando ela
+            if (!hasActiveOrDraft) {
+                await questoesRepository.update(id, { ativo: false });
+            }
+
+            return newQuestao;
+        }
+
         const updateData: any = {};
 
         if (data.questao) updateData.descricao = data.questao;
@@ -127,7 +157,23 @@ class QuestoesService {
         if (!questao) {
             throw new AppError('Questão não encontrada.', 404);
         }
-        await questoesRepository.remove(id);
+
+        const usage = await questoesRepository.getQuestionUsage(id);
+
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+
+            if (hasActiveOrDraft) {
+                // Bloqueia a exclusão pois afetaria uma avaliação em rascunho ou ativa
+                throw new AppError('Não é possível excluir esta questão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
+            } else {
+                // Apenas desativa (soft delete) pois só existe em avaliações encerradas
+                await questoesRepository.update(id, { ativo: false });
+            }
+        } else {
+            // Não está em nenhuma avaliação, pode deletar de verdade
+            await questoesRepository.remove(id);
+        }
     }
 
     private mapToDTO(questao: any): QuestaoResponseDTO {

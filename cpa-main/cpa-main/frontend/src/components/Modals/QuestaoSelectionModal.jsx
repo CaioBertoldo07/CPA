@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+    IconButton,
+    Tooltip,
     TextField,
     Button,
     MenuItem,
@@ -17,12 +19,24 @@ import {
     CircularProgress,
     Grid
 } from '@mui/material';
+import { FaRegEdit } from 'react-icons/fa';
 import MuiBaseModal from '../utils/MuiBaseModal';
+import Modal_Questoes from './Modal_Questoes';
+import { getQuestaoById } from '../../api/questoes';
 import { useGetQuestoesQuery } from '../../hooks/queries/useQuestaoQueries';
 
-function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
-    const [dimensaoSelecionada, setDimensaoSelecionada] = useState('');
-    const [questoesSelecionadas, setQuestoesSelecionadas] = useState([]);
+function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelectedIds = [] }) {
+    const [dimensaoSelecionada, setDimensaoSelecionada] = React.useState('');
+    const [questoesSelecionadas, setQuestoesSelecionadas] = React.useState([]);
+    const [showEditModal, setShowEditModal] = React.useState(false);
+    const [selectedQuestion, setSelectedQuestion] = React.useState(null);
+
+    // Initialize selection from props when modal opens
+    React.useEffect(() => {
+        if (show) {
+            setQuestoesSelecionadas(initialSelectedIds);
+        }
+    }, [show, initialSelectedIds]);
 
     const {
         data: questoes = [],
@@ -31,12 +45,12 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
         error: queryError
     } = useGetQuestoesQuery();
 
-    const dimensoes = useMemo(() => Array.from(new Set(questoes
+    const dimensoes = React.useMemo(() => Array.from(new Set(questoes
         .map(q => q?.dimensao?.nome)
         .filter(Boolean)
     )).sort(), [questoes]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (isError) {
             console.error("Erro ao carregar questões:", queryError);
         }
@@ -49,7 +63,7 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
         onHide();
     };
 
-    const filteredQuestoes = useMemo(() => dimensaoSelecionada
+    const filteredQuestoes = React.useMemo(() => dimensaoSelecionada
         ? questoes.filter(q => q?.dimensao?.nome === dimensaoSelecionada)
         : questoes, [questoes, dimensaoSelecionada]);
 
@@ -79,8 +93,30 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
         onQuestoesSelected(questoesSelecionadas);
         handleClose();
     };
+    
+    const handleEditClick = async (questao) => {
+        try {
+            const data = await getQuestaoById(questao.id);
+            setSelectedQuestion(data);
+            setShowEditModal(true);
+        } catch (error) {
+            console.error("Erro ao buscar detalhes da questão:", error);
+        }
+    };
 
-    const groupedQuestoes = useMemo(() => filteredQuestoes.reduce((acc, questao) => {
+    const handleEditSuccess = (updatedQuestao) => {
+        // Se a questão foi clonada (novo ID), atualiza a seleção local
+        if (updatedQuestao && selectedQuestion && updatedQuestao.id !== selectedQuestion.id) {
+            setQuestoesSelecionadas(prev => {
+                const filtered = prev.filter(id => id !== selectedQuestion.id);
+                return [...filtered, updatedQuestao.id];
+            });
+        }
+        setShowEditModal(false);
+        setSelectedQuestion(null);
+    };
+
+    const groupedQuestoes = React.useMemo(() => filteredQuestoes.reduce((acc, questao) => {
         const eixoNome = questao?.dimensao?.eixo?.nome || 'Sem eixo';
         const eixoNumero = questao?.dimensao?.eixo?.numero ?? '';
         const dimensaoNome = questao?.dimensao?.nome || 'Sem dimensão';
@@ -207,40 +243,63 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
                                                     return (
                                                         <ListItem
                                                             key={questao.id}
-                                                            button
-                                                            onClick={() => handleQuestaoToggle(questao.id)}
+                                                            disablePadding
+                                                            secondaryAction={
+                                                                <Tooltip title="Editar Questão">
+                                                                    <IconButton 
+                                                                        edge="end" 
+                                                                        aria-label="edit" 
+                                                                        onClick={(e) => { e.stopPropagation(); handleEditClick(questao); }}
+                                                                        size="small"
+                                                                        sx={{ color: 'primary.main', '&:hover': { color: 'primary.dark' } }}
+                                                                    >
+                                                                        <FaRegEdit size={16} />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            }
                                                             sx={{
                                                                 py: 0.5,
                                                                 borderRadius: 1,
-                                                                alignItems: 'flex-start',
                                                                 '&:hover': { backgroundColor: 'action.hover' }
                                                             }}
                                                         >
-                                                            <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
-                                                                <Checkbox
-                                                                    edge="start"
-                                                                    checked={isSelected}
-                                                                    tabIndex={-1}
-                                                                    disableRipple
-                                                                    size="small"
-                                                                />
-                                                            </ListItemIcon>
-                                                            <ListItemText
-                                                                primary={`Q${questaoCount++} — ${questao.descricao}`}
-                                                                primaryTypographyProps={{
-                                                                    variant: 'body2',
-                                                                    sx: { fontWeight: isSelected ? 600 : 400 }
+                                                            <Box 
+                                                                onClick={() => handleQuestaoToggle(questao.id)}
+                                                                sx={{ 
+                                                                    display: 'flex', 
+                                                                    width: '100%', 
+                                                                    cursor: 'pointer',
+                                                                    alignItems: 'flex-start',
+                                                                    pr: 6 // Espaço para o botão de edit
                                                                 }}
-                                                                secondary={subquestoes.length > 0 ? (
-                                                                    <Box sx={{ mt: 0.5, pl: 1.5, borderLeft: '2px solid #e2e8f0' }}>
-                                                                        {subquestoes.map(qa => (
-                                                                            <Typography key={qa.id} variant="caption" display="block" sx={{ color: '#64748b' }}>
-                                                                                • {qa.descricao}
-                                                                            </Typography>
-                                                                        ))}
-                                                                    </Box>
-                                                                ) : null}
-                                                            />
+                                                            >
+                                                                <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+                                                                    <Checkbox
+                                                                        edge="start"
+                                                                        checked={isSelected}
+                                                                        tabIndex={-1}
+                                                                        disableRipple
+                                                                        size="small"
+                                                                    />
+                                                                </ListItemIcon>
+                                                                <ListItemText
+                                                                    primary={`Q${questaoCount++} — ${questao.descricao}`}
+                                                                    primaryTypographyProps={{
+                                                                        variant: 'body2',
+                                                                        sx: { fontWeight: isSelected ? 600 : 400 }
+                                                                    }}
+                                                                    secondary={subquestoes.length > 0 ? (
+                                                                        <Box sx={{ mt: 0.5, pl: 1.5, borderLeft: '2px solid #e2e8f0' }}>
+                                                                            {subquestoes.map(qa => (
+                                                                                <Typography key={qa.id} variant="caption" display="block" sx={{ color: '#64748b' }}>
+                                                                                    • {qa.descricao}
+                                                                                </Typography>
+                                                                            ))}
+                                                                        </Box>
+                                                                    ) : null}
+                                                                    secondaryTypographyProps={{ component: 'div' }}
+                                                                />
+                                                            </Box>
                                                         </ListItem>
                                                     );
                                                 })}
@@ -253,6 +312,15 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
                     )}
                 </Box>
             </Box>
+            
+            {showEditModal && selectedQuestion && (
+                <Modal_Questoes
+                    show={showEditModal}
+                    onHide={() => { setShowEditModal(false); setSelectedQuestion(null); }}
+                    questao={selectedQuestion}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </MuiBaseModal>
     );
 }

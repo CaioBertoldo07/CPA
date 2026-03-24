@@ -129,6 +129,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             headerName: 'Modalidades',
             flex: 1,
             minWidth: 200,
+            type: 'string',
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {params.value?.map((m, i) => (
@@ -211,7 +212,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                                     '&:hover': { bgcolor: '#e8f5e9' }
                                 }}
                             >
-                                Ver 
+                                Ver
                             </MuiButton>
                         </Tooltip>
                     </Box>
