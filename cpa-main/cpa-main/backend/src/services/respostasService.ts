@@ -16,7 +16,14 @@ class RespostasService {
         const matriculaHash = hashMatricula(matricula);
 
         // 2. Verificar se o avaliador já respondeu esta avaliação
-        const jaRespondeu = await respostasRepository.findRespostaExistente(matriculaHash, idAvaliacao);
+        // Checa tanto pelo hash (novos registros) quanto pela matrícula crua (registros anteriores à migração),
+        // para preservar a regra de 1 resposta por avaliação durante o período de transição.
+        const jaRespondeu = await prisma.respostas.findFirst({
+            where: {
+                avaliador_matricula: { in: [matriculaHash, matricula] },
+                avaliacao_questao: { avaliacao: { id: idAvaliacao } },
+            },
+        });
         if (jaRespondeu) {
             throw new AppError('Você já respondeu esta avaliação.', 400);
         }
@@ -33,11 +40,20 @@ class RespostasService {
                     curso = alunoInfo.CURSO_NOME;
                     unidade = alunoInfo.UNIDADE_NOME;
                     
+                    // Normaliza a sigla da unidade recebida do Lyceum (ex: "est" -> "EST")
+                    const siglaUnidade = alunoInfo.UNIDADE
+                        ? alunoInfo.UNIDADE.trim().toUpperCase()
+                        : null;
+
                     // Buscar o município da unidade no nosso banco usando a SIGLA (ex: EST)
-                    const unidadeDB = await prisma.unidades.findFirst({
-                        where: { sigla: { contains: alunoInfo.UNIDADE } }
-                    });
-                    municipio = unidadeDB?.municipio_vinculo || null;
+                    if (siglaUnidade) {
+                        const unidadeDB = await prisma.unidades.findFirst({
+                            where: { sigla: { equals: siglaUnidade } }
+                        });
+                        municipio = unidadeDB?.municipio_vinculo || null;
+                    } else {
+                        municipio = null;
+                    }
                 }
             } catch (err) {
                 console.error('Erro ao buscar dados demográficos no Lyceum:', err);

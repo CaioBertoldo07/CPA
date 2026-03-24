@@ -584,7 +584,7 @@ const RelatorioAvaliacao = () => {
                             minH={300}
                         >
                             {participacaoData.curso.length === 0 ? (
-                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados de curso registrado</div>
+                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados de curso registrados</div>
                             ) : (
                                 <ResponsiveContainer width="100%" height={220}>
                                     <BarChart data={participacaoData.curso} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
