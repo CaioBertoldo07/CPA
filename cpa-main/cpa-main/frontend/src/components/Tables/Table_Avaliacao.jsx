@@ -42,7 +42,11 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+const fmt = d => {
+    if (!d) return '—';
+    const datePart = String(d).substring(0, 10);
+    return new Date(datePart + 'T00:00:00').toLocaleDateString('pt-BR');
+};
 
 const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
     const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
@@ -214,30 +218,33 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
 
                     {/* Editar (apenas rascunho) */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        {params.row.status === 1 && (
-                            <Tooltip title="Editar rascunho">
-                                <MuiButton
-                                    size="small"
-                                    variant="text"
-                                    startIcon={<FaPencil size={13} />}
-                                    onClick={() => onEditar?.(params.row.id)}
-                                    sx={{
-                                        color: '#d97706',
-                                        textTransform: 'none',
-                                        fontWeight: 600,
-                                        fontSize: '0.75rem',
-                                        minWidth: 'auto',
-                                        '&:hover': { bgcolor: '#fef3c7' }
-                                    }}
-                                >
-                                    Editar
-                                </MuiButton>
-                            </Tooltip>
-                        )}
+                        {params.row.status === 1 && (() => {
+                            const vencida = new Date(params.row.data_fim.substring(0, 10) + 'T23:59:59') < new Date();
+                            return (
+                                <Tooltip title={vencida ? 'Data de fim vencida — edite a data para poder enviar' : 'Editar rascunho'}>
+                                    <MuiButton
+                                        size="small"
+                                        variant="text"
+                                        startIcon={<FaPencil size={13} />}
+                                        onClick={() => onEditar?.(params.row.id)}
+                                        sx={{
+                                            color: vencida ? '#dc2626' : '#d97706',
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem',
+                                            minWidth: 'auto',
+                                            '&:hover': { bgcolor: vencida ? '#fee2e2' : '#fef3c7' }
+                                        }}
+                                    >
+                                        Editar
+                                    </MuiButton>
+                                </Tooltip>
+                            );
+                        })()}
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        {params.row.status === 1 && (
+                        {params.row.status === 1 && new Date(params.row.data_fim.substring(0, 10) + 'T23:59:59') >= new Date() && (
                             <Tooltip title="Enviar">
                                 <MuiButton
                                     size="small"

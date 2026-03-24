@@ -71,6 +71,7 @@ class AvaliacoesService {
     }
 
     async getAll(): Promise<AvaliacaoResponseDTO[]> {
+        await avaliacaoRepository.encerrarVencidas();
         const avaliacoes = await avaliacaoRepository.findMany();
         return avaliacoes.map(a => this.mapAvaliacao(a));
     }
@@ -177,6 +178,7 @@ class AvaliacoesService {
 
         if (newStatus === 2) { // Enviar (Rascunho -> Enviada)
             if (avaliacao.status !== 1) throw new AppError('Apenas rascunhos podem ser enviados.', 400);
+            if (new Date(avaliacao.data_fim) < new Date()) throw new AppError('Não é possível enviar uma avaliação com data de encerramento vencida.', 400);
             this.validateCompleteness(avaliacao);
         }
 
