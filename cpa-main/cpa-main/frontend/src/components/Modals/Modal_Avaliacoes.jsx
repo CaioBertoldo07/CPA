@@ -155,8 +155,8 @@ function Modal_Avaliacoes(props) {
             modalidade: modalidadeSelecionada.map(q => q.value),
             questoes: questoesSelecionadas,
             periodo_letivo: `${ano}.${periodo}`,
-            data_inicio: startDate,
-            data_fim: endDate,
+            data_inicio: startDate ? `${startDate}T00:00:00` : startDate,
+            data_fim: endDate ? `${endDate}T23:59:59` : endDate,
             status: 1,
             ano,
         };

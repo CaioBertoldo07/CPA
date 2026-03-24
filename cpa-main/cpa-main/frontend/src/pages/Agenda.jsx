@@ -82,10 +82,9 @@ const Agenda = () => {
     const parseDate = (value, endOfDay = false) => {
         if (!value) return null;
         if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
-        const str = String(value);
-        const d = str.includes('T')
-            ? new Date(str)
-            : new Date(str + (endOfDay ? 'T23:59:59' : 'T00:00:00'));
+        // Extrai apenas YYYY-MM-DD para evitar shift de fuso horário UTC→local
+        const datePart = String(value).substring(0, 10);
+        const d = new Date(datePart + (endOfDay ? 'T23:59:59' : 'T00:00:00'));
         return isNaN(d.getTime()) ? null : d;
     };
 
