@@ -84,7 +84,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
 
     const handleProrrogarConfirm = async () => {
         if (!novaDataFim) { showNotification('Informe a nova data.', 'warning'); return; }
-        prorrogarMutation.mutate({ id: avaliacaoAlvo.id, novaDataFim }, {
+        prorrogarMutation.mutate({ id: avaliacaoAlvo.id, novaDataFim: `${novaDataFim}T23:59:59` }, {
             onSuccess: () => {
                 showNotification('Avaliação prorrogada com sucesso!', 'success');
                 onSuccess?.('Avaliação prorrogada!');
