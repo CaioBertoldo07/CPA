@@ -270,6 +270,7 @@ export {
     create,
     encerrarVencidas,
     findMany,
+    findManyPaginated,
     findById,
     findByIdSimple,
     findDisponiveis,
