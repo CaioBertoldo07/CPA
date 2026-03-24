@@ -60,6 +60,10 @@ const MultiSelectModalidadesInput = ({ item, applyValue, apiRef }) => {
     );
 };
 
+const supportedStringFilterOperators = getGridStringOperators().filter(op =>
+    ['contains', 'equals', 'startsWith', 'endsWith', 'isEmpty', 'isNotEmpty'].includes(op.value)
+);
+
 const modalidadesFilterOperators = [
     {
         label: 'contém algum de',
@@ -70,9 +74,7 @@ const modalidadesFilterOperators = [
         },
         InputComponent: MultiSelectModalidadesInput,
     },
-    ...getGridStringOperators().filter(op =>
-        ['contains', 'equals', 'startsWith', 'endsWith', 'isEmpty', 'isNotEmpty'].includes(op.value)
-    ),
+    ...supportedStringFilterOperators,
 ];
 
 const fmt = d => {
@@ -197,8 +199,8 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 </Box>
             )
         },
-        { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
-        { field: 'ano', headerName: 'Ano', type: 'string', width: 80 },
+        { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, filterOperators: supportedStringFilterOperators, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
+        { field: 'ano', headerName: 'Ano', type: 'string', width: 80, filterOperators: supportedStringFilterOperators },
         {
             field: 'data_inicio',
             headerName: 'Início',

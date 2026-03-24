@@ -173,7 +173,9 @@ class AvaliacoesService {
 
         const andConditions: any[] = [];
 
-        if (filters.status) andConditions.push({ status: filters.status });
+        if (filters.status != null && !Number.isNaN(filters.status)) {
+            andConditions.push({ status: filters.status });
+        }
 
         if (filters.search) {
             const q = filters.search.trim();
