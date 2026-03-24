@@ -109,6 +109,15 @@ class QuestoesService {
             };
         }
 
+        if (data.questoesAdicionais) {
+            updateData.questoes_adicionais = {
+                deleteMany: {},
+                create: data.questoesAdicionais.map((q: any) => ({
+                    descricao: q.descricao
+                }))
+            };
+        }
+
         await questoesRepository.update(id, updateData);
         return this.getById(id);
     }

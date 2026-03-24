@@ -118,7 +118,7 @@ const AvaliacaoAlunos = () => {
             const firstEixoKey = `${firstQuestao.dimensoes.eixos.numero} - ${firstQuestao.dimensoes.eixos.nome}`;
             setExpandedEixo(firstEixoKey);
         }
-    }, [avaliacao, expandedEixo]);
+    }, [avaliacao]);
 
     const groupByEixoDimensao = () => {
         return avaliacao?.avaliacao_questoes?.reduce((acc, { id: avQuestId, questoes }) => {
