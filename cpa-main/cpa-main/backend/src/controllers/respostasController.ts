@@ -12,8 +12,8 @@ const salvarRespostas = asyncHandler(async (req: Request, res: Response) => {
     // Validação
     await salvarRespostasSchema.validate(req.body, { abortEarly: false });
 
-    const { matricula } = (req as any).user;
-    await respostasService.salvar(req.body, matricula);
+    const user = (req as any).user;
+    await respostasService.salvar({ ...req.body, universityToken: user.universityToken }, user.matricula);
 
     res.status(201).json({ message: 'Respostas salvas com sucesso!' });
 });

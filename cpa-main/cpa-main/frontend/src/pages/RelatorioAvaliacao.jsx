@@ -389,6 +389,20 @@ const RelatorioAvaliacao = () => {
 
     const questoesRespondidas = questoesAchatadas.filter(q => q.total > 0).length;
 
+    const participacaoData = useMemo(() => {
+        if (!reportData?.participacao) return { unidade: [], curso: [], municipio: [] };
+        
+        const format = (obj) => Object.entries(obj)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        return {
+            unidade: format(reportData.participacao.unidade),
+            curso: format(reportData.participacao.curso).slice(0, 10), // Top 10 cursos
+            municipio: format(reportData.participacao.municipio),
+        };
+    }, [reportData]);
+
     const stats = [
         { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
         ...(totalQuestoesAvaliacao !== null
@@ -542,7 +556,65 @@ const RelatorioAvaliacao = () => {
                     </div>
 
                     <div className="insights-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                        {/* Novos gráficos serão inseridos aqui para fornecer insights mais profundos */}
+                        {/* Participação por Unidade */}
+                        <ChartCard
+                            title="Participação por Unidade"
+                            subtitle="Divisão de respondentes por unidade acadêmica"
+                            loading={loadingRespostas}
+                            delay={80}
+                            minH={300}
+                        >
+                            {participacaoData.unidade.length === 0 ? (
+                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados de unidade registrado</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <PieChart>
+                                        <Pie
+                                            data={participacaoData.unidade}
+                                            cx="50%" cy="50%"
+                                            innerRadius={60} outerRadius={85}
+                                            paddingAngle={4} dataKey="value"
+                                            animationDuration={1000}
+                                        >
+                                            {participacaoData.unidade.map((_, i) => (
+                                                <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} stroke="none" />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<ChartTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
+                        </ChartCard>
+
+                        {/* Participação por Curso (Top 10) */}
+                        <ChartCard
+                            title="Participação por Curso"
+                            subtitle="Top 10 cursos com mais participações nesta avaliação"
+                            loading={loadingRespostas}
+                            delay={130}
+                            minH={300}
+                        >
+                            {participacaoData.curso.length === 0 ? (
+                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados de curso registrados</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart data={participacaoData.curso} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                        <XAxis type="number" hide />
+                                        <YAxis 
+                                            type="category" 
+                                            dataKey="name" 
+                                            width={100} 
+                                            tick={{ fontSize: 10, fill: '#4a5568' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <Tooltip content={<ChartTooltip formatter={v => v + ' respondentes'} />} cursor={{ fill: '#f8fafc' }} />
+                                        <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </ChartCard>
                     </div>
                 </div>
 

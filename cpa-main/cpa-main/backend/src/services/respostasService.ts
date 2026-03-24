@@ -3,15 +3,62 @@ import * as avaliacaoRepository from '../repositories/avaliacaoRepository';
 import { RespostaInputDTO, SalvarRespostasDTO, RelatorioFiltrosDTO } from '../dtos/RespostaDTO';
 import { AppError } from '../middleware/errorMiddleware';
 import prisma from '../repositories/prismaClient';
+import { hashMatricula } from '../utils/hashUtils';
+import LyceumService from './lyceumService';
+
+const lyceumService = new LyceumService();
 
 class RespostasService {
     async salvar(data: SalvarRespostasDTO, matricula: string): Promise<void> {
-        const { idAvaliacao, respostas } = data;
+        const { idAvaliacao, respostas, universityToken } = data;
 
-        // Verificar se o avaliador já respondeu esta avaliação
-        const jaRespondeu = await respostasRepository.findRespostaExistente(matricula, idAvaliacao);
+        // 1. Hash da matrícula para anonimato
+        const matriculaHash = hashMatricula(matricula);
+
+        // 2. Verificar se o avaliador já respondeu esta avaliação
+        // Checa tanto pelo hash (novos registros) quanto pela matrícula crua (registros anteriores à migração),
+        // para preservar a regra de 1 resposta por avaliação durante o período de transição.
+        const jaRespondeu = await prisma.respostas.findFirst({
+            where: {
+                avaliador_matricula: { in: [matriculaHash, matricula] },
+                avaliacao_questao: { avaliacao: { id: idAvaliacao } },
+            },
+        });
         if (jaRespondeu) {
             throw new AppError('Você já respondeu esta avaliação.', 400);
+        }
+
+        // 3. Obter dados demográficos do Lyceum
+        let curso = null;
+        let unidade = null;
+        let municipio = null;
+
+        if (universityToken) {
+            try {
+                const alunoInfo = await lyceumService.getAlunoInfo(universityToken);
+                if (alunoInfo) {
+                    curso = alunoInfo.CURSO_NOME;
+                    unidade = alunoInfo.UNIDADE_NOME;
+                    
+                    // Normaliza a sigla da unidade recebida do Lyceum (ex: "est" -> "EST")
+                    const siglaUnidade = alunoInfo.UNIDADE
+                        ? alunoInfo.UNIDADE.trim().toUpperCase()
+                        : null;
+
+                    // Buscar o município da unidade no nosso banco usando a SIGLA (ex: EST)
+                    if (siglaUnidade) {
+                        const unidadeDB = await prisma.unidades.findFirst({
+                            where: { sigla: { equals: siglaUnidade } }
+                        });
+                        municipio = unidadeDB?.municipio_vinculo || null;
+                    } else {
+                        municipio = null;
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao buscar dados demográficos no Lyceum:', err);
+                // Não bloqueamos a resposta caso o Lyceum falhe, apenas salvamos sem demographics
+            }
         }
 
         const grouped: Record<number, RespostaInputDTO[]> = {};
@@ -50,9 +97,12 @@ class RespostasService {
                     await respostasRepository.createRespostaGrade({
                         avaliacao_questao: { connect: { id: idQuestao } },
                         adicionalId: Number(qAdicionalId),
-                        avaliador_matricula: matricula,
+                        avaliador_matricula: matriculaHash,
                         resposta: alternativa.descricao,
                         data_resposta,
+                        curso,
+                        unidade,
+                        municipio
                     });
                 }
             } else { // Padrão
@@ -70,9 +120,12 @@ class RespostasService {
 
                 await respostasRepository.createResposta({
                     avaliacao_questao: { connect: { id: idQuestao } },
-                    avaliador_matricula: matricula,
+                    avaliador_matricula: matriculaHash,
                     resposta: alternativa.descricao,
                     data_resposta,
+                    curso,
+                    unidade,
+                    municipio
                 });
             }
         }
@@ -214,9 +267,40 @@ class RespostasService {
             });
         });
 
+        // 7. Agrupar participações por Unidade, Curso e Município
+        const participacao: any = {
+            unidade: {},
+            curso: {},
+            municipio: {}
+        };
+
+        const processarDemographics = (r: any) => {
+            if (r.unidade) {
+                participacao.unidade[r.unidade] = (participacao.unidade[r.unidade] || 0) + 1;
+            }
+            if (r.curso) {
+                participacao.curso[r.curso] = (participacao.curso[r.curso] || 0) + 1;
+            }
+            if (r.municipio) {
+                participacao.municipio[r.municipio] = (participacao.municipio[r.municipio] || 0) + 1;
+            }
+        };
+
+        // Como as respostas são por questão, precisamos contar avaliadores únicos por categoria
+        // Uma forma simples é agrupar por (avaliador_matricula, unidade/curso/municipio)
+        const vUnicos = new Set();
+        [...respostasPadrao, ...respostasGrade].forEach((r: any) => {
+            const key = `${r.avaliador_matricula}-${r.unidade}-${r.curso}-${r.municipio}`;
+            if (!vUnicos.has(key)) {
+                vUnicos.add(key);
+                processarDemographics(r);
+            }
+        });
+
         return {
             totalAvaliadores: avaliadoresUnicos,
             relatorio,
+            participacao
         };
     }
 }
