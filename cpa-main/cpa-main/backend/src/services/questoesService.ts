@@ -15,7 +15,11 @@ class QuestoesService {
         if (!questao) {
             throw new AppError('Questão não encontrada.', 404);
         }
-        return this.mapToDTO(questao);
+        const usage = await questoesRepository.getQuestionUsage(id);
+        return {
+            ...this.mapToDTO(questao),
+            isUsed: usage.length > 0
+        };
     }
 
     async create(data: CreateQuestaoDTO): Promise<QuestaoResponseDTO> {
@@ -75,6 +79,40 @@ class QuestoesService {
         if (!existingQuestao) {
             throw new AppError('Questão não encontrada para atualizar.', 404);
         }
+
+        const usage = await questoesRepository.getQuestionUsage(id);
+        console.log(`[questoesService.update] ID: ${id}, usage statuses found: [${usage.join(', ')}]`);
+
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            console.log(`[questoesService.update] Questão ID: ${id} está em uso. Clonando... (hasActiveOrDraft: ${hasActiveOrDraft})`);
+
+            // Clonagem (Versionamento)
+            const mergedData: CreateQuestaoDTO = {
+                questao: data.questao ?? existingQuestao.descricao,
+                dimensaoNumero: data.dimensaoNumero ?? existingQuestao.numero_dimensoes,
+                categorias: data.categorias ?? (existingQuestao.Questoes_categorias?.map((qc: any) => qc.id_categorias) || []),
+                modalidades: data.modalidades ?? (existingQuestao.questoes_modalidades?.map((qm: any) => qm.id_modalidades) || []),
+                padraoRespostaId: data.padraoRespostaId ?? existingQuestao.id_padrao_resposta,
+                basica: data.basica ?? existingQuestao.basica,
+                tipo_questao: data.tipo_questao ?? (existingQuestao.id_questoes_tipo || 1),
+                questoesAdicionais: data.questoesAdicionais ?? (existingQuestao.questoes_adicionais?.map((qa: any) => ({ descricao: qa.descricao })) || [])
+            };
+
+            const newQuestao = await this.create(mergedData);
+
+            // Somente desativa a original se não houver nenhuma avaliação Rascunho ou Ativa usando ela
+            if (!hasActiveOrDraft) {
+                console.log(`[questoesService.update] Desativando a original ID: ${id} (pois só existe em avaliações encerradas)`);
+                await questoesRepository.update(id, { ativo: false });
+            } else {
+                console.log(`[questoesService.update] Mantendo a original ID: ${id} ATIVA (pois existe em avaliações rascunho/ativas)`);
+            }
+
+            return newQuestao;
+        }
+
+        console.log(`[questoesService.update] Questão ID: ${id} NÃO está em uso. Realizando update direto.`);
 
         const updateData: any = {};
 

@@ -129,6 +129,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             headerName: 'Modalidades',
             flex: 1,
             minWidth: 200,
+            type: 'string',
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {params.value?.map((m, i) => (
@@ -146,7 +147,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
         { field: 'periodo_letivo', headerName: 'Período', width: 120, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
         { field: 'ano', headerName: 'Ano', width: 80 },
         { field: 'data_inicio', headerName: 'Início', width: 110, valueFormatter: (value) => fmt(value) },
-        { field: 'data_fim', headerName: 'Fim', width: 110, valueFormatter: (value) => fmt(value) },
+        { field: 'data_fim', type: 'date', headerName: 'Fim', width: 110, valueFormatter: (value) => fmt(value) },
         {
             field: 'status',
             headerName: 'Status',
@@ -211,7 +212,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                                     '&:hover': { bgcolor: '#e8f5e9' }
                                 }}
                             >
-                                Ver 
+                                Ver
                             </MuiButton>
                         </Tooltip>
                     </Box>

@@ -54,7 +54,7 @@ model Questoes {
   questoes_alternativas Questoes_alternativas[] @ignore
   questoes_avaliadores  Questoes_avaliadores[] @ignore
   tipo_questao          Questoes_tipo?          @relation(fields: [id_questoes_tipo], references: [id])
-
+  ativo                 Boolean                 @default(true)
 }
 
 model  QuestoesAdicionais {
