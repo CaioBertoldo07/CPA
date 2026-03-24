@@ -51,6 +51,11 @@ const fmt = d => {
 const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
 
+    // Reseta para página 0 quando filtros mudam
+    useEffect(() => {
+        setPaginationModel(prev => prev.page === 0 ? prev : { ...prev, page: 0 });
+    }, [filtroStatus, searchQuery]);
+
     const { data: response, isLoading: loading, isError } = useGetAvaliacoesQuery(paginationModel);
 
     const avaliacoes = response?.data ?? [];

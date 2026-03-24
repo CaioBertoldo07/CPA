@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
     getAvaliacoes,
     getAvaliacoesDisponiveis,
@@ -10,6 +10,7 @@ export const useGetAvaliacoesQuery = (paginationModel = { page: 0, pageSize: 10 
     return useQuery({
         queryKey: ['avaliacoes', paginationModel.page, paginationModel.pageSize],
         queryFn: () => getAvaliacoes(paginationModel.page, paginationModel.pageSize),
+        placeholderData: keepPreviousData,
     });
 };
 
