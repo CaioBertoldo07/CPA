@@ -194,7 +194,10 @@ model Respostas {
   id_avaliacao_questoes Int
   resposta              String   @db.VarChar(500)
   data_resposta         DateTime @db.Date
-  avaliador_matricula   String   @db.VarChar(10)
+  avaliador_matricula   String   @db.VarChar(100)
+  unidade               String?  @db.VarChar(100)
+  municipio             String?  @db.VarChar(100)
+  curso                 String?  @db.VarChar(200)
   avaliacao_questao     Avaliacao_questoes @relation(fields: [id_avaliacao_questoes], references: [id])
 }
 
@@ -204,7 +207,10 @@ model RespostasGrade {
   adicionalId           Int
   resposta              String              @db.VarChar(500)
   data_resposta         DateTime            @default(now()) @db.Date
-  avaliador_matricula   String              @db.VarChar(10)
+  avaliador_matricula   String              @db.VarChar(100)
+  unidade               String?             @db.VarChar(100)
+  municipio             String?             @db.VarChar(100)
+  curso                 String?             @db.VarChar(200)
   avaliacao_questao     Avaliacao_questoes  @relation(fields: [id_avaliacao_questoes], references: [id], onDelete: Cascade)
 }
 

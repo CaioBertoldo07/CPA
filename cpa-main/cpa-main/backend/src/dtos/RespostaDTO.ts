@@ -9,6 +9,7 @@ export interface RespostaInputDTO {
 export interface SalvarRespostasDTO {
     idAvaliacao: number;
     respostas: RespostaInputDTO[];
+    universityToken?: string;
 }
 
 export interface RelatorioFiltrosDTO {

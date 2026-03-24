@@ -1,9 +1,14 @@
 import axios, { AxiosInstance } from 'axios';
+import https from 'https';
 import { LyceumCursoDTO } from '../dtos/LyceumDTO';
 
 interface LyceumUnidadesResponse {
     UNIDADECURSOS: LyceumCursoDTO[];
 }
+
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+});
 
 class LyceumService {
     private axiosInstance: AxiosInstance;
@@ -25,6 +30,7 @@ class LyceumService {
             timeout: 10000,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
+            httpsAgent,
         });
 
         // Interceptor para adicionar o token nas requisições
@@ -47,6 +53,31 @@ class LyceumService {
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error('Erro ao obter unidades de curso:', errorMessage);
+            throw error;
+        }
+    }
+
+    async getAlunoInfo(universityToken: string): Promise<any> {
+        try {
+            const response = await axios.get(
+                'https://api-carteira.uea.edu.br/lyceum/cadu/aluno/matriculapessoal',
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${universityToken}`,
+                    },
+                    httpsAgent,
+                }
+            );
+
+            if (response.status !== 200 || !response.data.status) {
+                throw new Error('Erro ao obter informações detalhadas do aluno.');
+            }
+
+            return response.data.message[0];
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('Erro ao obter informações do aluno no Lyceum:', errorMessage);
             throw error;
         }
     }
