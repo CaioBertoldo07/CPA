@@ -77,24 +77,6 @@ class AvaliacoesService {
         return avaliacoes.map((a: any) => this.mapAvaliacao(a));
     }
 
-    async getAllPaginated(page: number, limit: number): Promise<{
-        data: AvaliacaoResponseDTO[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
-    }> {
-        await avaliacaoRepository.encerrarVencidas();
-        const skip = page * limit;
-        const [avaliacoes, total] = await avaliacaoRepository.findManyPaginated(skip, limit);
-        return {
-            data: avaliacoes.map((a: any) => this.mapAvaliacao(a)),
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
-    }
-
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
         const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
 

@@ -49,13 +49,7 @@ const fmt = d => {
 };
 
 const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
-    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-
-    const { data: response, isLoading: loading, isError } = useGetAvaliacoesQuery(paginationModel);
-
-    const avaliacoes = response?.data ?? [];
-    const rowCount = response?.meta?.total ?? 0;
-
+    const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
     const prorrogarMutation = useProrrogarAvaliacaoMutation();
@@ -326,11 +320,10 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 rows={rows}
                 columns={columns}
                 loading={loading}
-                paginationMode="server"
-                rowCount={rowCount}
-                paginationModel={paginationModel}
-                onPaginationModelChange={setPaginationModel}
                 pageSizeOptions={[10, 25, 50]}
+                initialState={{
+                    pagination: { paginationModel: { pageSize: 10 } },
+                }}
                 density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
