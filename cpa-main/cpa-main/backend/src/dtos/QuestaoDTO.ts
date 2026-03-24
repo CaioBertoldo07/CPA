@@ -25,6 +25,7 @@ export interface QuestaoResponseDTO {
         nome: string;
     }>;
     questoesAdicionais?: any[];
+    isUsed?: boolean;
 }
 
 /**
@@ -39,9 +40,6 @@ export interface CreateQuestaoDTO {
     basica: boolean;
     tipo_questao: number;
     questoesAdicionais?: Array<{
-        id_questoes: number;
-        id_questoes_tipo: number;
-        ordem: number;
         descricao: string;
     }>;
 }

@@ -198,6 +198,13 @@ function Modal_Questoes(props) {
                     </Alert>
                 )}
 
+                {editingQuestao?.isUsed && (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        Esta questão já está sendo utilizada em uma avaliação. 
+                        Fique ciente de que qualquer alteração salvará uma <strong>nova cópia</strong> da questão, mantendo a original vinculada às avaliações atuais.
+                    </Alert>
+                )}
+
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
                         Enunciado Principal

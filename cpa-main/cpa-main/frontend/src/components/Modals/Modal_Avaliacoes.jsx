@@ -377,6 +377,7 @@ function Modal_Avaliacoes(props) {
                 <QuestaoSelectionModal
                     show={showQuestaoModal}
                     onHide={() => setShowQuestaoModal(false)}
+                    initialSelectedIds={questoesSelecionadas}
                     onQuestoesSelected={handleQuestoesSelect}
                 />
             )}

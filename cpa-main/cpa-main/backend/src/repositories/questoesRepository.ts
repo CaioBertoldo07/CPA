@@ -6,6 +6,7 @@ import prisma from './prismaClient';
  */
 const findMany = () => {
     return prisma.questoes.findMany({
+        where: { ativo: true },
         include: {
             dimensoes: { include: { eixos: true } },
             Questoes_categorias: { include: { categorias: true } },
@@ -70,4 +71,41 @@ const findUniqueById = (id: number) => {
     return prisma.questoes.findUnique({ where: { id } });
 };
 
-export { findMany, findById, findByIds, create, update, remove, findUniqueById };
+/**
+ * Retorna os status de todas as avaliações vinculadas a uma questão
+ */
+const getQuestionUsage = async (id: number) => {
+    const questao = await prisma.questoes.findUnique({
+        where: { id },
+        include: {
+            avaliacao_questoes: {
+                include: { avaliacao: { select: { status: true } } }
+            },
+            avaliacao: {
+                select: { status: true }
+            }
+        }
+    });
+
+    if (!questao) return [];
+
+    const statuses = new Set<number>();
+    
+    // Status das avaliações via tabela de junção explícita
+    questao.avaliacao_questoes?.forEach(aq => {
+        if (aq.avaliacao?.status !== undefined && aq.avaliacao?.status !== null) {
+            statuses.add(aq.avaliacao.status);
+        }
+    });
+
+    // Status das avaliações via relacionamento implícito
+    questao.avaliacao?.forEach(a => {
+        if (a.status !== undefined && a.status !== null) {
+            statuses.add(a.status);
+        }
+    });
+
+    return Array.from(statuses);
+};
+
+export { findMany, findById, findByIds, create, update, remove, findUniqueById, getQuestionUsage };

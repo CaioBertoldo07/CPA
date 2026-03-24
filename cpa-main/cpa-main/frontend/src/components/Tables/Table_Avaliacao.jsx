@@ -112,7 +112,6 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
 
     const { data: modalidadesData = [] } = useGetModalidadesQuery();
     const modalidadesOptions = modalidadesData.map(m => m.mod_ensino);
-
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
     const prorrogarMutation = useProrrogarAvaliacaoMutation();
@@ -293,7 +292,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                                     '&:hover': { bgcolor: '#e8f5e9' }
                                 }}
                             >
-                                Ver 
+                                Ver
                             </MuiButton>
                         </Tooltip>
                     </Box>
@@ -410,6 +409,9 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 filterModel={filterModel}
                 onFilterModelChange={(model) => setFilterModel(model)}
                 pageSizeOptions={[10, 25, 50]}
+                initialState={{
+                    pagination: { paginationModel: { pageSize: 10 } },
+                }}
                 density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
