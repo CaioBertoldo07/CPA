@@ -14,6 +14,7 @@ const FILTROS = [
 
 const Avaliacoes = () => {
     const [modalShow, setModalShow] = useState(false);
+    const [editAvaliacaoId, setEditAvaliacaoId] = useState(null);
     const [filtroStatus, setFiltroStatus] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -25,9 +26,25 @@ const Avaliacoes = () => {
         setDrawerOpen(true);
     };
 
+    const handleEditar = (id) => {
+        setEditAvaliacaoId(id);
+        setModalShow(true);
+    };
+
+    const handleNovaAvaliacao = () => {
+        setEditAvaliacaoId(null);
+        setModalShow(true);
+    };
+
     const handleSuccess = (message) => {
         setModalShow(false);
+        setEditAvaliacaoId(null);
         showNotification(message || 'Avaliação criada com sucesso!', 'success');
+    };
+
+    const handleModalHide = () => {
+        setModalShow(false);
+        setEditAvaliacaoId(null);
     };
 
     return (
@@ -46,7 +63,7 @@ const Avaliacoes = () => {
                         <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Crie e gerencie avaliações institucionais</p>
                     </div>
                     <button
-                        onClick={() => setModalShow(true)}
+                        onClick={handleNovaAvaliacao}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: '#1D5E24', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(29,94,36,0.25)', transition: 'all 150ms', whiteSpace: 'nowrap' }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#256428'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = '#1D5E24'; e.currentTarget.style.transform = 'translateY(0)'; }}
@@ -109,14 +126,16 @@ const Avaliacoes = () => {
                         filtroStatus={filtroStatus}
                         searchQuery={searchQuery}
                         onVerDetalhes={handleVerDetalhes}
+                        onEditar={handleEditar}
                     />
                 </div>
             </div>
 
             <ModalAvaliacoes
                 show={modalShow}
-                onHide={() => setModalShow(false)}
+                onHide={handleModalHide}
                 onSuccess={handleSuccess}
+                avaliacaoId={editAvaliacaoId}
             />
 
             <DrawerAvaliacaoDetalhes

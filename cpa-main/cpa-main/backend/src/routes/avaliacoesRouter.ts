@@ -3,13 +3,14 @@ const router = express.Router();
 
 import {
     createAvaliacao,
+    editarAvaliacao,
     getAvaliacoes,
     getAvaliacoesDisponiveis,
     getAvaliacaoById,
     verificarSeUsuarioRespondeu,
-    enviarAvaliacao,       // ADICIONADO
-    prorrogarAvaliacao,    // ADICIONADO
-    deleteAvaliacao,    // ADICIONADO
+    enviarAvaliacao,
+    prorrogarAvaliacao,
+    deleteAvaliacao,
 } from '../controllers/avaliacoesController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
@@ -191,6 +192,7 @@ router.get('/avaliacoes/disponiveis', authenticateToken, getAvaliacoesDisponivei
  *                   example: Avaliação removida
  */
 router.get('/avaliacoes/:id', authenticateToken, getAvaliacaoById);
+router.put('/avaliacoes/:id', authenticateToken, editarAvaliacao);
 router.delete('/avaliacoes/:id', authenticateToken, deleteAvaliacao);
 
 /**

@@ -35,6 +35,13 @@ const getAvaliacaoById = asyncHandler(async (req: Request, res: Response) => {
     res.json(avaliacao);
 });
 
+const editarAvaliacao = asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id as string, 10);
+    const validatedData = await createAvaliacaoSchema.validate(req.body, { abortEarly: false });
+    const avaliacao = await avaliacoesService.editar(id, validatedData as any);
+    res.status(200).json({ message: 'Avaliação atualizada com sucesso!', avaliacao });
+});
+
 const enviarAvaliacao = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
     const avaliacao = await avaliacoesService.switchStatus(id, 2);
@@ -68,6 +75,7 @@ const verificarSeUsuarioRespondeu = asyncHandler(async (req: Request, res: Respo
 
 export {
     createAvaliacao,
+    editarAvaliacao,
     getAvaliacoes,
     getAvaliacoesDisponiveis,
     getAvaliacaoById,
