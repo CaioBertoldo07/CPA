@@ -203,6 +203,7 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
                                             <List sx={{ p: 0 }}>
                                                 {questoes.map((questao) => {
                                                     const isSelected = questoesSelecionadas.includes(questao.id);
+                                                    const subquestoes = questao.questoesAdicionais || [];
                                                     return (
                                                         <ListItem
                                                             key={questao.id}
@@ -211,10 +212,11 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
                                                             sx={{
                                                                 py: 0.5,
                                                                 borderRadius: 1,
+                                                                alignItems: 'flex-start',
                                                                 '&:hover': { backgroundColor: 'action.hover' }
                                                             }}
                                                         >
-                                                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                                            <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
                                                                 <Checkbox
                                                                     edge="start"
                                                                     checked={isSelected}
@@ -229,6 +231,15 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected }) {
                                                                     variant: 'body2',
                                                                     sx: { fontWeight: isSelected ? 600 : 400 }
                                                                 }}
+                                                                secondary={subquestoes.length > 0 ? (
+                                                                    <Box sx={{ mt: 0.5, pl: 1.5, borderLeft: '2px solid #e2e8f0' }}>
+                                                                        {subquestoes.map(qa => (
+                                                                            <Typography key={qa.id} variant="caption" display="block" sx={{ color: '#64748b' }}>
+                                                                                • {qa.descricao}
+                                                                            </Typography>
+                                                                        ))}
+                                                                    </Box>
+                                                                ) : null}
                                                             />
                                                         </ListItem>
                                                     );
