@@ -1,6 +1,7 @@
 import api from './index';
 
-export const getAvaliacoes = () => api.get('/avaliacoes');
+export const getAvaliacoes = (page = 0, pageSize = 10) =>
+    api.get('/avaliacoes', { params: { page, pageSize } });
 export const getAvaliacoesDisponiveis = () => api.get('/avaliacoes/disponiveis');
 export const createAvaliacao = (avaliacaoData) => api.post('/avaliacoes', avaliacaoData);
 export const editarAvaliacao = (id, avaliacaoData) => api.put(`/avaliacoes/${id}`, avaliacaoData);

@@ -39,6 +39,38 @@ const findMany = () => {
     });
 };
 
+const includeRelations = {
+    avaliacao_questoes: {
+        include: {
+            questoes: {
+                include: {
+                    questoes_adicionais: true,
+                    dimensoes: { include: { eixos: true } }
+                }
+            }
+        }
+    },
+    unidade: true,
+    categorias: true,
+    cursos: true,
+    modalidades: true,
+} as const;
+
+/**
+ * Busca avaliações paginadas com o total geral para server-side pagination
+ */
+const findManyPaginated = (skip: number, take: number): Promise<[any[], number]> => {
+    return Promise.all([
+        prisma.avaliacao.findMany({
+            skip,
+            take,
+            orderBy: { id: 'desc' },
+            include: includeRelations,
+        }),
+        prisma.avaliacao.count(),
+    ]);
+};
+
 /**
  * Busca uma avaliação pelo ID com relações completas
  */
@@ -237,6 +269,7 @@ export {
     create,
     encerrarVencidas,
     findMany,
+    findManyPaginated,
     findById,
     findByIdSimple,
     findDisponiveis,
