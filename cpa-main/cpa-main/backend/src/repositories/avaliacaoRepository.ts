@@ -170,6 +170,16 @@ const update = (id: number, data: Prisma.AvaliacaoUpdateInput) => {
 };
 
 /**
+ * Encerra automaticamente avaliações enviadas com data_fim vencida
+ */
+const encerrarVencidas = () => {
+    return prisma.avaliacao.updateMany({
+        where: { status: 2, data_fim: { lt: new Date() } },
+        data: { status: 3 },
+    });
+};
+
+/**
  * Remove uma avaliação pelo ID
  */
 const remove = (id: number) => {
@@ -225,6 +235,7 @@ const findAvaliacaoQuestaoWithDetails = (id: number) => {
 
 export {
     create,
+    encerrarVencidas,
     findMany,
     findById,
     findByIdSimple,
