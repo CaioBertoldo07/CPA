@@ -77,6 +77,130 @@ class AvaliacoesService {
         return avaliacoes.map((a: any) => this.mapAvaliacao(a));
     }
 
+    private buildColumnFilters(items: any[]): any[] {
+        const conditions: any[] = [];
+        for (const item of items) {
+            if (!item.field || !item.operator) continue;
+            const emptyOp = item.operator === 'isEmpty' || item.operator === 'isNotEmpty';
+            const hasValue = item.value !== undefined && item.value !== null && item.value !== '';
+            if (!hasValue && !emptyOp) continue;
+
+            switch (item.field) {
+                case 'id': {
+                    const id = parseInt(item.value, 10);
+                    if (isNaN(id)) break;
+                    if (item.operator === '=')  conditions.push({ id });
+                    else if (item.operator === '!=') conditions.push({ NOT: { id } });
+                    else if (item.operator === '>')  conditions.push({ id: { gt: id } });
+                    else if (item.operator === '>=') conditions.push({ id: { gte: id } });
+                    else if (item.operator === '<')  conditions.push({ id: { lt: id } });
+                    else if (item.operator === '<=') conditions.push({ id: { lte: id } });
+                    break;
+                }
+                case 'modalidades': {
+                    const val = item.value as string;
+                    const mode = 'insensitive' as const;
+                    if (item.operator === 'isAnyOf') {
+                        const vals = Array.isArray(item.value) ? item.value : [];
+                        if (vals.length) conditions.push({ modalidades: { some: { mod_ensino: { in: vals } } } });
+                    }
+                    else if (item.operator === 'contains')   conditions.push({ modalidades: { some: { mod_ensino: { contains: val, mode } } } });
+                    else if (item.operator === 'equals')     conditions.push({ modalidades: { some: { mod_ensino: { equals: val, mode } } } });
+                    else if (item.operator === 'startsWith') conditions.push({ modalidades: { some: { mod_ensino: { startsWith: val, mode } } } });
+                    else if (item.operator === 'endsWith')   conditions.push({ modalidades: { some: { mod_ensino: { endsWith: val, mode } } } });
+                    else if (item.operator === 'isEmpty')    conditions.push({ modalidades: { none: {} } });
+                    else if (item.operator === 'isNotEmpty') conditions.push({ modalidades: { some: {} } });
+                    break;
+                }
+                case 'periodo_letivo':
+                case 'ano': {
+                    const f = item.field;
+                    const val = item.value as string;
+                    const mode = 'insensitive' as const;
+                    if (item.operator === 'contains')        conditions.push({ [f]: { contains: val, mode } });
+                    else if (item.operator === 'equals')     conditions.push({ [f]: val });
+                    else if (item.operator === 'startsWith') conditions.push({ [f]: { startsWith: val, mode } });
+                    else if (item.operator === 'endsWith')   conditions.push({ [f]: { endsWith: val, mode } });
+                    else if (item.operator === 'isEmpty')    conditions.push({ [f]: null });
+                    else if (item.operator === 'isNotEmpty') conditions.push({ NOT: { [f]: null } });
+                    break;
+                }
+                case 'data_inicio':
+                case 'data_fim': {
+                    const f = item.field;
+                    const date = new Date(item.value);
+                    if (isNaN(date.getTime())) break;
+                    const start = new Date(date); start.setHours(0, 0, 0, 0);
+                    const end   = new Date(date); end.setHours(23, 59, 59, 999);
+                    if (item.operator === 'is')          conditions.push({ [f]: { gte: start, lte: end } });
+                    else if (item.operator === 'not')        conditions.push({ NOT: { [f]: { gte: start, lte: end } } });
+                    else if (item.operator === 'after')      conditions.push({ [f]: { gt: end } });
+                    else if (item.operator === 'onOrAfter')  conditions.push({ [f]: { gte: start } });
+                    else if (item.operator === 'before')     conditions.push({ [f]: { lt: start } });
+                    else if (item.operator === 'onOrBefore') conditions.push({ [f]: { lte: end } });
+                    else if (item.operator === 'isEmpty')    conditions.push({ [f]: null });
+                    else if (item.operator === 'isNotEmpty') conditions.push({ NOT: { [f]: null } });
+                    break;
+                }
+                case 'status': {
+                    if (item.operator === 'is') {
+                        const val = parseInt(item.value, 10);
+                        if (!isNaN(val)) conditions.push({ status: val });
+                    } else if (item.operator === 'not') {
+                        const val = parseInt(item.value, 10);
+                        if (!isNaN(val)) conditions.push({ NOT: { status: val } });
+                    } else if (item.operator === 'isAnyOf') {
+                        const vals = (Array.isArray(item.value) ? item.value : []).map(Number).filter((n: number) => !isNaN(n));
+                        if (vals.length) conditions.push({ status: { in: vals } });
+                    }
+                    break;
+                }
+            }
+        }
+        return conditions;
+    }
+
+    async getAllPaginated(
+        page: number,
+        limit: number,
+        filters: { status?: number; search?: string; columnFilters?: any[] } = {}
+    ): Promise<{
+        data: AvaliacaoResponseDTO[];
+        meta: { total: number; page: number; limit: number; totalPages: number };
+    }> {
+        await avaliacaoRepository.encerrarVencidas();
+        const skip = page * limit;
+
+        const andConditions: any[] = [];
+
+        if (filters.status != null && !Number.isNaN(filters.status)) {
+            andConditions.push({ status: filters.status });
+        }
+
+        if (filters.search) {
+            const q = filters.search.trim();
+            const orClauses: any[] = [
+                { periodo_letivo: { contains: q, mode: 'insensitive' } },
+                { ano: { contains: q, mode: 'insensitive' } },
+                { modalidades: { some: { mod_ensino: { contains: q, mode: 'insensitive' } } } },
+            ];
+            const idNum = parseInt(q, 10);
+            if (!isNaN(idNum)) orClauses.push({ id: idNum });
+            andConditions.push({ OR: orClauses });
+        }
+
+        const columnConditions = this.buildColumnFilters(filters.columnFilters || []);
+        andConditions.push(...columnConditions);
+
+        const where = andConditions.length ? { AND: andConditions } : undefined;
+
+        const [avaliacoes, total] = await avaliacaoRepository.findManyPaginated(skip, limit, where);
+        return {
+            data: avaliacoes.map((a: any) => this.mapAvaliacao(a)),
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
+    }
+
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
         const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
 

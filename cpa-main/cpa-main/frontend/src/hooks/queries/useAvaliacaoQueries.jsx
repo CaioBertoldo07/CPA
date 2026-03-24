@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
     getAvaliacoes,
     getAvaliacoesDisponiveis,
@@ -6,10 +6,16 @@ import {
     verificarSeUsuarioRespondeu
 } from '../../api/avaliacoes';
 
-export const useGetAvaliacoesQuery = () => {
+export const useGetAvaliacoesQuery = ({ page = 0, pageSize = 10, status, search, columnFilters } = {}) => {
+    const filtersKey = columnFilters?.length ? JSON.stringify(columnFilters) : '';
     return useQuery({
-        queryKey: ['avaliacoes'],
-        queryFn: getAvaliacoes,
+        queryKey: ['avaliacoes', page, pageSize, status ?? null, search ?? '', filtersKey],
+        queryFn: () => getAvaliacoes(page, pageSize, {
+            ...(status != null && { status }),
+            ...(search ? { search } : {}),
+            ...(columnFilters?.length ? { columnFilters: JSON.stringify(columnFilters) } : {}),
+        }),
+        placeholderData: keepPreviousData,
     });
 };
 

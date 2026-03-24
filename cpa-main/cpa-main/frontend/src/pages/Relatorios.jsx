@@ -256,10 +256,11 @@ const Relatorios = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const {
-        data: avaliacoes = [],
+        data: _avaliacoesResp,
         isLoading: loading,
         isError
     } = useGetAvaliacoesQuery();
+    const avaliacoes = _avaliacoesResp?.data ?? [];
 
     useEffect(() => {
         if (isError) {

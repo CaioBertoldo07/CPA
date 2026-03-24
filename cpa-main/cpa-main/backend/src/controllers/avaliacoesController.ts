@@ -15,8 +15,14 @@ const createAvaliacao = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getAvaliacoes = asyncHandler(async (req: Request, res: Response) => {
-    const avaliacoes = await avaliacoesService.getAll();
-    res.status(200).json(avaliacoes);
+    const page = Math.max(0, parseInt(req.query.page as string, 10) || 0);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string, 10) || 10));
+    const status = req.query.status ? parseInt(req.query.status as string, 10) : undefined;
+    const search = (req.query.search as string) || undefined;
+    let columnFilters: any[] = [];
+    try { if (req.query.columnFilters) columnFilters = JSON.parse(req.query.columnFilters as string); } catch {}
+    const result = await avaliacoesService.getAllPaginated(page, pageSize, { status, search, columnFilters });
+    res.status(200).json(result);
 });
 
 const getAvaliacoesDisponiveis = asyncHandler(async (req: Request, res: Response) => {

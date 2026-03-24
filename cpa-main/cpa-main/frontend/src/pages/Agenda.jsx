@@ -49,7 +49,8 @@ const EventComponent = ({ event }) => {
 };
 
 const Agenda = () => {
-    const { data: avaliacoes = [], isLoading, isError } = useGetAvaliacoesQuery();
+    const { data: _avaliacoesResp, isLoading, isError } = useGetAvaliacoesQuery();
+    const avaliacoes = _avaliacoesResp?.data ?? [];
     const [currentView, setCurrentView] = useState(Views.MONTH);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedEvent, setSelectedEvent] = useState(null);

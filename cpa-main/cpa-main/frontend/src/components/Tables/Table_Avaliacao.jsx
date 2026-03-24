@@ -1,5 +1,4 @@
-// src/components/Tables/Table_Avaliacao.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
 import { FaTrash, FaPencil } from 'react-icons/fa6';
 import { IoEyeOutline, IoSearchOutline } from 'react-icons/io5';
@@ -12,9 +11,10 @@ import {
     useEnviarAvaliacaoMutation,
     useProrrogarAvaliacaoMutation
 } from '../../hooks/mutations/useAvaliacaoMutations';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, getGridStringOperators } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autocomplete, TextField } from '@mui/material';
+import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -42,6 +42,41 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+const MultiSelectModalidadesInput = ({ item, applyValue, apiRef }) => {
+    const column = apiRef.current.getColumn(item.field);
+    const options = column.valueOptions || [];
+    return (
+        <Autocomplete
+            multiple
+            disableCloseOnSelect
+            options={options}
+            value={item.value || []}
+            onChange={(_, newValue) => applyValue({ ...item, value: newValue })}
+            renderInput={(params) => (
+                <TextField {...params} label="Modalidades" variant="standard" size="small" />
+            )}
+            sx={{ minWidth: 220 }}
+        />
+    );
+};
+
+const supportedStringFilterOperators = getGridStringOperators().filter(op =>
+    ['contains', 'equals', 'startsWith', 'endsWith', 'isEmpty', 'isNotEmpty'].includes(op.value)
+);
+
+const modalidadesFilterOperators = [
+    {
+        label: 'contém algum de',
+        value: 'isAnyOf',
+        getApplyFilterFn: (filterItem) => {
+            if (!filterItem.value?.length) return null;
+            return (value) => filterItem.value.some(v => value?.includes(v));
+        },
+        InputComponent: MultiSelectModalidadesInput,
+    },
+    ...supportedStringFilterOperators,
+];
+
 const fmt = d => {
     if (!d) return '—';
     const datePart = String(d).substring(0, 10);
@@ -49,7 +84,34 @@ const fmt = d => {
 };
 
 const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
-    const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+    const [filterModel, setFilterModel] = useState({ items: [] });
+    const [debouncedFilters, setDebouncedFilters] = useState([]);
+
+    // Debounce dos filtros de coluna para não disparar request a cada tecla
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedFilters(filterModel.items), 400);
+        return () => clearTimeout(t);
+    }, [filterModel]);
+
+    // Reseta para página 0 quando qualquer filtro muda
+    useEffect(() => {
+        setPaginationModel(prev => prev.page === 0 ? prev : { ...prev, page: 0 });
+    }, [filtroStatus, searchQuery, debouncedFilters]);
+
+    const { data: response, isLoading: loading, isError } = useGetAvaliacoesQuery({
+        page: paginationModel.page,
+        pageSize: paginationModel.pageSize,
+        status: filtroStatus ?? undefined,
+        search: searchQuery || undefined,
+        columnFilters: debouncedFilters.length ? debouncedFilters : undefined,
+    });
+
+    const avaliacoes = response?.data ?? [];
+    const rowCount = response?.meta?.total ?? 0;
+
+    const { data: modalidadesData = [] } = useGetModalidadesQuery();
+    const modalidadesOptions = modalidadesData.map(m => m.mod_ensino);
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
     const prorrogarMutation = useProrrogarAvaliacaoMutation();
@@ -98,18 +160,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
         });
     };
 
-    const rows = useMemo(() => {
-        return avaliacoes
-            .filter(a => filtroStatus ? a.status === filtroStatus : true)
-            .filter(a => {
-                if (!searchQuery) return true;
-                const q = searchQuery.toLowerCase();
-                return String(a.id).includes(q)
-                    || (a.periodo_letivo || '').toLowerCase().includes(q)
-                    || (a.ano || '').toLowerCase().includes(q)
-                    || (a.modalidades || []).some(m => (m.mod_ensino || '').toLowerCase().includes(q));
-            });
-    }, [avaliacoes, filtroStatus, searchQuery]);
+    const rows = avaliacoes;
 
     const columns = [
         {
@@ -127,12 +178,15 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
         {
             field: 'modalidades',
             headerName: 'Modalidades',
+            type: 'string',
             flex: 1,
             minWidth: 200,
-            type: 'string',
+            valueOptions: modalidadesOptions,
+            filterOperators: modalidadesFilterOperators,
+            valueGetter: (value) => (value || []).map(m => m.mod_ensino).join(', '),
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {params.value?.map((m, i) => (
+                    {(params.row.modalidades || []).map((m, i) => (
                         <Chip
                             key={i}
                             label={m.mod_ensino}
@@ -144,14 +198,40 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 </Box>
             )
         },
-        { field: 'periodo_letivo', headerName: 'Período', width: 120, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
-        { field: 'ano', headerName: 'Ano', width: 80 },
-        { field: 'data_inicio', headerName: 'Início', width: 110, valueFormatter: (value) => fmt(value) },
-        { field: 'data_fim', headerName: 'Fim', width: 110, valueFormatter: (value) => fmt(value) },
+        { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, filterOperators: supportedStringFilterOperators, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
+        { field: 'ano', headerName: 'Ano', type: 'string', width: 80, filterOperators: supportedStringFilterOperators },
+        {
+            field: 'data_inicio',
+            headerName: 'Início',
+            type: 'date',
+            width: 110,
+            valueGetter: (value) => {
+                if (!value) return null;
+                return new Date(String(value).substring(0, 10) + 'T00:00:00');
+            },
+            valueFormatter: (value) => value ? value.toLocaleDateString('pt-BR') : '—',
+        },
+        {
+            field: 'data_fim',
+            headerName: 'Fim',
+            type: 'date',
+            width: 110,
+            valueGetter: (value) => {
+                if (!value) return null;
+                return new Date(String(value).substring(0, 10) + 'T00:00:00');
+            },
+            valueFormatter: (value) => value ? value.toLocaleDateString('pt-BR') : '—',
+        },
         {
             field: 'status',
             headerName: 'Status',
+            type: 'singleSelect',
             width: 130,
+            valueOptions: [
+                { value: 1, label: 'Rascunho' },
+                { value: 2, label: 'Enviada' },
+                { value: 3, label: 'Encerrada' },
+            ],
             renderCell: (params) => <StatusBadge status={params.value} />
         },
         {
@@ -321,6 +401,13 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 rows={rows}
                 columns={columns}
                 loading={loading}
+                paginationMode="server"
+                rowCount={rowCount}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                filterMode="server"
+                filterModel={filterModel}
+                onFilterModelChange={(model) => setFilterModel(model)}
                 pageSizeOptions={[10, 25, 50]}
                 initialState={{
                     pagination: { paginationModel: { pageSize: 10 } },
