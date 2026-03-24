@@ -6,10 +6,10 @@ import {
     verificarSeUsuarioRespondeu
 } from '../../api/avaliacoes';
 
-export const useGetAvaliacoesQuery = (paginationModel = { page: 0, pageSize: 10 }) => {
+export const useGetAvaliacoesQuery = () => {
     return useQuery({
-        queryKey: ['avaliacoes', paginationModel.page, paginationModel.pageSize],
-        queryFn: () => getAvaliacoes(paginationModel.page, paginationModel.pageSize),
+        queryKey: ['avaliacoes'],
+        queryFn: getAvaliacoes,
     });
 };
 
