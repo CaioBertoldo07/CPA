@@ -144,17 +144,7 @@ const QuestaoTooltip = ({ active, payload }) => {
     );
 };
 
-const DonutLegend = ({ data }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
-        {data.map(d => (
-            <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: '#4a5568', minWidth: 60 }}>{d.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1a202c' }}>{d.value}</span>
-            </div>
-        ))}
-    </div>
-);
+
 
 /* ─────────────────────────── QuestaoCard ─────────────────────────── */
 
@@ -395,27 +385,12 @@ const RelatorioAvaliacao = () => {
 
     const totalQuestoesAvaliacao = avaliacao?.avaliacao_questoes?.length ?? null;
 
-    const dimensaoData = useMemo(() => {
-        const counts = {};
-        questoesAchatadas.forEach(q => {
-            const dim = q.dimensao || '—';
-            counts[dim] = (counts[dim] || 0) + q.total;
-        });
-        return Object.entries(counts)
-            .map(([name, total]) => ({ name, total }))
-            .sort((a, b) => b.total - a.total);
-    }, [questoesAchatadas]);
 
-    const tipoData = useMemo(() => [
-        { name: 'Padrão', value: questoesAchatadas.filter(q => q.tipo === 1).length, color: TIPO_COLORS.padrao },
-        { name: 'Grade', value: questoesAchatadas.filter(q => q.tipo === 2).length, color: TIPO_COLORS.grade },
-    ].filter(d => d.value > 0), [questoesAchatadas]);
 
     const questoesRespondidas = questoesAchatadas.filter(q => q.total > 0).length;
 
     const stats = [
         { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
-        { icon: '✅', label: 'Questões Respondidas', value: questoesRespondidas, topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70 },
         ...(totalQuestoesAvaliacao !== null
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
             : []),
@@ -556,69 +531,7 @@ const RelatorioAvaliacao = () => {
                     </div>
 
                     <div className="insights-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-
-                        {/* Chart 1 — por Dimensão */}
-                        <ChartCard
-                            title="Respostas por Dimensão"
-                            subtitle="Quantidade de respostas agrupadas por dimensão"
-                            loading={loadingRespostas}
-                            delay={80}
-                            minH={300}
-                        >
-                            {dimensaoData.length === 0 ? (
-                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados para exibir</div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <BarChart data={dimensaoData} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 4 }} barCategoryGap="30%">
-                                        <defs>
-                                            <linearGradient id="dimGrad" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%" stopColor="#4caf50" />
-                                                <stop offset="100%" stopColor="#2e7d32" />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                                        <XAxis type="number" tick={{ fontSize: 12, fill: '#718096' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#4a5568' }} axisLine={false} tickLine={false} width={110} />
-                                        <Tooltip content={<ChartTooltip formatter={v => v + ' respostas'} />} cursor={{ fill: 'rgba(46,125,50,0.06)' }} />
-                                        <Bar dataKey="total" name="Respostas" fill="url(#dimGrad)" radius={[0, 6, 6, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            )}
-                        </ChartCard>
-
-                        {/* Chart 2 — por Tipo */}
-                        <ChartCard
-                            title="Questões por Tipo"
-                            subtitle="Proporção entre questões de padrão e grade"
-                            loading={loadingRespostas}
-                            delay={130}
-                            minH={300}
-                        >
-                            {tipoData.length === 0 ? (
-                                <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center' }}>Sem dados para exibir</div>
-                            ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, width: '100%', flexWrap: 'wrap' }}>
-                                    <ResponsiveContainer width={180} height={180}>
-                                        <PieChart>
-                                            <Pie
-                                                data={tipoData}
-                                                cx="50%" cy="50%"
-                                                innerRadius={52} outerRadius={82}
-                                                paddingAngle={3} dataKey="value"
-                                                animationBegin={0} animationDuration={900}
-                                            >
-                                                {tipoData.map((entry, i) => (
-                                                    <Cell key={i} fill={entry.color} stroke="none" />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip content={<ChartTooltip />} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                    <DonutLegend data={tipoData} />
-                                </div>
-                            )}
-                        </ChartCard>
-
+                        {/* Novos gráficos serão inseridos aqui para fornecer insights mais profundos */}
                     </div>
                 </div>
 
