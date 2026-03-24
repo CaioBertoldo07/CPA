@@ -81,11 +81,8 @@ class QuestoesService {
         }
 
         const usage = await questoesRepository.getQuestionUsage(id);
-        console.log(`[questoesService.update] ID: ${id}, usage statuses found: [${usage.join(', ')}]`);
-
         if (usage.length > 0) {
             const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
-            console.log(`[questoesService.update] Questão ID: ${id} está em uso. Clonando... (hasActiveOrDraft: ${hasActiveOrDraft})`);
 
             // Clonagem (Versionamento)
             const mergedData: CreateQuestaoDTO = {
@@ -103,16 +100,11 @@ class QuestoesService {
 
             // Somente desativa a original se não houver nenhuma avaliação Rascunho ou Ativa usando ela
             if (!hasActiveOrDraft) {
-                console.log(`[questoesService.update] Desativando a original ID: ${id} (pois só existe em avaliações encerradas)`);
                 await questoesRepository.update(id, { ativo: false });
-            } else {
-                console.log(`[questoesService.update] Mantendo a original ID: ${id} ATIVA (pois existe em avaliações rascunho/ativas)`);
             }
 
             return newQuestao;
         }
-
-        console.log(`[questoesService.update] Questão ID: ${id} NÃO está em uso. Realizando update direto.`);
 
         const updateData: any = {};
 
@@ -176,12 +168,10 @@ class QuestoesService {
                 throw new AppError('Não é possível excluir esta questão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
             } else {
                 // Apenas desativa (soft delete) pois só existe em avaliações encerradas
-                console.log(`[questoesService.delete] Desativando questão ID: ${id} (soft-delete)`);
                 await questoesRepository.update(id, { ativo: false });
             }
         } else {
             // Não está em nenhuma avaliação, pode deletar de verdade
-            console.log(`[questoesService.delete] Removendo questão ID: ${id} (hard-delete)`);
             await questoesRepository.remove(id);
         }
     }
