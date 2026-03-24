@@ -18,16 +18,20 @@ import {
     IoListOutline
 } from 'react-icons/io5';
 import MuiBaseModal from '../utils/MuiBaseModal';
-import { useAdicionarAvaliacaoMutation } from '../../hooks/mutations/useAvaliacaoMutations';
+import { useAdicionarAvaliacaoMutation, useEditAvaliacaoMutation } from '../../hooks/mutations/useAvaliacaoMutations';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useGetMunicipiosQuery } from '../../hooks/queries/useMunicipioQueries';
 import { useGetUnidadesByMunicipiosQuery } from '../../hooks/queries/useUnidadeQueries';
 import { useGetCategoriasQuery } from '../../hooks/queries/useCategoriaQueries';
+import { useGetAvaliacaoByIdQuery } from '../../hooks/queries/useAvaliacaoQueries';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import CursoSelectionModal from './CursoSelectionModal';
 import QuestaoSelectionModal from './QuestaoSelectionModal';
 
 function Modal_Avaliacoes(props) {
+    // props.avaliacaoId — when set, modal is in edit mode
+    const editMode = !!props.avaliacaoId;
+
     const [ano, setAno] = useState('');
     const [periodo, setPeriodo] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -42,6 +46,7 @@ function Modal_Avaliacoes(props) {
     const [error, setError] = useState('');
     const [showCursoModal, setShowCursoModal] = useState(false);
     const [showQuestaoModal, setShowQuestaoModal] = useState(false);
+    const [editUnidadeIds, setEditUnidadeIds] = useState([]);
 
     const { data: municipiosData = [] } = useGetMunicipiosQuery();
     const { data: modalidadesData = [] } = useGetModalidadesQuery();
@@ -50,8 +55,11 @@ function Modal_Avaliacoes(props) {
     const municipiosNomes = municipiosVinculo.map(m => m.label.split(' - ')[0]);
     const { data: unidadesData = [] } = useGetUnidadesByMunicipiosQuery(municipiosNomes);
 
+    const { data: avaliacaoEditData } = useGetAvaliacaoByIdQuery(editMode ? props.avaliacaoId : null);
+
     const adicionarAvaliacaoMutation = useAdicionarAvaliacaoMutation();
-    const loading = adicionarAvaliacaoMutation.isPending;
+    const editAvaliacaoMutation = useEditAvaliacaoMutation();
+    const loading = editMode ? editAvaliacaoMutation.isPending : adicionarAvaliacaoMutation.isPending;
 
     const municipiosOptions = useMemo(() =>
         municipiosData.map(m => ({ value: m.id, label: `${m.nome} - ${m.UF}` })), [municipiosData]);
@@ -62,6 +70,7 @@ function Modal_Avaliacoes(props) {
     const categoriasOptions = useMemo(() =>
         categoriasData.map(c => ({ value: c.id, label: c.nome })), [categoriasData]);
 
+    // Reset on close
     useEffect(() => {
         if (!props.show) {
             setAno(''); setPeriodo('');
@@ -71,8 +80,49 @@ function Modal_Avaliacoes(props) {
             setCategoriasSelecionadas([]); setModalidadeSelecionada([]);
             setCurso(''); setCursosSelecionados([]);
             setQuestoesSelecionadas([]); setError('');
+            setEditUnidadeIds([]);
         }
     }, [props.show]);
+
+    // Pre-populate form when editing
+    useEffect(() => {
+        if (!editMode || !avaliacaoEditData || !props.show || !municipiosOptions.length) return;
+
+        const avaliacao = avaliacaoEditData;
+        const [anoVal, periodoVal] = (avaliacao.periodo_letivo || '').split('.');
+        setAno(anoVal || '');
+        setPeriodo(periodoVal || '');
+        setStartDate((avaliacao.data_inicio || '').split('T')[0]);
+        setEndDate((avaliacao.data_fim || '').split('T')[0]);
+
+        const modals = (avaliacao.modalidades || []).map(m => ({ value: m.id, label: m.mod_ensino }));
+        setModalidadeSelecionada(modals);
+
+        const cats = (avaliacao.categorias || []).map(c => (typeof c === 'object' ? c.id : c));
+        setCategoriasSelecionadas(cats);
+
+        const cursosApi = avaliacao.cursos || [];
+        setCursosSelecionados(cursosApi);
+        setCurso(cursosApi.map(c => c.nome).join(', '));
+
+        setQuestoesSelecionadas((avaliacao.questoes || []).map(q => (typeof q === 'object' ? q.id : q)));
+
+        const unidadeIds = (avaliacao.unidade || []).map(u => u.id);
+        setEditUnidadeIds(unidadeIds);
+
+        const municipioNomes = [...new Set((avaliacao.unidade || []).map(u => u.municipio_vinculo).filter(Boolean))];
+        const municipiosSelected = municipiosOptions.filter(opt =>
+            municipioNomes.some(nome => opt.label.startsWith(nome + ' -') || opt.label === nome)
+        );
+        setMunicipiosVinculo(municipiosSelected.length ? municipiosSelected : municipiosOptions.slice(0, 0));
+    }, [avaliacaoEditData, editMode, props.show, municipiosOptions.length]);
+
+    // After municipalities are set, select the right unidades once they load
+    useEffect(() => {
+        if (!editMode || !editUnidadeIds.length || !unidadesOptions.length) return;
+        const selected = unidadesOptions.filter(opt => editUnidadeIds.includes(opt.value));
+        if (selected.length > 0) setUnidadeSelecionada(selected);
+    }, [unidadesData, editUnidadeIds, editMode]);
 
     const handleCategoriasChange = (selected) => {
         setCategoriasSelecionadas(selected.map(s => s.value));
@@ -111,10 +161,17 @@ function Modal_Avaliacoes(props) {
             ano,
         };
 
-        adicionarAvaliacaoMutation.mutate(avaliacaoData, {
-            onSuccess: () => props.onSuccess?.('Avaliação criada com sucesso!'),
-            onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao criar avaliação.')
-        });
+        if (editMode) {
+            editAvaliacaoMutation.mutate({ id: props.avaliacaoId, data: avaliacaoData }, {
+                onSuccess: () => props.onSuccess?.('Avaliação atualizada com sucesso!'),
+                onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao atualizar avaliação.')
+            });
+        } else {
+            adicionarAvaliacaoMutation.mutate(avaliacaoData, {
+                onSuccess: () => props.onSuccess?.('Avaliação criada com sucesso!'),
+                onError: (err) => setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao criar avaliação.')
+            });
+        }
     };
 
     const modalActions = (
@@ -129,7 +186,7 @@ function Modal_Avaliacoes(props) {
                 disabled={loading}
                 sx={{ fontWeight: 700, minWidth: '150px' }}
             >
-                {loading ? 'Salvando...' : 'Criar Avaliação'}
+                {loading ? 'Salvando...' : editMode ? 'Salvar Alterações' : 'Criar Avaliação'}
             </Button>
         </>
     );
@@ -138,7 +195,7 @@ function Modal_Avaliacoes(props) {
         <MuiBaseModal
             open={props.show}
             onClose={props.onHide}
-            title="Nova Avaliação"
+            title={editMode ? 'Editar Avaliação' : 'Nova Avaliação'}
             actions={modalActions}
             isLoading={loading}
             maxWidth="md"

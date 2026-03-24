@@ -130,6 +130,47 @@ class AvaliacoesService {
         return !!resposta;
     }
 
+    async editar(id: number, data: CreateAvaliacaoDTO): Promise<AvaliacaoResponseDTO> {
+        const existing = await avaliacaoRepository.findByIdSimple(id);
+        if (!existing) throw new AppError('Avaliação não encontrada.', 404);
+        if (existing.status !== 1) throw new AppError('Apenas rascunhos podem ser editados.', 400);
+
+        const { unidade, cursos, categorias, modalidade, questoes, periodo_letivo, data_inicio, data_fim, ano } = data;
+
+        const [uExist, cExist, catExist, modExist, qExist] = await Promise.all([
+            avaliacaoRepository.validateUnidades(unidade),
+            avaliacaoRepository.validateCursos(cursos),
+            avaliacaoRepository.validateCategorias(categorias),
+            avaliacaoRepository.validateModalidades(modalidade),
+            avaliacaoRepository.validateQuestoes(questoes)
+        ]);
+
+        if (uExist.length !== unidade.length) throw new AppError('Uma ou mais unidades não encontradas.', 404);
+        if (cExist.length !== cursos.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
+        if (catExist.length !== categorias.length) throw new AppError('Uma ou mais categorias não encontrados.', 404);
+        if (modExist.length !== modalidade.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
+        if (qExist.length !== questoes.length) throw new AppError('Uma ou mais questões não encontradas.', 404);
+
+        const avaliacao = await avaliacaoRepository.update(id, {
+            periodo_letivo,
+            data_inicio: new Date(data_inicio),
+            data_fim: new Date(data_fim),
+            ano,
+            unidade: { set: unidade.map(uid => ({ id: uid })) },
+            modalidades: { set: modalidade.map(mid => ({ id: mid })) },
+            cursos: { set: cursos.map(identificador => ({ identificador_api_lyceum: identificador })) },
+            categorias: { set: categorias.map(cid => ({ id: cid })) },
+            avaliacao_questoes: {
+                deleteMany: {},
+                create: questoes.map(questaoId => ({
+                    questoes: { connect: { id: questaoId } },
+                })),
+            },
+        });
+
+        return this.mapAvaliacao(avaliacao);
+    }
+
     async switchStatus(id: number, newStatus: number): Promise<AvaliacaoResponseDTO> {
         const avaliacao = await avaliacaoRepository.findByIdSimple(id);
         if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);

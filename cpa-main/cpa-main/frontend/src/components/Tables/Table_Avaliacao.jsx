@@ -1,7 +1,7 @@
 // src/components/Tables/Table_Avaliacao.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
-import { FaTrash } from 'react-icons/fa6';
+import { FaTrash, FaPencil } from 'react-icons/fa6';
 import { IoEyeOutline, IoSearchOutline } from 'react-icons/io5';
 import { BsUpload } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +44,7 @@ const StatusBadge = ({ status }) => {
 
 const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes }) => {
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
     const { data: avaliacoes = [], isLoading: loading, isError } = useGetAvaliacoesQuery();
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
@@ -152,7 +152,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
         {
             field: 'actions',
             headerName: 'Ações',
-            width: 420,
+            width: 500,
             sortable: false,
             filterable: false,
             headerAlign: 'right',
@@ -160,7 +160,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             renderCell: (params) => (
                 <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: '100px 80px 110px 80px',
+                    gridTemplateColumns: '100px 80px 80px 110px 80px',
                     gap: 1,
                     height: '100%',
                     alignItems: 'center',
@@ -207,9 +207,33 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                                     '&:hover': { bgcolor: '#e8f5e9' }
                                 }}
                             >
-                                Ver
+                                Ver 
                             </MuiButton>
                         </Tooltip>
+                    </Box>
+
+                    {/* Editar (apenas rascunho) */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        {params.row.status === 1 && (
+                            <Tooltip title="Editar rascunho">
+                                <MuiButton
+                                    size="small"
+                                    variant="text"
+                                    startIcon={<FaPencil size={13} />}
+                                    onClick={() => onEditar?.(params.row.id)}
+                                    sx={{
+                                        color: '#d97706',
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        minWidth: 'auto',
+                                        '&:hover': { bgcolor: '#fef3c7' }
+                                    }}
+                                >
+                                    Editar
+                                </MuiButton>
+                            </Tooltip>
+                        )}
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
