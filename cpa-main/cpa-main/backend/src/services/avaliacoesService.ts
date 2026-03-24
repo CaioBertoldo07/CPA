@@ -4,6 +4,7 @@ import { AppError } from '../middleware/errorMiddleware';
 import { UserResponseDTO } from '../dtos/AuthDTO';
 import axios from 'axios';
 import https from 'https';
+import { hashMatricula } from '../utils/hashUtils';
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: process.env.DISABLE_SSL_VALIDATION !== 'true',
@@ -72,7 +73,7 @@ class AvaliacoesService {
 
     async getAll(): Promise<AvaliacaoResponseDTO[]> {
         const avaliacoes = await avaliacaoRepository.findMany();
-        return avaliacoes.map(a => this.mapAvaliacao(a));
+        return avaliacoes.map((a: any) => this.mapAvaliacao(a));
     }
 
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
@@ -81,12 +82,13 @@ class AvaliacoesService {
         if (avaliacoes.length === 0) return [];
 
         const avaliacaoIds = avaliacoes.map(a => a.id);
-        const respondidas = await avaliacaoRepository.findAvaliacoesRespondidasPeloAvaliador(matricula, avaliacaoIds);
-        const respondidasIds = new Set(respondidas.map(r => r.avaliacao_questao?.id_avaliacao).filter(Boolean));
+        const matriculaHash = hashMatricula(matricula);
+        const respondidas = await avaliacaoRepository.findAvaliacoesRespondidasPeloAvaliador(matriculaHash, avaliacaoIds);
+        const respondidasids = new Set(respondidas.map((r: any) => r.avaliacao_questao?.id_avaliacao).filter(Boolean));
 
-        const avaliacoesNaoRespondidas = avaliacoes.filter(a => !respondidasIds.has(a.id));
+        const avaliacoesNaoRespondidas = avaliacoes.filter((a: any) => !respondidasids.has(a.id));
 
-        return avaliacoesNaoRespondidas.map(a => this.mapAvaliacao(a));
+        return avaliacoesNaoRespondidas.map((a: any) => this.mapAvaliacao(a));
     }
 
     async getById(id: number, user?: UserResponseDTO): Promise<AvaliacaoResponseDTO> {
@@ -126,7 +128,8 @@ class AvaliacoesService {
     }
 
     async hasUserResponded(matricula: string, idAvaliacao: number): Promise<boolean> {
-        const resposta = await avaliacaoRepository.findRespostaDoAvaliador(matricula, idAvaliacao);
+        const matriculaHash = hashMatricula(matricula);
+        const resposta = await avaliacaoRepository.findRespostaDoAvaliador(matriculaHash, idAvaliacao);
         return !!resposta;
     }
 
