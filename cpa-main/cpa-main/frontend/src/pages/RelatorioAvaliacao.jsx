@@ -502,9 +502,20 @@ const RelatorioAvaliacao = () => {
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', marginBottom: 6 }}>Unidades</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                {(avaliacao?.unidades || []).length > 0
-                                    ? avaliacao.unidades.map((u, i) => (
+                                {(avaliacao?.unidade || []).length > 0
+                                    ? avaliacao.unidade.map((u, i) => (
                                         <span key={i} style={{ padding: '2px 9px', background: '#f1f5f9', color: '#4a5568', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid #e2e8f0' }}>{u.sigla || u.nome}</span>
+                                    ))
+                                    : <span style={{ color: '#718096', fontSize: 13 }}>—</span>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', marginBottom: 6 }}>Categorias de Avaliadores</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {(avaliacao?.categorias || []).length > 0
+                                    ? avaliacao.categorias.map((c, i) => (
+                                        <span key={i} style={{ padding: '2px 9px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid #bfdbfe' }}>{c.nome}</span>
                                     ))
                                     : <span style={{ color: '#718096', fontSize: 13 }}>—</span>
                                 }
