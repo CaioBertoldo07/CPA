@@ -59,15 +59,16 @@ const includeRelations = {
 /**
  * Busca avaliações paginadas com o total geral para server-side pagination
  */
-const findManyPaginated = (skip: number, take: number): Promise<[any[], number]> => {
+const findManyPaginated = (skip: number, take: number, where?: Prisma.AvaliacaoWhereInput): Promise<[any[], number]> => {
     return Promise.all([
         prisma.avaliacao.findMany({
             skip,
             take,
+            where,
             orderBy: { id: 'desc' },
             include: includeRelations,
         }),
-        prisma.avaliacao.count(),
+        prisma.avaliacao.count({ where }),
     ]);
 };
 

@@ -6,10 +6,15 @@ import {
     verificarSeUsuarioRespondeu
 } from '../../api/avaliacoes';
 
-export const useGetAvaliacoesQuery = (paginationModel = { page: 0, pageSize: 10 }) => {
+export const useGetAvaliacoesQuery = ({ page = 0, pageSize = 10, status, search, columnFilters } = {}) => {
+    const filtersKey = columnFilters?.length ? JSON.stringify(columnFilters) : '';
     return useQuery({
-        queryKey: ['avaliacoes', paginationModel.page, paginationModel.pageSize],
-        queryFn: () => getAvaliacoes(paginationModel.page, paginationModel.pageSize),
+        queryKey: ['avaliacoes', page, pageSize, status ?? null, search ?? '', filtersKey],
+        queryFn: () => getAvaliacoes(page, pageSize, {
+            ...(status != null && { status }),
+            ...(search ? { search } : {}),
+            ...(columnFilters?.length ? { columnFilters: JSON.stringify(columnFilters) } : {}),
+        }),
         placeholderData: keepPreviousData,
     });
 };
