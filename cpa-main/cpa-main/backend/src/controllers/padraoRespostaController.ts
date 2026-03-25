@@ -16,7 +16,12 @@ const getPadraoRespostaById = asyncHandler(async (req: Request, res: Response) =
 
 const postPadraoResposta = asyncHandler(async (req: Request, res: Response) => {
     await padraoRespostaSchema.validate(req.body);
-    const padrao = await padraoRespostaService.create(req.body.sigla);
+    const { sigla, alternativas } = req.body;
+    const padrao = await padraoRespostaService.create(
+        sigla,
+        alternativas
+    );
+
     res.status(201).json({
         message: 'Padrão de resposta cadastrado com sucesso!',
         padrao
