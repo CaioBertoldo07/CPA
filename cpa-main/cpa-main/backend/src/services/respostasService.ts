@@ -303,6 +303,50 @@ class RespostasService {
             participacao
         };
     }
+
+    // Retorna total de respondentes únicos por categoria para o dashboard global.
+    async getDashboardCategorias() {
+        const categorias = await prisma.categorias.findMany({
+            orderBy: { nome: 'asc' },
+        });
+
+        const result = await Promise.all(
+            categorias.map(async (cat) => {
+                const avaliacoes = await prisma.avaliacao.findMany({
+                    where: { categorias: { some: { id: cat.id } } },
+                    include: { avaliacao_questoes: { select: { id: true } } },
+                });
+
+                const aqIds = avaliacoes.flatMap((av) =>
+                    av.avaliacao_questoes.map((aq) => aq.id),
+                );
+
+                if (aqIds.length === 0) {
+                    return { categoria: cat.nome, respondentes: 0 };
+                }
+
+                const [padrao, grade] = await Promise.all([
+                    prisma.respostas.findMany({
+                        where: { id_avaliacao_questoes: { in: aqIds } },
+                        select: { avaliador_matricula: true },
+                    }),
+                    prisma.respostasGrade.findMany({
+                        where: { id_avaliacao_questoes: { in: aqIds } },
+                        select: { avaliador_matricula: true },
+                    }),
+                ]);
+
+                const unicos = new Set([
+                    ...padrao.map((r) => r.avaliador_matricula),
+                    ...grade.map((r) => r.avaliador_matricula),
+                ]);
+
+                return { categoria: cat.nome, respondentes: unicos.size };
+            }),
+        );
+
+        return { categorias: result };
+    }
 }
 
 export default new RespostasService();

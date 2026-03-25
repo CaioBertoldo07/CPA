@@ -38,14 +38,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     const navItems = [
         { path: '/relatorios', icon: <RiDashboardLine size={20} />, label: 'Dashboard' },
         { path: '/eixos', icon: <MdOutlineAccountTree size={20} />, label: 'Eixos/Dimensões' },
-        { path: '/cursos',      icon: <MdOutlineSchool size={20} />,          label: 'Cursos' },
         { path: '/modalidades', icon: <HiOutlineBuildingOffice2 size={20} />, label: 'Modalidades' },
+        { path: '/cursos',      icon: <MdOutlineSchool size={20} />,          label: 'Cursos' },
         { path: '/categorias', icon: <TbCategory size={20} />, label: 'Categorias' },
         { path: '/padraoresposta', icon: <MdOutlineListAlt size={20} />, label: 'Padrões de Resposta' },
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
         { path: '/agenda', icon: <RiCalendarLine size={20} />, label: 'Agenda' },
-        { path: '/cursos', icon: <MdOutlineListAlt size={20} />, label: 'Cursos' },
         { path: '/admin', icon: <RiAdminLine size={20} />, label: 'Admins' },
     ];
 
@@ -91,10 +90,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 <div className="user-info">
                     <span className="user-email" title={userEmail}>{userEmail}</span>
                 </div>
-                <NavLink to="/settings" className="nav-item footer-item">
-                    <span className="nav-icon"><RiSettings4Line size={20} /></span>
-                    <span className="nav-label">Settings</span>
-                </NavLink>
                 <button onClick={handleLogout} className="nav-item footer-item logout-btn">
                     <span className="nav-icon"><IoLogOutOutline size={20} /></span>
                     <span className="nav-label">Logout</span>
