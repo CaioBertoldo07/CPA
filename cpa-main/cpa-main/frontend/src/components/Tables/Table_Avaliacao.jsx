@@ -275,26 +275,28 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                         </Tooltip>
                     </Box>
 
-                    {/* Ver relatório */}
+                    {/* Ver relatório (apenas para avaliações enviadas ou encerradas) */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <Tooltip title="Ver relatório">
-                            <MuiButton
-                                size="small"
-                                variant="text"
-                                startIcon={<IoEyeOutline size={16} />}
-                                onClick={() => navigate(`/relatorio/${params.row.id}`)}
-                                sx={{
-                                    color: '#1D5E24',
-                                    textTransform: 'none',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem',
-                                    minWidth: 'auto',
-                                    '&:hover': { bgcolor: '#e8f5e9' }
-                                }}
-                            >
-                                Ver
-                            </MuiButton>
-                        </Tooltip>
+                        {params.row.status !== 1 && (
+                            <Tooltip title="Ver relatório">
+                                <MuiButton
+                                    size="small"
+                                    variant="text"
+                                    startIcon={<IoEyeOutline size={16} />}
+                                    onClick={() => navigate(`/relatorio/${params.row.id}`)}
+                                    sx={{
+                                        color: '#1D5E24',
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        minWidth: 'auto',
+                                        '&:hover': { bgcolor: '#e8f5e9' }
+                                    }}
+                                >
+                                    Ver
+                                </MuiButton>
+                            </Tooltip>
+                        )}
                     </Box>
 
                     {/* Editar (apenas rascunho) */}
