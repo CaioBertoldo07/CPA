@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -9,6 +9,7 @@ import {
     ListItemButton,
     ListItemText,
     Checkbox,
+    CircularProgress,
 } from '@mui/material';
 import MuiBaseModal from '../utils/MuiBaseModal';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
@@ -17,12 +18,7 @@ import { useClassifyCursosMutation } from '../../hooks/mutations/useCursoMutatio
 function ModalClassificarCursos({ show, onHide, cursoIds = [], onSuccess }) {
     const [selectedModalidadeId, setSelectedModalidadeId] = useState(null);
 
-    const { data: modalidadesRaw } = useGetModalidadesQuery();
-    const modalidades = useMemo(() => {
-        if (Array.isArray(modalidadesRaw)) return modalidadesRaw;
-        if (modalidadesRaw?.data) return modalidadesRaw.data;
-        return [];
-    }, [modalidadesRaw]);
+    const { data: modalidades = [], isLoading: loadingModalidades } = useGetModalidadesQuery();
 
     const classificarMutation = useClassifyCursosMutation();
 
@@ -75,7 +71,11 @@ function ModalClassificarCursos({ show, onHide, cursoIds = [], onSuccess }) {
                     {cursoIds.length} curso(s) selecionado(s) serão classificados com a modalidade escolhida abaixo.
                 </Typography>
 
-                {modalidades.length === 0 ? (
+                {loadingModalidades ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                        <CircularProgress size={28} />
+                    </Box>
+                ) : modalidades.length === 0 ? (
                     <Alert severity="info" sx={{ borderRadius: 2 }}>
                         Nenhuma modalidade cadastrada.
                     </Alert>
@@ -95,7 +95,7 @@ function ModalClassificarCursos({ show, onHide, cursoIds = [], onSuccess }) {
                                         sx={{ mr: 1, p: 0 }}
                                     />
                                     <ListItemText
-                                        primary={m.nome}
+                                        primary={m.mod_ensino}
                                         primaryTypographyProps={{ fontWeight: selectedModalidadeId === m.id ? 600 : 400 }}
                                     />
                                 </ListItemButton>

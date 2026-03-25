@@ -103,13 +103,43 @@ const TableCursos = ({ searchQuery = '', filtroStatus = 'TODOS', onSelectionChan
             field: 'curso_tipo',
             headerName: 'Tipo de Curso',
             width: 175,
-            valueGetter: (value) => value?.nome ?? null,
             renderCell: (params) => {
                 const nome = params.row.curso_tipo;
                 return nome ? (
                     <Chip label={nome} size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
                 ) : (
-                    <Chip label="Sem classificação" size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
+                    <Chip label="Sem tipo" size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
+                );
+            },
+        },
+        {
+            field: 'modalidade_rel',
+            headerName: 'Modalidade',
+            width: 175,
+            renderCell: (params) => {
+                const rel = params.row.modalidade_rel;
+                
+                // Verifica se os campos existem e não são nulos/vazios
+                const temDados = rel?.mod_ensino || rel?.mod_oferta;
+                
+                if (temDados) {
+                    const nome = `${rel?.mod_ensino ?? ''} - ${rel?.mod_oferta ?? ''}`;
+                    return (
+                        <Chip 
+                            label={nome} 
+                            size="small" 
+                            sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} 
+                        />
+                    );
+                }
+
+                // Caso contrário, mostra o fallback
+                return (
+                    <Chip 
+                        label="Sem modalidade" 
+                        size="small" 
+                        sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} 
+                    />
                 );
             },
         },
