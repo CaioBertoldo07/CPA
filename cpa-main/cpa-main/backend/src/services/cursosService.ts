@@ -24,6 +24,8 @@ class CursosService {
             unidade?: string;
             municipio?: string;
             unclassified?: string;
+            unidadeIds?: string;
+            municipioIds?: string;
         }
     }) {
         return await cursosRepository.findPaginated(params);

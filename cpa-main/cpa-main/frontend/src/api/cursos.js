@@ -6,7 +6,7 @@ export const getCursosByUnidades = (unidadeIds) => {
 };
 
 export const getPaginatedCursos = (params) => {
-    return api.get(`/cursos/paginated`, { params });
+    return api.get('/cursos/paginated', { params });
 };
 
 export const classifyCursos = (cursoIds, idModalidade) => {
