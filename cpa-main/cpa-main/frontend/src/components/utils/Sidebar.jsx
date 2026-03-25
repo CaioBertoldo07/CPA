@@ -45,6 +45,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
         { path: '/agenda', icon: <RiCalendarLine size={20} />, label: 'Agenda' },
+        { path: '/cursos', icon: <MdOutlineListAlt size={20} />, label: 'Cursos' },
         { path: '/admin', icon: <RiAdminLine size={20} />, label: 'Admins' },
     ];
 

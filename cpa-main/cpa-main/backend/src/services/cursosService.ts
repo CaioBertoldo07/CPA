@@ -1,6 +1,5 @@
 import * as cursosRepository from '../repositories/cursosRepository';
 import { CursoResponseDTO } from '../dtos/CursoDTO';
-import { AppError } from '../middleware/errorMiddleware';
 
 class CursosService {
     async getAll(): Promise<CursoResponseDTO[]> {
@@ -36,6 +35,10 @@ class CursosService {
 
     async updateStatus(cursoIds: number[], ativo: boolean) {
         return await cursosRepository.updateManyStatus(cursoIds, ativo);
+    }
+
+    async getUniqueTypes() {
+        return await cursosRepository.getUniqueTypes();
     }
 }
 

@@ -81,7 +81,7 @@ const findPaginated = async (params: {
     }
 }) => {
     const { page, pageSize, filters } = params;
-    const skip = (page - 1) * pageSize;
+    const skip = page * pageSize;
 
     const where: any = {};
 
@@ -93,7 +93,11 @@ const findPaginated = async (params: {
             ];
         }
         if (filters.curso_tipo) {
-            where.curso_tipo = { contains: filters.curso_tipo, mode: 'insensitive' };
+            const tipos = Array.isArray(filters.curso_tipo) 
+                ? filters.curso_tipo 
+                : filters.curso_tipo.split(',').map(t => t.trim());
+            
+            where.curso_tipo = { in: tipos, mode: 'insensitive' };
         }
         if (filters.unidade) {
             where.unidades = {
@@ -149,11 +153,23 @@ const updateManyModality = (cursoIds: number[], idModalidade: number) => {
 /**
  * Atualiza o status ativo de vários cursos
  */
-const updateManyStatus = (cursoIds: number[], ativo: boolean) => {
+const updateManyStatus = async (ids: number[], ativo: boolean) => {
     return prisma.cursos.updateMany({
-        where: { id: { in: cursoIds } },
+        where: { id: { in: ids } },
         data: { ativo }
     });
+};
+
+/**
+ * Busca tipos de curso únicos
+ */
+const getUniqueTypes = async () => {
+    const types = await prisma.cursos.findMany({
+        select: { curso_tipo: true },
+        distinct: ['curso_tipo'],
+        where: { curso_tipo: { not: null } }
+    });
+    return types.map(t => t.curso_tipo as string).sort();
 };
 
 export {
@@ -165,4 +181,5 @@ export {
     findPaginated,
     updateManyModality,
     updateManyStatus,
+    getUniqueTypes,
 };

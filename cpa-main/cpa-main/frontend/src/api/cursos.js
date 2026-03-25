@@ -13,5 +13,10 @@ export const classifyCursos = (cursoIds, idModalidade) => {
     return api.post(`/cursos/classify`, { cursoIds, idModalidade });
 };
 
+export const getCursoTypes = () => {
+    return api.get('/cursos/tipos');
+};
+
 export const updateCursosStatus = ({ cursoIds, ativo }) =>
     api.patch('/cursos/status', { cursoIds, ativo });
+

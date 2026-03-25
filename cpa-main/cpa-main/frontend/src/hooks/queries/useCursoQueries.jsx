@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCursosByUnidades, getPaginatedCursos } from '../../api/cursos';
+import { getCursosByUnidades, getPaginatedCursos, getCursoTypes } from '../../api/cursos';
 
 export const useGetCursosByUnidadesQuery = (unidadeIds) => {
     return useQuery({
@@ -14,5 +14,12 @@ export const useGetPaginatedCursosQuery = (params) => {
         queryKey: ['cursos', 'paginated', params],
         queryFn: () => getPaginatedCursos(params),
         keepPreviousData: true,
+    });
+};
+
+export const useGetCursoTypesQuery = () => {
+    return useQuery({
+        queryKey: ['cursos', 'types'],
+        queryFn: () => getCursoTypes(),
     });
 };
