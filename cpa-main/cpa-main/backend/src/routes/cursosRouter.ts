@@ -99,5 +99,55 @@ router.get('/cursos/by-unidades', cursosController.getCursosByUnidadesIds);
  */
 router.get('/cursos/by-modalidades', cursosController.getCursosByModalidade);
 
+/**
+ * @swagger
+ * /api/cursos/paginated:
+ *   get:
+ *     summary: Lista os cursos com paginação e filtros
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Número da página
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *         description: Itens por página
+ *       - in: query
+ *         name: nome
+ *         schema:
+ *           type: string
+ *         description: Filtro por nome do curso
+ *       - in: query
+ *         name: codigo
+ *         schema:
+ *           type: string
+ *         description: Filtro por código do curso
+ *       - in: query
+ *         name: curso_tipo
+ *         schema:
+ *           type: string
+ *         description: Filtro por tipo de curso
+ *       - in: query
+ *         name: unidade
+ *         schema:
+ *           type: string
+ *         description: Filtro por unidade
+ *       - in: query
+ *         name: municipio
+ *         schema:
+ *           type: string
+ *         description: Filtro por município
+ *     responses:
+ *       200:
+ *         description: Lista paginada de cursos
+ */
+router.get('/cursos/paginated', cursosController.getPaginatedCursos);
+
 
 export default router;

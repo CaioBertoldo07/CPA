@@ -20,12 +20,6 @@ class CronImportarCursos {
                     continue;
                 }
 
-                // Insere ou atualiza a modalidade correspondente ao curso
-                const modalidadeResult = await this.importModalidade(curso);
-                if (modalidadeResult) {
-                    console.log(`Modalidade ${curso.CURSO_TIPO} adicionada ou atualizada com sucesso!`);
-                }
-
                 // Insere o curso no banco de dados
                 const cursoResult = await this.importCurso(curso);
                 if (cursoResult) {
@@ -87,6 +81,8 @@ class CronImportarCursos {
                 nivel,
                 modalidade,
                 modalidade_api,
+                curso_tipo: modalidade,
+                ativo: true,
                 municipio: {
                     connectOrCreate: {
                         where: { nome: municipioNome },
@@ -104,7 +100,9 @@ class CronImportarCursos {
                     }
                 } : undefined,
             },
-            update: {},
+            update: {
+                curso_tipo: modalidade,
+            },
         });
     }
 }

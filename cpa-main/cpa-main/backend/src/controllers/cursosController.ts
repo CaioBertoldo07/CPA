@@ -39,8 +39,30 @@ const getTodosCursos = asyncHandler(async (req: Request, res: Response) => {
     res.status(200).json(cursos);
 });
 
+const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 10;
+    
+    const filters = {
+        nome: req.query.nome as string,
+        codigo: req.query.codigo as string,
+        curso_tipo: req.query.curso_tipo as string,
+        unidade: req.query.unidade as string,
+        municipio: req.query.municipio as string,
+    };
+
+    const result = await cursosService.getPaginated({
+        page,
+        pageSize,
+        filters
+    });
+
+    res.status(200).json(result);
+});
+
 export {
     getCursosByModalidade,
     getCursosByUnidadesIds,
-    getTodosCursos
+    getTodosCursos,
+    getPaginatedCursos
 };

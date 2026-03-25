@@ -14,6 +14,20 @@ class CursosService {
     async getByUnidades(unidadeIds: number[]): Promise<CursoResponseDTO[]> {
         return await cursosRepository.findByUnidades(unidadeIds) as CursoResponseDTO[];
     }
+
+    async getPaginated(params: {
+        page: number;
+        pageSize: number;
+        filters?: {
+            nome?: string;
+            codigo?: string;
+            curso_tipo?: string;
+            unidade?: string;
+            municipio?: string;
+        }
+    }) {
+        return await cursosRepository.findPaginated(params);
+    }
 }
 
 export default new CursosService();
