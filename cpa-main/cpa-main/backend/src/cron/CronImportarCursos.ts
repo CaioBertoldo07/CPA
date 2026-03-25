@@ -11,25 +11,10 @@ class CronImportarCursos {
     async execAsync(cursosLyceumJson: LyceumCursoDTO[]) {
         for (const curso of cursosLyceumJson) {
             try {
-                // Verifica se o curso já existe com base no identificador da API
-                const existingCourse = await prisma.cursos.findUnique({
-                    where: { identificador_api_lyceum: curso.CURSO },
-                });
-
-                if (existingCourse) {
-                    continue;
-                }
-
-                // Insere ou atualiza a modalidade correspondente ao curso
-                const modalidadeResult = await this.importModalidade(curso);
-                if (modalidadeResult) {
-                    console.log(`Modalidade ${curso.CURSO_TIPO} adicionada ou atualizada com sucesso!`);
-                }
-
-                // Insere o curso no banco de dados
+                // Insere ou atualiza o curso no banco de dados (upsert)
                 const cursoResult = await this.importCurso(curso);
                 if (cursoResult) {
-                    console.log(`Curso ${curso.CURSO} adicionado à base de dados com sucesso!`);
+                    console.log(`Curso ${curso.CURSO} processado com sucesso!`);
                 }
 
             } catch (error: unknown) {
@@ -87,6 +72,8 @@ class CronImportarCursos {
                 nivel,
                 modalidade,
                 modalidade_api,
+                curso_tipo: modalidade,
+                ativo: true,
                 municipio: {
                     connectOrCreate: {
                         where: { nome: municipioNome },
@@ -104,7 +91,9 @@ class CronImportarCursos {
                     }
                 } : undefined,
             },
-            update: {},
+            update: {
+                curso_tipo: modalidade,
+            },
         });
     }
 }

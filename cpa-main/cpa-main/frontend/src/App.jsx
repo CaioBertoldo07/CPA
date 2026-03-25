@@ -16,6 +16,7 @@ import AvaliacaoAlunos from './pages/AvaliacaoAlunos';
 import PadraoResposta from './pages/Padrao_Resposta';
 import RelatorioAvaliacao from './pages/RelatorioAvaliacao';
 import Agenda from './pages/Agenda';
+import Cursos from './pages/Cursos';
 import Layout from './components/utils/Layout';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -71,6 +72,7 @@ const App = () => {
                         <Route path="/categorias" element={<ProtectedRoute element={Categorias} isAdminRequired={true} layout={Layout} />} />
                         <Route path="/padraoresposta" element={<ProtectedRoute element={PadraoResposta} isAdminRequired={true} layout={Layout} />} />
                         <Route path="/agenda" element={<ProtectedRoute element={Agenda} isAdminRequired={true} layout={Layout} />} />
+                        <Route path="/cursos" element={<ProtectedRoute element={Cursos} isAdminRequired={true} layout={Layout} />} />
 
                         {/* Student Routes */}
                         <Route path="/alunos" element={<ProtectedRoute element={Alunos} />} />

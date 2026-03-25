@@ -88,6 +88,7 @@ model Modalidades {
 
   avaliacao            Avaliacao[]            @relation("AvaliacaoModalidades")
   Questoes_modalidades Questoes_modalidades[]
+  cursos               Cursos[]
 }
 
 model Questoes_modalidades {
@@ -137,6 +138,10 @@ model Cursos {
   municipio                Municipios              @relation(fields: [municipio_sede], references: [id])
   modalidade               String?
   modalidade_api           String?
+  curso_tipo               String?
+  id_modalidade            Int?
+  modalidade_rel           Modalidades?            @relation(fields: [id_modalidade], references: [id])
+  ativo                    Boolean                 @default(true)
 }
 
 model Municipios {

@@ -3,5 +3,8 @@ export interface CursoResponseDTO {
     nome: string;
     identificador_api_lyceum: string;
     unidade?: any;
+    municipio?: any;
     modalidade?: any;
+    curso_tipo?: string;
+    ativo?: boolean;
 }

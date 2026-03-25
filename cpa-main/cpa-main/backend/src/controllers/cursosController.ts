@@ -39,8 +39,61 @@ const getTodosCursos = asyncHandler(async (req: Request, res: Response) => {
     res.status(200).json(cursos);
 });
 
+const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
+    const page = Math.max(0, parseInt(req.query.page as string, 10) || 0);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string, 10) || 10));
+    
+    const filters = {
+        nome: req.query.nome as string,
+        codigo: req.query.codigo as string,
+        curso_tipo: req.query.curso_tipo as string,
+        unidade: req.query.unidade as string,
+        municipio: req.query.municipio as string,
+        unclassified: req.query.unclassified as string,
+    };
+
+    const result = await cursosService.getPaginated({
+        page,
+        pageSize,
+        filters
+    });
+
+    res.status(200).json(result);
+});
+
+const classifyCursos = asyncHandler(async (req: Request, res: Response) => {
+    const { cursoIds, idModalidade } = req.body;
+
+    if (!Array.isArray(cursoIds) || !idModalidade) {
+        return res.status(400).json({ message: "IDs dos cursos e ID da modalidade são obrigatórios." });
+    }
+
+    const result = await cursosService.classifyCursos(cursoIds, idModalidade);
+    res.status(200).json({ message: "Cursos classificados com sucesso.", result });
+});
+
+const updateCursosStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { cursoIds, ativo } = req.body;
+
+    if (!Array.isArray(cursoIds) || typeof ativo !== 'boolean') {
+        return res.status(400).json({ message: "IDs dos cursos e status (ativo) são obrigatórios." });
+    }
+
+    const result = await cursosService.updateStatus(cursoIds, ativo);
+    res.status(200).json({ message: "Status dos cursos atualizado com sucesso.", result });
+});
+
+const getUniqueTypes = asyncHandler(async (req: Request, res: Response) => {
+    const result = await cursosService.getUniqueTypes();
+    res.status(200).json(result);
+});
+
 export {
     getCursosByModalidade,
     getCursosByUnidadesIds,
-    getTodosCursos
+    getTodosCursos,
+    getPaginatedCursos,
+    classifyCursos,
+    updateCursosStatus,
+    getUniqueTypes
 };

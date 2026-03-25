@@ -1,6 +1,5 @@
 import * as cursosRepository from '../repositories/cursosRepository';
 import { CursoResponseDTO } from '../dtos/CursoDTO';
-import { AppError } from '../middleware/errorMiddleware';
 
 class CursosService {
     async getAll(): Promise<CursoResponseDTO[]> {
@@ -13,6 +12,33 @@ class CursosService {
 
     async getByUnidades(unidadeIds: number[]): Promise<CursoResponseDTO[]> {
         return await cursosRepository.findByUnidades(unidadeIds) as CursoResponseDTO[];
+    }
+
+    async getPaginated(params: {
+        page: number;
+        pageSize: number;
+        filters?: {
+            nome?: string;
+            codigo?: string;
+            curso_tipo?: string;
+            unidade?: string;
+            municipio?: string;
+            unclassified?: string;
+        }
+    }) {
+        return await cursosRepository.findPaginated(params);
+    }
+
+    async classifyCursos(cursoIds: number[], idModalidade: number) {
+        return await cursosRepository.updateManyModality(cursoIds, idModalidade);
+    }
+
+    async updateStatus(cursoIds: number[], ativo: boolean) {
+        return await cursosRepository.updateManyStatus(cursoIds, ativo);
+    }
+
+    async getUniqueTypes() {
+        return await cursosRepository.getUniqueTypes();
     }
 }
 

@@ -1,7 +1,15 @@
 // routes/cursos.js
 import express from 'express';
-const router = express.Router();
-import * as cursosController from '../controllers/cursosController';
+const cursosRouter = express.Router();
+import {
+    getTodosCursos,
+    getCursosByUnidadesIds, // Assuming this should also be destructured or kept as is
+    getCursosByModalidade, // Assuming this should also be destructured or kept as is
+    getPaginatedCursos,
+    classifyCursos,
+    updateCursosStatus,
+    getUniqueTypes
+} from '../controllers/cursosController';
 
 // Endpoint para obter cursos por unidade
 
@@ -39,7 +47,7 @@ import * as cursosController from '../controllers/cursosController';
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos', cursosController.getTodosCursos);
+cursosRouter.get('/cursos', getTodosCursos);
 
 /**
  * @swagger
@@ -68,7 +76,7 @@ router.get('/cursos', cursosController.getTodosCursos);
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos/by-unidades', cursosController.getCursosByUnidadesIds);
+cursosRouter.get('/cursos/by-unidades', getCursosByUnidadesIds);
 
 /**
  * @swagger
@@ -97,7 +105,116 @@ router.get('/cursos/by-unidades', cursosController.getCursosByUnidadesIds);
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos/by-modalidades', cursosController.getCursosByModalidade);
+cursosRouter.get('/cursos/by-modalidades', getCursosByModalidade);
+
+/**
+ * @swagger
+ * /api/cursos/paginated:
+ *   get:
+ *     summary: Lista os cursos com paginação e filtros
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Número da página
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *         description: Itens por página
+ *       - in: query
+ *         name: nome
+ *         schema:
+ *           type: string
+ *         description: Filtro por nome do curso
+ *       - in: query
+ *         name: codigo
+ *         schema:
+ *           type: string
+ *         description: Filtro por código do curso
+ *       - in: query
+ *         name: curso_tipo
+ *         schema:
+ *           type: string
+ *         description: Filtro por tipo de curso
+ *       - in: query
+ *         name: unidade
+ *         schema:
+ *           type: string
+ *         description: Filtro por unidade
+ *       - in: query
+ *         name: municipio
+ *         schema:
+ *           type: string
+ *         description: Filtro por município
+ *     responses:
+ *       200:
+ *         description: Lista paginada de cursos
+ */
+cursosRouter.get('/cursos/paginated', getPaginatedCursos);
+
+/**
+ * @swagger
+ * /api/cursos/classify:
+ *   post:
+ *     summary: Classifica um ou mais cursos em uma modalidade e os ativa
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cursoIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               idModalidade:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Sucesso
+ */
+cursosRouter.post('/cursos/classify', classifyCursos);
+
+/**
+ * @swagger
+ * /api/cursos/status:
+ *   patch:
+ *     summary: Altera o status (ativo/inativo) de um ou mais cursos
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cursoIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               ativo:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Sucesso
+ */
+cursosRouter.patch('/cursos/status', updateCursosStatus);
 
 
-export default router;
+/**
+ * @route GET /api/cursos/tipos
+ */
+cursosRouter.get('/cursos/tipos', getUniqueTypes);
+
+export default cursosRouter;
