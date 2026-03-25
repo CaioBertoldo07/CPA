@@ -149,5 +149,59 @@ router.get('/cursos/by-modalidades', cursosController.getCursosByModalidade);
  */
 router.get('/cursos/paginated', cursosController.getPaginatedCursos);
 
+/**
+ * @swagger
+ * /api/cursos/classify:
+ *   post:
+ *     summary: Classifica um ou mais cursos em uma modalidade e os ativa
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cursoIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               idModalidade:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Sucesso
+ */
+router.post('/cursos/classify', cursosController.classifyCursos);
+
+/**
+ * @swagger
+ * /api/cursos/status:
+ *   patch:
+ *     summary: Altera o status (ativo/inativo) de um ou mais cursos
+ *     tags: [Cursos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cursoIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               ativo:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Sucesso
+ */
+router.patch('/cursos/status', cursosController.updateCursosStatus);
+
 
 export default router;

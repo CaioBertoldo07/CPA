@@ -60,9 +60,33 @@ const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
     res.status(200).json(result);
 });
 
+const classifyCursos = asyncHandler(async (req: Request, res: Response) => {
+    const { cursoIds, idModalidade } = req.body;
+
+    if (!Array.isArray(cursoIds) || !idModalidade) {
+        return res.status(400).json({ message: "IDs dos cursos e ID da modalidade são obrigatórios." });
+    }
+
+    const result = await cursosService.classifyCursos(cursoIds, idModalidade);
+    res.status(200).json({ message: "Cursos classificados com sucesso.", result });
+});
+
+const updateCursosStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { cursoIds, ativo } = req.body;
+
+    if (!Array.isArray(cursoIds) || typeof ativo !== 'boolean') {
+        return res.status(400).json({ message: "IDs dos cursos e status (ativo) são obrigatórios." });
+    }
+
+    const result = await cursosService.updateStatus(cursoIds, ativo);
+    res.status(200).json({ message: "Status dos cursos atualizado com sucesso.", result });
+});
+
 export {
     getCursosByModalidade,
     getCursosByUnidadesIds,
     getTodosCursos,
-    getPaginatedCursos
+    getPaginatedCursos,
+    classifyCursos,
+    updateCursosStatus
 };

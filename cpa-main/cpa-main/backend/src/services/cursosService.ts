@@ -28,6 +28,14 @@ class CursosService {
     }) {
         return await cursosRepository.findPaginated(params);
     }
+
+    async classifyCursos(cursoIds: number[], idModalidade: number) {
+        return await cursosRepository.updateManyModality(cursoIds, idModalidade);
+    }
+
+    async updateStatus(cursoIds: number[], ativo: boolean) {
+        return await cursosRepository.updateManyStatus(cursoIds, ativo);
+    }
 }
 
 export default new CursosService();

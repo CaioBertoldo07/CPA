@@ -129,6 +129,29 @@ const findPaginated = async (params: {
     };
 };
 
+/**
+ * Atualiza a modalidade de vários cursos e os ativa
+ */
+const updateManyModality = (cursoIds: number[], idModalidade: number) => {
+    return prisma.cursos.updateMany({
+        where: { id: { in: cursoIds } },
+        data: {
+            id_modalidade: idModalidade,
+            ativo: true
+        }
+    });
+};
+
+/**
+ * Atualiza o status ativo de vários cursos
+ */
+const updateManyStatus = (cursoIds: number[], ativo: boolean) => {
+    return prisma.cursos.updateMany({
+        where: { id: { in: cursoIds } },
+        data: { ativo }
+    });
+};
+
 export {
     findAll,
     findByIdentificador,
@@ -136,4 +159,6 @@ export {
     findByModalidades,
     findByUnidades,
     findPaginated,
+    updateManyModality,
+    updateManyStatus,
 };
