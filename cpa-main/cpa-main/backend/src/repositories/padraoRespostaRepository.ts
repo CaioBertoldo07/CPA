@@ -58,7 +58,6 @@ const findBySigla = (sigla: string) => {
  * Cria um novo padrão de resposta com suas alternativas (Transacional)
  */
 const createWithAlternativas = (sigla: string, alternativas: { descricao: string }[]) => {
-    console.log('Sigla, alternativa: ', sigla, alternativas)
     return prisma.padrao_resposta.create({
         data: {
             sigla,
