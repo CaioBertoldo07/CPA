@@ -16,3 +16,7 @@ export const classifyCursos = (cursoIds, idModalidade) => {
 export const getCursoTypes = () => {
     return api.get('/cursos/tipos');
 };
+
+export const updateCursosStatus = ({ cursoIds, ativo }) =>
+    api.patch('/cursos/status', { cursoIds, ativo });
+
