@@ -77,6 +77,7 @@ const findPaginated = async (params: {
         curso_tipo?: string;
         unidade?: string;
         municipio?: string;
+        unclassified?: string;
     }
 }) => {
     const { page, pageSize, filters } = params;
@@ -86,10 +87,10 @@ const findPaginated = async (params: {
 
     if (filters) {
         if (filters.nome) {
-            where.nome = { contains: filters.nome, mode: 'insensitive' };
-        }
-        if (filters.codigo) {
-            where.identificador_api_lyceum = { contains: filters.codigo, mode: 'insensitive' };
+            where.OR = [
+                { nome: { contains: filters.nome, mode: 'insensitive' } },
+                { identificador_api_lyceum: { contains: filters.nome, mode: 'insensitive' } }
+            ];
         }
         if (filters.curso_tipo) {
             where.curso_tipo = { contains: filters.curso_tipo, mode: 'insensitive' };
@@ -103,6 +104,9 @@ const findPaginated = async (params: {
             where.municipio = {
                 nome: { contains: filters.municipio, mode: 'insensitive' }
             };
+        }
+        if (filters.unclassified === 'true') {
+            where.id_modalidade = null;
         }
     }
 

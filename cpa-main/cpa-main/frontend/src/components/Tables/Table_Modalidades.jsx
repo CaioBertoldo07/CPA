@@ -4,7 +4,9 @@ import { useNotification } from '../../context/NotificationContext';
 import EditModal from '../Modals/ModalUpdateModalidades';
 import { IoTrashOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
+import { HiOutlineDocumentSearch } from "react-icons/hi";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
+import Modal_IncluirCursos from '../Modals/Modal_IncluirCursos';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 import { DataGrid } from '@mui/x-data-grid';
@@ -21,6 +23,9 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingModalidade, setDeletingModalidade] = useState(null);
+
+    const [showIncludeModal, setShowIncludeModal] = useState(false);
+    const [selectingModalidade, setSelectingModalidade] = useState(null);
 
     useEffect(() => { if (isError) showNotification('Erro ao carregar modalidades.', 'error'); }, [isError, showNotification]);
 
@@ -113,6 +118,27 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                             Editar
                         </Button>
                     </Tooltip>
+                    <Tooltip title="Gerenciar Cursos">
+                        <Button
+                            size="small"
+                            variant="text"
+                            startIcon={<HiOutlineDocumentSearch size={16} />}
+                            onClick={() => {
+                                setSelectingModalidade(params.row);
+                                setShowIncludeModal(true);
+                            }}
+                            sx={{
+                                color: '#2b6cb0',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                minWidth: 'auto',
+                                '&:hover': { bgcolor: '#ebf4ff' }
+                            }}
+                        >
+                            Cursos
+                        </Button>
+                    </Tooltip>
                     <Tooltip title="Excluir">
                         <Button
                             size="small"
@@ -184,6 +210,15 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                 message={deletingModalidade ? `Tem certeza que deseja excluir a modalidade "${deletingModalidade.mod_ensino}"?` : ""}
                 loading={deleteMutation.isPending}
             />
+
+            {selectingModalidade && (
+                <Modal_IncluirCursos
+                    show={showIncludeModal}
+                    onHide={() => setShowIncludeModal(false)}
+                    modalityId={selectingModalidade.id}
+                    modalityName={selectingModalidade.mod_ensino}
+                />
+            )}
         </Box>
     );
 };

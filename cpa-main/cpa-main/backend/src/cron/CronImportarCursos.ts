@@ -11,19 +11,10 @@ class CronImportarCursos {
     async execAsync(cursosLyceumJson: LyceumCursoDTO[]) {
         for (const curso of cursosLyceumJson) {
             try {
-                // Verifica se o curso já existe com base no identificador da API
-                const existingCourse = await prisma.cursos.findUnique({
-                    where: { identificador_api_lyceum: curso.CURSO },
-                });
-
-                if (existingCourse) {
-                    continue;
-                }
-
-                // Insere o curso no banco de dados
+                // Insere ou atualiza o curso no banco de dados (upsert)
                 const cursoResult = await this.importCurso(curso);
                 if (cursoResult) {
-                    console.log(`Curso ${curso.CURSO} adicionado à base de dados com sucesso!`);
+                    console.log(`Curso ${curso.CURSO} processado com sucesso!`);
                 }
 
             } catch (error: unknown) {

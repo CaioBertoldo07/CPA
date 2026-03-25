@@ -49,6 +49,7 @@ const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
         curso_tipo: req.query.curso_tipo as string,
         unidade: req.query.unidade as string,
         municipio: req.query.municipio as string,
+        unclassified: req.query.unclassified as string,
     };
 
     const result = await cursosService.getPaginated({
