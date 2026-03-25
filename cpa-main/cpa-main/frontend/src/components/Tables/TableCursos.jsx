@@ -3,7 +3,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, Chip, Typography, IconButton } from '@mui/material';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
-import { useGetCursosPaginatedQuery } from '../../hooks/queries/useCursoQueries';
+import { useGetPaginatedCursosQuery } from '../../hooks/queries/useCursoQueries';
 import { useNotification } from '../../context/NotificationContext';
 
 const PAGE_SIZE = 20;
@@ -44,7 +44,7 @@ const TableCursos = ({ searchQuery = '', filtroStatus = 'TODOS', onSelectionChan
         ...(searchQuery ? { nome: searchQuery } : {}),
     }), [page, searchQuery]);
 
-    const { data, isLoading, isError } = useGetCursosPaginatedQuery(queryParams);
+    const { data, isLoading, isError } = useGetPaginatedCursosQuery(queryParams);
 
     const items      = data?.items      ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -100,12 +100,12 @@ const TableCursos = ({ searchQuery = '', filtroStatus = 'TODOS', onSelectionChan
             ),
         },
         {
-            field: 'modalidade_rel',
-            headerName: 'Modalidade',
+            field: 'curso_tipo',
+            headerName: 'Tipo de Curso',
             width: 175,
             valueGetter: (value) => value?.nome ?? null,
             renderCell: (params) => {
-                const nome = params.row.modalidade_rel?.nome;
+                const nome = params.row.curso_tipo;
                 return nome ? (
                     <Chip label={nome} size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
                 ) : (

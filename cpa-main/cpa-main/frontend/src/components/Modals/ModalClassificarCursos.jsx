@@ -2,74 +2,20 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Button,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     Typography,
-    Chip,
     Alert,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
+    Checkbox,
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-import { ptBR } from '@mui/x-data-grid/locales';
 import MuiBaseModal from '../utils/MuiBaseModal';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
-import { useClassificarCursosMutation } from '../../hooks/mutations/useCursoMutations';
+import { useClassifyCursosMutation } from '../../hooks/mutations/useCursoMutations';
 
-const dataGridSx = {
-    border: '1px solid #e2e8f0',
-    borderRadius: 2,
-    '& .MuiDataGrid-cell:focus': { outline: 'none' },
-    '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
-    '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },
-    '& .MuiDataGrid-columnHeaders': {
-        bgcolor: '#f8fafc',
-        borderBottom: '1px solid #e2e8f0',
-        '& .MuiDataGrid-columnHeaderTitle': {
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#718096',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-        },
-    },
-};
-
-const columns = [
-    {
-        field: 'identificador_api_lyceum',
-        headerName: 'Código',
-        width: 130,
-        renderCell: (params) => (
-            <Typography variant="caption" sx={{
-                fontFamily: 'monospace', bgcolor: '#f1f5f9',
-                px: 1, py: 0.25, borderRadius: 1,
-                border: '1px solid #e2e8f0', fontWeight: 600, color: '#64748b',
-            }}>
-                {params.value ?? '—'}
-            </Typography>
-        ),
-    },
-    {
-        field: 'nome',
-        headerName: 'Nome do Curso',
-        flex: 1,
-        minWidth: 200,
-        renderCell: (params) => (
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>{params.value}</Typography>
-        ),
-    },
-    {
-        field: 'municipio',
-        headerName: 'Município',
-        width: 160,
-        valueGetter: (value) => value?.nome ?? '—',
-    },
-];
-
-function ModalClassificarCursos({ show, onHide, cursos = [], onSuccess }) {
-    const [idModalidade, setIdModalidade] = useState('');
-    const [selectedIds, setSelectedIds] = useState([]);
+function ModalClassificarCursos({ show, onHide, cursoIds = [], onSuccess }) {
+    const [selectedModalidadeId, setSelectedModalidadeId] = useState(null);
 
     const { data: modalidadesRaw } = useGetModalidadesQuery();
     const modalidades = useMemo(() => {
@@ -78,32 +24,20 @@ function ModalClassificarCursos({ show, onHide, cursos = [], onSuccess }) {
         return [];
     }, [modalidadesRaw]);
 
-    const classificarMutation = useClassificarCursosMutation();
+    const classificarMutation = useClassifyCursosMutation();
 
-    // Inicializa select e reseta seleção ao abrir/fechar
     useEffect(() => {
-        if (!show) {
-            setSelectedIds([]);
-            setIdModalidade('');
-        }
+        if (!show) setSelectedModalidadeId(null);
     }, [show]);
 
-    useEffect(() => {
-        if (modalidades.length > 0 && !idModalidade) {
-            setIdModalidade(String(modalidades[0].id));
-        }
-    }, [modalidades, idModalidade]);
-
-    const selectedCount = selectedIds.length;
-
     const handleSalvar = () => {
-        if (!selectedCount || !idModalidade) return;
+        if (!cursoIds.length || !selectedModalidadeId) return;
         classificarMutation.mutate(
-            { cursoIds: selectedIds, idModalidade: Number(idModalidade) },
+            { cursoIds, idModalidade: selectedModalidadeId },
             {
                 onSuccess: () => {
-                    const nomeMod = modalidades.find(m => String(m.id) === idModalidade)?.nome ?? '';
-                    onSuccess?.(`${selectedCount} curso(s) classificado(s) como "${nomeMod}" com sucesso!`);
+                    const nomeMod = modalidades.find(m => m.id === selectedModalidadeId)?.nome ?? '';
+                    onSuccess?.(`${cursoIds.length} curso(s) classificado(s) como "${nomeMod}" com sucesso!`);
                     onHide();
                 },
             }
@@ -112,24 +46,17 @@ function ModalClassificarCursos({ show, onHide, cursos = [], onSuccess }) {
 
     const modalActions = (
         <>
-            <Button
-                onClick={onHide}
-                color="inherit"
-                disabled={classificarMutation.isPending}
-                sx={{ fontWeight: 600 }}
-            >
+            <Button onClick={onHide} color="inherit" disabled={classificarMutation.isPending} sx={{ fontWeight: 600 }}>
                 Cancelar
             </Button>
             <Button
                 onClick={handleSalvar}
                 variant="contained"
                 color="primary"
-                disabled={selectedCount === 0 || !idModalidade || classificarMutation.isPending}
+                disabled={!selectedModalidadeId || classificarMutation.isPending}
                 sx={{ fontWeight: 700, minWidth: 160 }}
             >
-                {classificarMutation.isPending
-                    ? 'Salvando...'
-                    : `Classificar (${selectedCount})`}
+                {classificarMutation.isPending ? 'Salvando...' : `Classificar (${cursoIds.length})`}
             </Button>
         </>
     );
@@ -141,50 +68,40 @@ function ModalClassificarCursos({ show, onHide, cursos = [], onSuccess }) {
             title="Classificar Cursos"
             actions={modalActions}
             isLoading={classificarMutation.isPending}
-            maxWidth="md"
+            maxWidth="sm"
         >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {cursos.length === 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                    {cursoIds.length} curso(s) selecionado(s) serão classificados com a modalidade escolhida abaixo.
+                </Typography>
+
+                {modalidades.length === 0 ? (
                     <Alert severity="info" sx={{ borderRadius: 2 }}>
-                        Todos os cursos desta página já possuem modalidade classificada.
+                        Nenhuma modalidade cadastrada.
                     </Alert>
                 ) : (
-                    <>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Modalidade</InputLabel>
-                            <Select
-                                value={idModalidade}
-                                label="Modalidade"
-                                onChange={e => setIdModalidade(e.target.value)}
-                            >
-                                {modalidades.map(m => (
-                                    <MenuItem key={m.id} value={String(m.id)}>
-                                        {m.nome}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <Box sx={{ height: 360 }}>
-                            <DataGrid
-                                rows={cursos}
-                                columns={columns}
-                                checkboxSelection
-                                disableRowSelectionOnClick
-                                density="compact"
-                                pageSizeOptions={[10, 25]}
-                                initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-                                onRowSelectionModelChange={(model) => {
-                                    const ids = Array.isArray(model)
-                                        ? model
-                                        : (model?.ids ? Array.from(model.ids) : []);
-                                    setSelectedIds(ids);
-                                }}
-                                localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
-                                sx={dataGridSx}
-                            />
-                        </Box>
-                    </>
+                    <List sx={{ border: '1px solid #e2e8f0', borderRadius: 2, p: 0, overflow: 'hidden' }}>
+                        {modalidades.map((m, index) => (
+                            <ListItem key={m.id} disablePadding divider={index < modalidades.length - 1}>
+                                <ListItemButton
+                                    onClick={() => setSelectedModalidadeId(m.id)}
+                                    selected={selectedModalidadeId === m.id}
+                                    sx={{ '&.Mui-selected': { bgcolor: '#eff6ff' }, '&.Mui-selected:hover': { bgcolor: '#dbeafe' } }}
+                                >
+                                    <Checkbox
+                                        checked={selectedModalidadeId === m.id}
+                                        disableRipple
+                                        size="small"
+                                        sx={{ mr: 1, p: 0 }}
+                                    />
+                                    <ListItemText
+                                        primary={m.nome}
+                                        primaryTypographyProps={{ fontWeight: selectedModalidadeId === m.id ? 600 : 400 }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
                 )}
             </Box>
         </MuiBaseModal>

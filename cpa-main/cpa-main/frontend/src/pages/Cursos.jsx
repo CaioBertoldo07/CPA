@@ -24,8 +24,11 @@ const Cursos = () => {
     const showNotification  = useNotification();
     const updateStatusMutation = useUpdateCursosStatusMutation();
 
-    // Cursos sem modalidade da página atual — passados para o modal
-    const cursosSemModalidade = currentItems.filter(c => !c.modalidade_rel);
+    // Cursos selecionados que ainda não têm classificação
+    const selectedSemClassificacao = currentItems.filter(
+        c => selectedIds.some(id => String(id) === String(c.id)) && !c.modalidade_rel
+    );
+    const canClassificar = selectedSemClassificacao.length > 0;
 
     const canAtivar   = filtroStatus === 'INATIVOS' && selectedIds.length > 0;
     const canInativar = filtroStatus === 'ATIVOS'   && selectedIds.length > 0;
@@ -84,11 +87,19 @@ const Cursos = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {/* Classificar — sempre habilitado */}
+                        {/* Classificar — habilitado apenas quando há cursos sem classificação selecionados */}
                         <button
-                            onClick={() => setModalAberto(true)}
-                            style={{ ...btnBase, background: '#1d4ed8', color: '#fff', boxShadow: '0 2px 8px rgba(29,78,216,0.25)' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#1e40af'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                            onClick={() => canClassificar && setModalAberto(true)}
+                            disabled={!canClassificar}
+                            title={!canClassificar ? 'Selecione ao menos um curso sem classificação' : ''}
+                            style={{
+                                ...btnBase,
+                                background: '#1d4ed8', color: '#fff',
+                                boxShadow: canClassificar ? '0 2px 8px rgba(29,78,216,0.25)' : 'none',
+                                opacity: canClassificar ? 1 : 0.45,
+                                cursor: canClassificar ? 'pointer' : 'not-allowed',
+                            }}
+                            onMouseEnter={e => { if (canClassificar) { e.currentTarget.style.background = '#1e40af'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
                             onMouseLeave={e => { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.transform = 'translateY(0)'; }}
                         >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -232,7 +243,7 @@ const Cursos = () => {
             <ModalClassificarCursos
                 show={modalAberto}
                 onHide={() => setModalAberto(false)}
-                cursos={cursosSemModalidade}
+                cursoIds={selectedSemClassificacao.map(c => c.id)}
                 onSuccess={handleSuccess}
             />
         </>
