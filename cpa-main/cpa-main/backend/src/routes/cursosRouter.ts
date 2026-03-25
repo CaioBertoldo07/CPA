@@ -1,7 +1,15 @@
 // routes/cursos.js
 import express from 'express';
-const router = express.Router();
-import * as cursosController from '../controllers/cursosController';
+const cursosRouter = express.Router();
+import {
+    getTodosCursos,
+    getCursosByUnidadesIds, // Assuming this should also be destructured or kept as is
+    getCursosByModalidade, // Assuming this should also be destructured or kept as is
+    getPaginatedCursos,
+    classifyCursos,
+    updateCursosStatus,
+    getUniqueTypes
+} from '../controllers/cursosController';
 
 // Endpoint para obter cursos por unidade
 
@@ -39,7 +47,7 @@ import * as cursosController from '../controllers/cursosController';
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos', cursosController.getTodosCursos);
+cursosRouter.get('/cursos', getTodosCursos);
 
 /**
  * @swagger
@@ -68,7 +76,7 @@ router.get('/cursos', cursosController.getTodosCursos);
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos/by-unidades', cursosController.getCursosByUnidadesIds);
+cursosRouter.get('/cursos/by-unidades', getCursosByUnidadesIds);
 
 /**
  * @swagger
@@ -97,7 +105,7 @@ router.get('/cursos/by-unidades', cursosController.getCursosByUnidadesIds);
  *                   modalidadeId:
  *                     type: integer
  */
-router.get('/cursos/by-modalidades', cursosController.getCursosByModalidade);
+cursosRouter.get('/cursos/by-modalidades', getCursosByModalidade);
 
 /**
  * @swagger
@@ -147,7 +155,7 @@ router.get('/cursos/by-modalidades', cursosController.getCursosByModalidade);
  *       200:
  *         description: Lista paginada de cursos
  */
-router.get('/cursos/paginated', cursosController.getPaginatedCursos);
+cursosRouter.get('/cursos/paginated', getPaginatedCursos);
 
 /**
  * @swagger
@@ -174,7 +182,7 @@ router.get('/cursos/paginated', cursosController.getPaginatedCursos);
  *       200:
  *         description: Sucesso
  */
-router.post('/cursos/classify', cursosController.classifyCursos);
+cursosRouter.post('/cursos/classify', classifyCursos);
 
 /**
  * @swagger
@@ -201,7 +209,12 @@ router.post('/cursos/classify', cursosController.classifyCursos);
  *       200:
  *         description: Sucesso
  */
-router.patch('/cursos/status', cursosController.updateCursosStatus);
+cursosRouter.patch('/cursos/status', updateCursosStatus);
 
 
-export default router;
+/**
+ * @route GET /api/cursos/tipos
+ */
+cursosRouter.get('/cursos/tipos', getUniqueTypes);
+
+export default cursosRouter;

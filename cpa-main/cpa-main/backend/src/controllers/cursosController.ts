@@ -40,8 +40,8 @@ const getTodosCursos = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const pageSize = parseInt(req.query.pageSize as string) || 10;
+    const page = Math.max(0, parseInt(req.query.page as string, 10) || 0);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string, 10) || 10));
     
     const filters = {
         nome: req.query.nome as string,
@@ -83,11 +83,17 @@ const updateCursosStatus = asyncHandler(async (req: Request, res: Response) => {
     res.status(200).json({ message: "Status dos cursos atualizado com sucesso.", result });
 });
 
+const getUniqueTypes = asyncHandler(async (req: Request, res: Response) => {
+    const result = await cursosService.getUniqueTypes();
+    res.status(200).json(result);
+});
+
 export {
     getCursosByModalidade,
     getCursosByUnidadesIds,
     getTodosCursos,
     getPaginatedCursos,
     classifyCursos,
-    updateCursosStatus
+    updateCursosStatus,
+    getUniqueTypes
 };

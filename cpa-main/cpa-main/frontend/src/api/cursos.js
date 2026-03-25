@@ -12,3 +12,7 @@ export const getPaginatedCursos = (params) => {
 export const classifyCursos = (cursoIds, idModalidade) => {
     return api.post(`/cursos/classify`, { cursoIds, idModalidade });
 };
+
+export const getCursoTypes = () => {
+    return api.get('/cursos/tipos');
+};
