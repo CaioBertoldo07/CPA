@@ -1,4 +1,3 @@
-// src/components/Tables/Table_Modalidades.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../../context/NotificationContext';
 import EditModal from '../Modals/ModalUpdateModalidades';
