@@ -51,11 +51,11 @@ const IconChart = () => (
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
     2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
-    3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
+    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
 };
 
 const CHART_COLORS = {
-    encerrada: '#2e7d32',
+    encerrada: '#ef4444',
     enviada: '#3b82f6',
     rascunho: '#94a3b8',
 };
@@ -168,7 +168,7 @@ const ChartTooltip = ({ active, payload, label, formatter }) => {
 };
 
 /* ───────── Circular Progress (SVG) ───────── */
-const CircularProgress = ({ pct, color = '#2e7d32', total, encerradas }) => {
+const CircularProgress = ({ pct, color = '#ef4444', total, encerradas }) => {
     const r = 52;
     const circumference = 2 * Math.PI * r;
     const dash = Math.min((pct / 100) * circumference, circumference);
@@ -181,8 +181,8 @@ const CircularProgress = ({ pct, color = '#2e7d32', total, encerradas }) => {
                 {/* Gradient definition */}
                 <defs>
                     <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#4caf50" />
-                        <stop offset="100%" stopColor="#2e7d32" />
+                        <stop offset="0%" stopColor="#f87171" />
+                        <stop offset="100%" stopColor="#ef4444" />
                     </linearGradient>
                 </defs>
                 {/* Progress arc */}
@@ -202,7 +202,7 @@ const CircularProgress = ({ pct, color = '#2e7d32', total, encerradas }) => {
             {/* Stats below circle */}
             <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: '#2e7d32' }}>{encerradas}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#ef4444' }}>{encerradas}</div>
                     <div style={{ fontSize: 11, color: '#718096' }}>Encerradas</div>
                 </div>
                 <div style={{ width: 1, background: '#e2e8f0' }} />

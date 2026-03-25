@@ -19,7 +19,7 @@ import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
     2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
-    3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
+    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
 };
 
 const StatusBadge = ({ status }) => {

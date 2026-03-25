@@ -11,7 +11,7 @@ const localizer = momentLocalizer(moment);
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
     2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
-    3: { label: 'Encerrada', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
 };
 
 const MESSAGES = {
@@ -257,7 +257,7 @@ const Agenda = () => {
                         { label: 'Total', value: counts.total, bg: '#f8fafc', color: '#1a202c', dot: '#64748b' },
                         { label: 'Rascunho', value: counts.rascunho, bg: '#f8fafc', color: '#64748b', dot: '#94a3b8', status: 1 },
                         { label: 'Enviadas', value: counts.enviada, bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', status: 2 },
-                        { label: 'Encerradas', value: counts.encerrada, bg: '#dcfce7', color: '#15803d', dot: '#22c55e', status: 3 },
+                        { label: 'Encerradas', value: counts.encerrada, bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444', status: 3 },
                     ].map(card => (
                         <button
                             key={card.label}
