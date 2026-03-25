@@ -18,7 +18,7 @@ const BAR_COLORS = ['#2e7d32', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b
 const STATUS_MAP = {
     1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
     2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
-    3: { label: 'Encerrada', bg: '#fce7f3', color: '#9d174d', dot: '#ec4899' },
+    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
 };
 
 const TIPO_COLORS = { padrao: '#3b82f6', grade: '#2e7d32' };
