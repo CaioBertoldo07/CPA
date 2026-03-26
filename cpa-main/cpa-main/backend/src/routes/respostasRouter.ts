@@ -90,6 +90,37 @@ router.post('/respostas', authenticateToken, respostasController.salvarRespostas
 router.get('/avaliacoes/:idAvaliacao/respostas', authenticateToken, respostasController.getRespostasByAvaliacao);
 router.get('/avaliacoes/:id/relatorio/disciplinas', authenticateToken, respostasController.getRelatorioDisciplinas);
 
+/**
+ * @swagger
+ * /api/dashboard/estatisticas-categorias:
+ *   get:
+ *     summary: Retorna estatísticas de respondentes por categoria para o dashboard global
+ *     tags: [Respostas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estatísticas por categoria
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categorias:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       categoria:
+ *                         type: string
+ *                       respondentes:
+ *                         type: integer
+ *                       populacao:
+ *                         type: integer
+ *                       participacao:
+ *                         type: number
+ */
+router.get('/dashboard/estatisticas-categorias', authenticateToken, respostasController.getDashboardCategorias);
 
 export default router;
 

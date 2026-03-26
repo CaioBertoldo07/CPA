@@ -450,7 +450,6 @@ class RespostasService {
         }).sort((a, b) => b.scoreGeral - a.scoreGeral);
 
         return ranking;
-    }
-}
+
 
 export default new RespostasService();

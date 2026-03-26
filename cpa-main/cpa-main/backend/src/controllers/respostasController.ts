@@ -40,6 +40,11 @@ const getRelatorioDisciplinas = asyncHandler(async (req: Request, res: Response)
     res.json(relatorio);
 });
 
+const getDashboardCategorias = asyncHandler(async (_req: Request, res: Response) => {
+    const data = await respostasService.getDashboardCategorias();
+    res.json(data);
+});
+
 export {
     salvarRespostas,
     getRespostasByAvaliacao,

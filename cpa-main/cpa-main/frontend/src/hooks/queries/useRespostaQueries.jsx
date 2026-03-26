@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { getRespostasPorAvaliacao, getRelatorioDisciplinas } from '../../api/respostas';
+
 
 export const useGetRespostasPorAvaliacaoQuery = (idAvaliacao, filters = {}) => {
     return useQuery({
@@ -14,5 +16,13 @@ export const useGetRespostasPorDisciplinaQuery = (idAvaliacao, filters = {}) => 
         queryKey: ['respostas', 'disciplinas', idAvaliacao, filters],
         queryFn: () => getRelatorioDisciplinas(idAvaliacao, filters),
         enabled: !!idAvaliacao,
+    });
+};
+
+export const useGetDashboardCategoriasQuery = () => {
+    return useQuery({
+        queryKey: ['dashboard', 'categorias'],
+        queryFn: getDashboardCategorias,
+        retry: false,
     });
 };
