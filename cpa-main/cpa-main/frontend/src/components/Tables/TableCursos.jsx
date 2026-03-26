@@ -132,6 +132,7 @@ const columns = [
         field: 'modalidade_rel',
         headerName: 'Modalidade',
         width: 175,
+        valueGetter: (_, row) => row.id_modalidade ?? 'SEM_MODALIDADE',
         renderCell: ({ row }) => {
             const rel = row.modalidade_rel;
             const temDados = rel?.mod_ensino || rel?.mod_oferta;
@@ -144,6 +145,7 @@ const columns = [
                 </Box>
             );
         },
+        filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },
     {
         field: 'unidades',
@@ -183,6 +185,7 @@ const TableCursos = ({
     selectedTypes = [],
     unidadeIds = [],
     municipioIds = [],
+    modalidadeOptions = [],
     unidadesOptions = [],
     municipiosOptions = [],
     typesOptions = [],
@@ -207,11 +210,12 @@ const TableCursos = ({
     const computedColumns = useMemo(() => {
         return columns.map(col => {
             if (col.field === 'curso_tipo') return { ...col, filterOperators: getMultiSelectOperators(typesOptions) };
+            if (col.field === 'modalidade_rel') return { ...col, filterOperators: getMultiSelectOperators(modalidadeOptions) };
             if (col.field === 'unidades') return { ...col, filterOperators: getMultiSelectOperators(unidadesOptions) };
             if (col.field === 'municipio') return { ...col, filterOperators: getMultiSelectOperators(municipiosOptions) };
             return col;
         });
-    }, [typesOptions, unidadesOptions, municipiosOptions]);
+    }, [typesOptions, modalidadeOptions, unidadesOptions, municipiosOptions]);
 
     const { data, isLoading, isError } = useGetPaginatedCursosQuery(queryParams);
 
@@ -227,17 +231,38 @@ const TableCursos = ({
     }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSelectionChange = (model) => {
-        const ids = Array.isArray(model) ? model : (model?.ids ? Array.from(model.ids) : []);
-        onSelectionChange?.(ids);
+        if (Array.isArray(model)) {
+            onSelectionChange?.(model);
+            return;
+        }
+
+        // MUI DataGrid v8 can emit { type: 'exclude', ids: Set() } when selecting all.
+        // For this screen, we operate with explicit IDs from the loaded rows.
+        if (model?.type === 'exclude') {
+            onSelectionChange?.(items.map((row) => row.id));
+            return;
+        }
+
+        onSelectionChange?.(model?.ids ? Array.from(model.ids) : []);
     };
 
     const filterModel = useMemo(() => {
         const items = [];
         if (searchQuery) items.push({ field: 'nome', operator: 'contains', value: searchQuery });
         if (selectedTypes.length > 0) items.push({ field: 'curso_tipo', operator: 'isAnyOf', value: selectedTypes });
+        if (extraParams?.modalidadeIds) {
+            items.push({
+                field: 'modalidade_rel',
+                operator: 'isAnyOf',
+                value: extraParams.modalidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)),
+            });
+        } else if (extraParams?.unclassified === 'true') {
+            items.push({ field: 'modalidade_rel', operator: 'isAnyOf', value: ['SEM_MODALIDADE'] });
+        }
         if (unidadeIds.length > 0) items.push({ field: 'unidades', operator: 'isAnyOf', value: unidadeIds });
         if (municipioIds.length > 0) items.push({ field: 'municipio', operator: 'isAnyOf', value: municipioIds });
-        if (extraParams?.ativo) items.push({ field: 'ativo', operator: 'contains', value: extraParams.ativo });
+        if (extraParams?.ativo === 'true') items.push({ field: 'ativo', operator: 'is', value: true });
+        if (extraParams?.ativo === 'false') items.push({ field: 'ativo', operator: 'is', value: false });
         return { items };
     }, [searchQuery, selectedTypes, unidadeIds, municipioIds, extraParams]);
 
@@ -249,6 +274,7 @@ const TableCursos = ({
                 getRowId={(row) => row.id}
                 loading={isLoading}
                 checkboxSelection
+                disableRowSelectionExcludeModel
                 disableRowSelectionOnClick
                 density="compact"
                 autoHeight

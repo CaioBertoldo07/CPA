@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
+import { Autocomplete, TextField } from '@mui/material';
 import 'moment/locale/pt-br';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
@@ -59,6 +60,7 @@ const Agenda = () => {
     const [filterDateTo, setFilterDateTo] = useState('');
     const [filterAno, setFilterAno] = useState(null);
     const [filterSemestre, setFilterSemestre] = useState(null);
+    const hasInitializedDefaultAno = useRef(false);
 
     const hasActiveFilters = filterStatus !== null || filterDateFrom || filterDateTo || filterAno;
 
@@ -68,11 +70,6 @@ const Agenda = () => {
         setFilterDateTo('');
         setFilterAno(null);
         setFilterSemestre(null);
-    };
-
-    const handleAnoClick = (ano) => {
-        if (filterAno === ano) { setFilterAno(null); setFilterSemestre(null); }
-        else { setFilterAno(ano); setFilterSemestre(null); }
     };
 
     // Converte data_inicio/data_fim que podem vir como:
@@ -194,6 +191,13 @@ const Agenda = () => {
         const anosOrdenados = Object.keys(map).sort((a, b) => b.localeCompare(a));
         return { semestresPorAno: map, anos: anosOrdenados };
     }, [avaliacoes]);
+
+    useEffect(() => {
+        if (!hasInitializedDefaultAno.current && anos.length > 0) {
+            setFilterAno(anos[0]);
+            hasInitializedDefaultAno.current = true;
+        }
+    }, [anos]);
 
     return (
         <>
@@ -356,29 +360,63 @@ const Agenda = () => {
                                     <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
                                         Ano
                                     </span>
-                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                                        {anos.map(ano => {
-                                            const ativo = filterAno === ano;
-                                            return (
-                                                <button
-                                                    key={ano}
-                                                    onClick={() => handleAnoClick(ano)}
-                                                    style={{
-                                                        padding: '4px 13px', fontSize: 12, fontWeight: 700,
-                                                        borderRadius: 9999, cursor: 'pointer', transition: 'all 150ms',
-                                                        border: `1.5px solid ${ativo ? '#1D5E24' : '#e2e8f0'}`,
-                                                        background: ativo ? '#1D5E24' : '#f8fafc',
-                                                        color: ativo ? '#fff' : '#64748b',
-                                                        boxShadow: ativo ? '0 2px 8px rgba(29,94,36,0.2)' : 'none',
-                                                    }}
-                                                    onMouseEnter={e => { if (!ativo) { e.currentTarget.style.borderColor = '#a5d6a7'; e.currentTarget.style.color = '#2e7d32'; } }}
-                                                    onMouseLeave={e => { if (!ativo) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; } }}
-                                                >
-                                                    {ano}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                    <Autocomplete
+                                        size="small"
+                                        options={anos}
+                                        value={filterAno}
+                                        onChange={(_, newValue) => {
+                                            setFilterAno(newValue || null);
+                                            setFilterSemestre(null);
+                                        }}
+                                        clearOnEscape
+                                        autoHighlight
+                                        noOptionsText="Nenhum ano encontrado"
+                                        sx={{
+                                            minWidth: 170,
+                                            '& .MuiOutlinedInput-root': {
+                                                background: '#f8fafc',
+                                                borderRadius: '10px',
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                color: '#1a202c',
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderWidth: '1.5px',
+                                                    borderColor: filterAno ? '#1D5E24' : '#e2e8f0',
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: filterAno ? '#1D5E24' : '#cbd5e1',
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: '#1D5E24',
+                                                    borderWidth: '1.5px',
+                                                },
+                                            },
+                                        }}
+                                        slotProps={{
+                                            paper: {
+                                                sx: {
+                                                    mt: 0.6,
+                                                    borderRadius: 2,
+                                                    border: '1px solid #e2e8f0',
+                                                    boxShadow: '0 12px 28px rgba(15,23,42,0.14)',
+                                                    '& .MuiAutocomplete-option': {
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                    },
+                                                },
+                                            },
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                placeholder="Buscar ano"
+                                                inputProps={{
+                                                    ...params.inputProps,
+                                                    'aria-label': 'Filtro de ano',
+                                                }}
+                                            />
+                                        )}
+                                    />
                                 </div>
 
                                 {/* Linha de semestres — só aparece quando um ano está selecionado */}

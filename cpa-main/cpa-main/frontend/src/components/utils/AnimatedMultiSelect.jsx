@@ -9,7 +9,7 @@ import { Autocomplete, TextField, Chip, Box } from '@mui/material';
  * @param {string} placeholder - Input placeholder
  * @param {Array} value - [{ value, label }, ...] current value
  */
-export default function AnimatedMultiSelect({ options, onChange, placeholder, value, disabled }) {
+export default function AnimatedMultiSelect({ options, onChange, placeholder, value, disabled, sx }) {
     // Adapter to match the react-select onChange signature expected by the parent
     const handleChange = (event, newValue) => {
         // Parent expects an array of objects: [{ value, label }]
@@ -54,7 +54,7 @@ export default function AnimatedMultiSelect({ options, onChange, placeholder, va
                     size="small"
                 />
             )}
-            sx={{ width: '100%', mt: 1 }}
+            sx={{ width: '100%', mt: 1, ...sx }}
         />
     );
 }
