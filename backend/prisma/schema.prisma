@@ -13,7 +13,6 @@ model Admin {
   nome  String @db.VarChar(100)
   email String @unique @db.VarChar(100)
 
-  @@map("admin")
 }
 
 model Eixos {
@@ -21,7 +20,6 @@ model Eixos {
   nome      String      @db.VarChar(100)
   dimensoes Dimensoes[]
 
-  @@map("eixos")
 }
 
 model Dimensoes {
@@ -32,7 +30,6 @@ model Dimensoes {
   eixos        Eixos?     @relation(fields: [numero_eixos], references: [numero], onDelete: NoAction, onUpdate: NoAction)
   questoes     Questoes[]
 
-  @@map("dimensoes")
 }
 
 // Tabela para armazenar os tipos de questão
@@ -41,7 +38,6 @@ model Questoes_tipo {
   descricao String    @db.VarChar(100)
   questoes  Questoes[]
 
-  @@map("questoes_tipo")
 }
 
 model Questoes {
@@ -65,7 +61,6 @@ model Questoes {
   ativo                 Boolean                 @default(true)
   repetir_todas_disciplinas Boolean             @default(false)
 
-  @@map("questoes")
 }
 
 model  QuestoesAdicionais {
@@ -74,7 +69,6 @@ model  QuestoesAdicionais {
   questaoId Int
   questao   Questoes @relation(fields: [questaoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@map("questoes_adicionais")
 }
 
 model Padrao_resposta {
@@ -83,7 +77,6 @@ model Padrao_resposta {
   alternativas Alternativas[]
   Questoes     Questoes[]
 
-  @@map("padrao_resposta")
 }
 
 model Alternativas {
@@ -93,7 +86,6 @@ model Alternativas {
   padrao_resp           Padrao_resposta?        @relation(fields: [id_padrao_resp], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Questoes_alternativas Questoes_alternativas[] @ignore
 
-  @@map("alternativas")
 }
 
 model Modalidades {
@@ -107,7 +99,6 @@ model Modalidades {
   Questoes_modalidades Questoes_modalidades[]
   cursos               Cursos[]
 
-  @@map("modalidades")
 }
 
 model Questoes_modalidades {
@@ -117,7 +108,6 @@ model Questoes_modalidades {
   modalidades           Modalidades? @relation(fields: [id_modalidades], references: [id], onDelete: Cascade, onUpdate: Cascade)
   questoes              Questoes?    @relation(fields: [id_questoes], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@map("questoes_modalidades")
 }
 
 model Categorias {
@@ -127,7 +117,6 @@ model Categorias {
   Questoes_categorias Questoes_categorias[]
   avaliacao           Avaliacao[]
 
-  @@map("categorias")
 }
 
 model Questoes_categorias {
@@ -137,7 +126,6 @@ model Questoes_categorias {
   questoes               Questoes?   @relation(fields: [id_questoes], references: [id], onDelete: Cascade, onUpdate: Cascade)
   categorias             Categorias? @relation(fields: [id_categorias], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@map("questoes_categorias")
 }
 
 model Unidades {
@@ -148,7 +136,6 @@ model Unidades {
   cursos            Cursos[]
   avaliacao         Avaliacao[]
 
-  @@map("unidades")
 }
 
 model Cursos {
@@ -170,7 +157,6 @@ model Cursos {
   modalidade_rel           Modalidades?            @relation(fields: [id_modalidade], references: [id])
   ativo                    Boolean                 @default(true)
 
-  @@map("cursos")
 }
 
 model Municipios {
@@ -179,7 +165,6 @@ model Municipios {
   UF   String @db.Char(5)
   cursos Cursos[]
 
-  @@map("municipios")
 }
 
 model Avaliadores {
@@ -213,7 +198,6 @@ model Avaliacao {
 
   avaliacao_questoes Avaliacao_questoes[] // Relacionamento com Avaliacao_questoes
 
-  @@map("avaliacao")
 }
 
 model Avaliacao_questoes {
@@ -226,7 +210,6 @@ model Avaliacao_questoes {
   // Novo relacionamento para respostas de questões grade
   respostasGrade RespostasGrade[]
 
-  @@map("avaliacao_questoes")
 }
 
 model Respostas {
@@ -241,7 +224,6 @@ model Respostas {
   disciplina            String?  @db.VarChar(200)
   avaliacao_questao     Avaliacao_questoes @relation(fields: [id_avaliacao_questoes], references: [id])
 
-  @@map("respostas")
 }
 
 model RespostasGrade {
@@ -257,7 +239,6 @@ model RespostasGrade {
   disciplina            String?             @db.VarChar(200)
   avaliacao_questao     Avaliacao_questoes  @relation(fields: [id_avaliacao_questoes], references: [id], onDelete: Cascade)
 
-  @@map("respostasgrade")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
