@@ -238,12 +238,12 @@ class AvaliacoesService {
                             // Clona a questão sem alterar sua descrição
                             const questaoClone = { 
                                 ...aq.questoes,
-                                id: `${aq.questoes.id}___${discId}` // ID virtual para a questão
+                                id: `${aq.questoes.id}___${discLabel}` // ID virtual para a questão com label completo
                             };
 
                             novasQuestoes.push({
                                 ...aq,
-                                id: `${aq.id}___${discId}`, // ID virtual para o vínculo
+                                id: `${aq.id}___${discLabel}`, // ID virtual para o vínculo com o label completo
                                 questoes: questaoClone,
                                 disciplina: discLabel
                             });

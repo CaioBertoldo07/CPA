@@ -18,6 +18,7 @@ import Categorias from "./pages/Categorias";
 import AvaliacaoAlunos from './pages/AvaliacaoAlunos';
 import PadraoResposta from './pages/Padrao_Resposta';
 import RelatorioAvaliacao from './pages/RelatorioAvaliacao';
+import RelatorioDisciplinas from './pages/RelatorioDisciplinas';
 import Agenda from './pages/Agenda';
 import Cursos from './pages/Cursos';
 import Layout from './components/utils/Layout';
@@ -91,6 +92,10 @@ const App = () => {
                         <Route
                             path="/relatorio/:id"
                             element={<ProtectedRoute element={RelatorioAvaliacao} isAdminRequired={true} layout={Layout} />}
+                        />
+                        <Route
+                            path="/relatorio/:id/disciplinas"
+                            element={<ProtectedRoute element={RelatorioDisciplinas} isAdminRequired={true} layout={Layout} />}
                         />
                     </Routes>
                 </Router>

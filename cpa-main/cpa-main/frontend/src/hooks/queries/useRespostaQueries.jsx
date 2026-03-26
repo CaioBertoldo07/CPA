@@ -1,10 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { getRespostasPorAvaliacao, getDashboardCategorias } from '../../api/respostas';
 
-export const useGetRespostasPorAvaliacaoQuery = (idAvaliacao) => {
+import { getRespostasPorAvaliacao, getRelatorioDisciplinas, getDashboardCategorias } from '../../api/respostas';
+
+
+export const useGetRespostasPorAvaliacaoQuery = (idAvaliacao, filters = {}) => {
     return useQuery({
-        queryKey: ['respostas', 'avaliacao', idAvaliacao],
-        queryFn: () => getRespostasPorAvaliacao(idAvaliacao),
+        queryKey: ['respostas', 'avaliacao', idAvaliacao, filters],
+        queryFn: () => getRespostasPorAvaliacao(idAvaliacao, filters),
+        enabled: !!idAvaliacao,
+    });
+};
+
+export const useGetRespostasPorDisciplinaQuery = (idAvaliacao, filters = {}) => {
+    return useQuery({
+        queryKey: ['respostas', 'disciplinas', idAvaliacao, filters],
+        queryFn: () => getRelatorioDisciplinas(idAvaliacao, filters),
         enabled: !!idAvaliacao,
     });
 };
