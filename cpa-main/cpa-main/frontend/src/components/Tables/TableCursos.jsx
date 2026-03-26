@@ -171,17 +171,17 @@ const TableCursos = ({
 }) => {
     const showNotification = useNotification();
 
-    const [paginationModel, setPaginationModel] = useState({ page: 1, pageSize: 10 });
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
 
     const queryParams = useMemo(() => ({
-        page: paginationModel.page,
+        page: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         ...(searchQuery ? { nome: searchQuery } : {}),
         ...(selectedTypes.length > 0 ? { curso_tipo: selectedTypes.join(',') } : {}),
         ...(unidadeIds.length > 0 ? { unidadeIds: unidadeIds.join(',') } : {}),
         ...(municipioIds.length > 0 ? { municipioIds: municipioIds.join(',') } : {}),
         ...extraParams,
-    }), [paginationModel, searchQuery, selectedTypes, unidadeIds, municipioIds, JSON.stringify(extraParams)]);
+    }), [paginationModel, searchQuery, selectedTypes, unidadeIds, municipioIds, extraParams]);
 
     const computedColumns = useMemo(() => {
         return columns.map(col => {

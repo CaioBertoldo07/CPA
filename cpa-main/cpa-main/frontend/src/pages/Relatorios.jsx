@@ -209,7 +209,7 @@ const Relatorios = () => {
         isLoading: loading,
         isError
     } = useGetAvaliacoesQuery();
-    const avaliacoes = _avaliacoesResp?.data ?? [];
+    const avaliacoes = useMemo(() => _avaliacoesResp?.data ?? [], [_avaliacoesResp]);
 
     useEffect(() => {
         if (isError) {
