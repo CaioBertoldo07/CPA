@@ -4,6 +4,63 @@ import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, Chip, Typography } from '@mui/material';
 import { useGetPaginatedCursosQuery } from '../../hooks/queries/useCursoQueries';
 import { useNotification } from '../../context/NotificationContext';
+import { Autocomplete, TextField, Checkbox } from '@mui/material';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+function MultiSelectFilterInput(props) {
+    const { item, applyValue, options } = props;
+
+    const handleChange = (_, newValue) => {
+        applyValue({ ...item, value: newValue.map(o => (o && typeof o === 'object') ? o.value : o) });
+    };
+
+    const value = (item.value || []).map(v => 
+        options.find(o => (o && typeof o === 'object' ? o.value : o) === v) || v
+    );
+
+    return (
+        <Autocomplete
+            multiple
+            options={options}
+            disableCloseOnSelect
+            getOptionLabel={(option) => (option && typeof option === 'object') ? option.label : option}
+            value={value}
+            onChange={handleChange}
+            renderOption={(props, option, { selected }) => (
+                <li {...props}>
+                    <Checkbox
+                        icon={icon}
+                        checkedIcon={checkedIcon}
+                        style={{ marginRight: 8 }}
+                        checked={selected}
+                    />
+                    {(option && typeof option === 'object') ? option.label : option}
+                </li>
+            )}
+            style={{ width: '100%', minWidth: 200 }}
+            renderInput={(params) => (
+                <TextField {...params} label="Valores" placeholder="Selecionar..." variant="standard" />
+            )}
+        />
+    );
+}
+
+const getMultiSelectOperators = (options) => [
+    {
+        label: 'É um de',
+        value: 'isAnyOf',
+        getApplyFilterFn: (filterItem) => {
+            if (!filterItem.value || filterItem.value.length === 0) return null;
+            return ({ value }) => filterItem.value.includes(value);
+        },
+        InputComponent: MultiSelectFilterInput,
+        InputComponentProps: { options },
+    },
+];
 
 const dataGridSx = {
     border: 'none',
@@ -55,6 +112,7 @@ const columns = [
         renderCell: ({ value }) => value
             ? <Chip label={value} size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
             : <Chip label="Sem tipo" size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />,
+        filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },
     {
         field: 'modalidade_rel',
@@ -73,12 +131,14 @@ const columns = [
         headerName: 'Cidade',
         width: 150,
         valueGetter: (_, row) => row.unidades?.nome ?? '—',
+        filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },
     {
         field: 'municipio',
         headerName: 'Município',
         width: 160,
         valueGetter: (_, row) => row.municipio?.nome ?? '—',
+        filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },
     {
         field: 'ativo',
@@ -102,6 +162,9 @@ const TableCursos = ({
     selectedTypes = [],
     unidadeIds = [],
     municipioIds = [],
+    unidadesOptions = [],
+    municipiosOptions = [],
+    typesOptions = [],
     extraParams = {},
     onSelectionChange,
     onItemsLoaded,
@@ -118,7 +181,16 @@ const TableCursos = ({
         ...(unidadeIds.length > 0 ? { unidadeIds: unidadeIds.join(',') } : {}),
         ...(municipioIds.length > 0 ? { municipioIds: municipioIds.join(',') } : {}),
         ...extraParams,
-    }), [paginationModel, searchQuery, selectedTypes, unidadeIds, municipioIds, extraParams]);
+    }), [paginationModel, searchQuery, selectedTypes, unidadeIds, municipioIds, JSON.stringify(extraParams)]);
+
+    const computedColumns = useMemo(() => {
+        return columns.map(col => {
+            if (col.field === 'curso_tipo') return { ...col, filterOperators: getMultiSelectOperators(typesOptions) };
+            if (col.field === 'unidades') return { ...col, filterOperators: getMultiSelectOperators(unidadesOptions) };
+            if (col.field === 'municipio') return { ...col, filterOperators: getMultiSelectOperators(municipiosOptions) };
+            return col;
+        });
+    }, [typesOptions, unidadesOptions, municipiosOptions]);
 
     const { data, isLoading, isError } = useGetPaginatedCursosQuery(queryParams);
 
@@ -141,16 +213,18 @@ const TableCursos = ({
     const filterModel = useMemo(() => {
         const items = [];
         if (searchQuery) items.push({ field: 'nome', operator: 'contains', value: searchQuery });
-        if (selectedTypes.length > 0) items.push({ field: 'curso_tipo', operator: 'contains', value: selectedTypes[0] });
+        if (selectedTypes.length > 0) items.push({ field: 'curso_tipo', operator: 'isAnyOf', value: selectedTypes });
+        if (unidadeIds.length > 0) items.push({ field: 'unidades', operator: 'isAnyOf', value: unidadeIds });
+        if (municipioIds.length > 0) items.push({ field: 'municipio', operator: 'isAnyOf', value: municipioIds });
         if (extraParams?.ativo) items.push({ field: 'ativo', operator: 'contains', value: extraParams.ativo });
         return { items };
-    }, [searchQuery, selectedTypes, extraParams]);
+    }, [searchQuery, selectedTypes, unidadeIds, municipioIds, extraParams]);
 
     return (
         <Box sx={{ width: '100%' }}>
             <DataGrid
                 rows={items}
-                columns={columns}
+                columns={computedColumns}
                 getRowId={(row) => row.id}
                 loading={isLoading}
                 checkboxSelection

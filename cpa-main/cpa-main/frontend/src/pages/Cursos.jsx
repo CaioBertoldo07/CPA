@@ -166,6 +166,9 @@ const Cursos = () => {
                         unidadeIds={selectedUnidades.map(u => u.value)}
                         municipioIds={selectedMunicipios.map(m => m.value)}
                         selectedTypes={selectedTypes.map(t => t.value)}
+                        unidadesOptions={unidadesOptions}
+                        municipiosOptions={municipiosOptions}
+                        typesOptions={typesOptions}
                         onSelectionChange={setSelectedIds}
                         onItemsLoaded={setCurrentItems}
                     />
