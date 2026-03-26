@@ -1,5 +1,5 @@
 export interface RespostaInputDTO {
-    id_avaliacao_questoes: number;
+    id_avaliacao_questoes: number | string;
     valor?: number;
     id_alternativa?: number;
     comentario?: string;
