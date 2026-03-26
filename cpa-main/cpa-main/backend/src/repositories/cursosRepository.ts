@@ -77,11 +77,14 @@ const findPaginated = async (params: {
         curso_tipo?: string;
         unidade?: string;
         municipio?: string;
+        unidadeIds?: string;
+        municipioIds?: string;
         unclassified?: string;
+        ativo?: string; // ✅ novo
     }
 }) => {
     const { page, pageSize, filters } = params;
-    const skip = page * pageSize;
+    const skip = (page - 1) * pageSize;
 
     const where: any = {};
 
@@ -93,25 +96,31 @@ const findPaginated = async (params: {
             ];
         }
         if (filters.curso_tipo) {
-            const tipos = Array.isArray(filters.curso_tipo) 
-                ? filters.curso_tipo 
-                : filters.curso_tipo.split(',').map(t => t.trim());
-            
-            where.curso_tipo = { in: tipos, mode: 'insensitive' };
+            const tipos = Array.isArray(filters.curso_tipo)
+                ? filters.curso_tipo
+                : filters.curso_tipo.split(',').map(t => t.trim().toUpperCase());
+            where.curso_tipo = { in: tipos };
         }
         if (filters.unidade) {
-            where.unidades = {
-                nome: { contains: filters.unidade, mode: 'insensitive' }
-            };
+            where.unidades = { nome: { contains: filters.unidade, mode: 'insensitive' } };
         }
         if (filters.municipio) {
-            where.municipio = {
-                nome: { contains: filters.municipio, mode: 'insensitive' }
-            };
+            where.municipio = { nome: { contains: filters.municipio, mode: 'insensitive' } };
+        }
+        if (filters.unidadeIds) {
+            const ids = filters.unidadeIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            if (ids.length > 0) where.id_unidades = { in: ids };
+        }
+        if (filters.municipioIds) {
+            const ids = filters.municipioIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            if (ids.length > 0) where.municipio_sede = { in: ids };
         }
         if (filters.unclassified === 'true') {
             where.id_modalidade = null;
         }
+        // ✅ filtro de status server-side
+        if (filters.ativo === 'true') where.ativo = true;
+        if (filters.ativo === 'false') where.ativo = false;
     }
 
     const [totalCount, items] = await Promise.all([
@@ -120,11 +129,7 @@ const findPaginated = async (params: {
             where,
             skip,
             take: pageSize,
-            include: {
-                unidades: true,
-                municipio: true,
-                modalidade_rel: true
-            },
+            include: { unidades: true, municipio: true, modalidade_rel: true },
             orderBy: { nome: 'asc' }
         })
     ]);
