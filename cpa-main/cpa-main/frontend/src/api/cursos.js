@@ -5,6 +5,11 @@ export const getCursosByUnidades = (unidadeIds) => {
     return api.get(`/cursos/by-unidades`, { params: { unidadeIds: ids.join(',') } });
 };
 
+export const getCursosByModalidades = (modalidadeIds) => {
+    const ids = Array.isArray(modalidadeIds) ? modalidadeIds : [modalidadeIds];
+    return api.get('/cursos/by-modalidades', { params: { modalidadeIds: ids.join(',') } });
+};
+
 export const getPaginatedCursos = (params) => {
     return api.get('/cursos/paginated', { params });
 };

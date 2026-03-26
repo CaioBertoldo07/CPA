@@ -6,6 +6,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { HiOutlineDocumentSearch } from "react-icons/hi";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import Modal_IncluirCursos from '../Modals/Modal_IncluirCursos';
+import DrawerModalidadeCursos from '../DrawerModalidadeCursos';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 import { DataGrid } from '@mui/x-data-grid';
@@ -25,6 +26,8 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
 
     const [showIncludeModal, setShowIncludeModal] = useState(false);
     const [selectingModalidade, setSelectingModalidade] = useState(null);
+    const [showCursosDrawer, setShowCursosDrawer] = useState(false);
+    const [drawerModalidade, setDrawerModalidade] = useState(null);
 
     useEffect(() => { if (isError) showNotification('Erro ao carregar modalidades.', 'error'); }, [isError, showNotification]);
 
@@ -81,6 +84,25 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                         label={`${params.value} questões`}
                         size="small"
                         sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', fontWeight: 600, border: '1px solid #e2e8f0', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }}
+                    />
+                </Box>
+            )
+        },
+        {
+            field: 'num_cursos',
+            headerName: 'Num. cursos',
+            width: 140,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Chip
+                        label={`${params.value ?? 0} cursos`}
+                        size="small"
+                        onClick={() => {
+                            setDrawerModalidade(params.row);
+                            setShowCursosDrawer(true);
+                        }}
+                        clickable
+                        sx={{ bgcolor: '#ecfeff', color: '#155e75', fontSize: '0.7rem', fontWeight: 600, border: '1px solid #cffafe', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }}
                     />
                 </Box>
             )
@@ -225,6 +247,12 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                     modalityName={selectingModalidade.mod_ensino}
                 />
             )}
+
+            <DrawerModalidadeCursos
+                open={showCursosDrawer}
+                onClose={() => setShowCursosDrawer(false)}
+                modalidade={drawerModalidade}
+            />
         </Box>
     );
 };

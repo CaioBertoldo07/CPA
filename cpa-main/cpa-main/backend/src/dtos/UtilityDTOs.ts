@@ -20,4 +20,5 @@ export interface ModalidadeResponseDTO {
     mod_ensino: string;
     mod_oferta?: string;
     num_questoes?: number;
+    num_cursos?: number;
 }

@@ -9,7 +9,7 @@ const getCursosByModalidade = asyncHandler(async (req: Request, res: Response) =
         return res.status(400).json({ message: "É necessário fornecer pelo menos um ID de modalidade." });
     }
 
-    const modalidadeIdsArray = modalidadeIds.split(',').map(id => id.trim());
+    const modalidadeIdsArray = modalidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
     if (modalidadeIdsArray.length === 0) {
         return res.status(400).json({ message: "IDs de modalidades inválidos fornecidos." });
     }

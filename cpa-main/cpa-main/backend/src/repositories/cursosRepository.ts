@@ -30,18 +30,19 @@ const findByIdentificadores = (identificadores: string[]) => {
 /**
  * Busca cursos por modalidades
  */
-const findByModalidades = (modalidadeNames: string[]) => {
+const findByModalidades = (modalidadeIds: number[]) => {
     return prisma.cursos.findMany({
         where: {
-            modalidade: { in: modalidadeNames }
+            id_modalidade: { in: modalidadeIds }
         },
+        orderBy: { nome: 'asc' },
         select: {
             id: true,
             identificador_api_lyceum: true,
             nome: true,
             nivel: true,
-            modalidade: true,
-            modalidade_api: true
+            curso_tipo: true,
+            id_modalidade: true
         }
     });
 };
