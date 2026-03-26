@@ -12,6 +12,9 @@ const findAll = () => {
                 Questoes_modalidades: {
                     select: { id_questoes: true },
                 },
+                cursos: {
+                    select: { id: true },
+                },
             },
         })
         .then((modalidades) =>
@@ -22,9 +25,10 @@ const findAll = () => {
 
                 // Conta questões distintas vinculadas a essa modalidade
                 const num_questoes = new Set(ids).size;
+                const num_cursos = (m.cursos || []).length;
 
-                const { Questoes_modalidades, ...rest } = m;
-                return { ...rest, num_questoes };
+                const { Questoes_modalidades, cursos, ...rest } = m;
+                return { ...rest, num_questoes, num_cursos };
             })
         );
 };
@@ -40,6 +44,9 @@ const findById = (id: number) => {
                 Questoes_modalidades: {
                     select: { id_questoes: true },
                 },
+                cursos: {
+                    select: { id: true },
+                },
             },
         })
         .then((m: any) => {
@@ -49,8 +56,9 @@ const findById = (id: number) => {
                 .filter((id: any) => id !== null && id !== undefined);
 
             const num_questoes = new Set(ids).size;
-            const { Questoes_modalidades, ...rest } = m;
-            return { ...rest, num_questoes };
+            const num_cursos = (m.cursos || []).length;
+            const { Questoes_modalidades, cursos, ...rest } = m;
+            return { ...rest, num_questoes, num_cursos };
         });
 };
 

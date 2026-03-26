@@ -6,7 +6,7 @@ class CursosService {
         return await cursosRepository.findAll() as CursoResponseDTO[];
     }
 
-    async getByModalidades(modalidadeIds: string[]): Promise<CursoResponseDTO[]> {
+    async getByModalidades(modalidadeIds: number[]): Promise<CursoResponseDTO[]> {
         return await cursosRepository.findByModalidades(modalidadeIds) as CursoResponseDTO[];
     }
 

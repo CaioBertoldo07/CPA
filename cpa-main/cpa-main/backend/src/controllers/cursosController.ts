@@ -9,7 +9,7 @@ const getCursosByModalidade = asyncHandler(async (req: Request, res: Response) =
         return res.status(400).json({ message: "É necessário fornecer pelo menos um ID de modalidade." });
     }
 
-    const modalidadeIdsArray = modalidadeIds.split(',').map(id => id.trim());
+    const modalidadeIdsArray = modalidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
     if (modalidadeIdsArray.length === 0) {
         return res.status(400).json({ message: "IDs de modalidades inválidos fornecidos." });
     }
@@ -62,11 +62,16 @@ const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
 const classifyCursos = asyncHandler(async (req: Request, res: Response) => {
     const { cursoIds, idModalidade } = req.body;
 
-    if (!Array.isArray(cursoIds) || !idModalidade) {
+    const parsedCursoIds = Array.isArray(cursoIds)
+        ? cursoIds.map((id: unknown) => parseInt(String(id), 10)).filter((id: number) => !isNaN(id))
+        : [];
+    const parsedModalidadeId = parseInt(String(idModalidade), 10);
+
+    if (parsedCursoIds.length === 0 || isNaN(parsedModalidadeId)) {
         return res.status(400).json({ message: "IDs dos cursos e ID da modalidade são obrigatórios." });
     }
 
-    const result = await cursosService.classifyCursos(cursoIds, idModalidade);
+    const result = await cursosService.classifyCursos(parsedCursoIds, parsedModalidadeId);
     res.status(200).json({ message: "Cursos classificados com sucesso.", result });
 });
 

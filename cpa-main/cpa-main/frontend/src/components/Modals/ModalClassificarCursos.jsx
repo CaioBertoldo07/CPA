@@ -32,7 +32,7 @@ function ModalClassificarCursos({ show, onHide, cursoIds = [], onSuccess }) {
             { cursoIds, idModalidade: selectedModalidadeId },
             {
                 onSuccess: () => {
-                    const nomeMod = modalidades.find(m => m.id === selectedModalidadeId)?.nome ?? '';
+                    const nomeMod = modalidades.find(m => m.id === selectedModalidadeId)?.mod_ensino ?? '';
                     onSuccess?.(`${cursoIds.length} curso(s) classificado(s) como "${nomeMod}" com sucesso!`);
                     onHide();
                 },

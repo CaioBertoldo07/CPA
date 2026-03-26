@@ -165,6 +165,8 @@ const columns = [
         field: 'ativo',
         headerName: 'Status',
         width: 110,
+        type: 'boolean',
+        valueGetter: (_, row) => !!row.ativo,
         renderCell: ({ value }) => (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Chip
@@ -185,6 +187,7 @@ const TableCursos = ({
     selectedTypes = [],
     unidadeIds = [],
     municipioIds = [],
+    externalFilterItems = [],
     modalidadeOptions = [],
     unidadesOptions = [],
     municipiosOptions = [],
@@ -247,24 +250,18 @@ const TableCursos = ({
     };
 
     const filterModel = useMemo(() => {
-        const items = [];
-        if (searchQuery) items.push({ field: 'nome', operator: 'contains', value: searchQuery });
-        if (selectedTypes.length > 0) items.push({ field: 'curso_tipo', operator: 'isAnyOf', value: selectedTypes });
-        if (extraParams?.modalidadeIds) {
-            items.push({
-                field: 'modalidade_rel',
-                operator: 'isAnyOf',
-                value: extraParams.modalidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)),
-            });
-        } else if (extraParams?.unclassified === 'true') {
-            items.push({ field: 'modalidade_rel', operator: 'isAnyOf', value: ['SEM_MODALIDADE'] });
-        }
-        if (unidadeIds.length > 0) items.push({ field: 'unidades', operator: 'isAnyOf', value: unidadeIds });
-        if (municipioIds.length > 0) items.push({ field: 'municipio', operator: 'isAnyOf', value: municipioIds });
-        if (extraParams?.ativo === 'true') items.push({ field: 'ativo', operator: 'is', value: true });
-        if (extraParams?.ativo === 'false') items.push({ field: 'ativo', operator: 'is', value: false });
-        return { items };
-    }, [searchQuery, selectedTypes, unidadeIds, municipioIds, extraParams]);
+        const filterItems = [];
+        if (searchQuery) filterItems.push({ id: 'nome', field: 'nome', operator: 'contains', value: searchQuery });
+        if (selectedTypes.length > 0) filterItems.push({ id: 'tipo', field: 'curso_tipo', operator: 'isAnyOf', value: selectedTypes });
+        if (unidadeIds.length > 0) filterItems.push({ id: 'unidades', field: 'unidades', operator: 'isAnyOf', value: unidadeIds });
+        if (municipioIds.length > 0) filterItems.push({ id: 'municipio', field: 'municipio', operator: 'isAnyOf', value: municipioIds });
+
+        externalFilterItems.forEach((item, index) => {
+            filterItems.push({ id: item.id ?? `external-${index}`, ...item });
+        });
+
+        return { items: filterItems };
+    }, [searchQuery, selectedTypes, unidadeIds, municipioIds, externalFilterItems]);
 
     return (
         <Box sx={{ width: '100%' }}>

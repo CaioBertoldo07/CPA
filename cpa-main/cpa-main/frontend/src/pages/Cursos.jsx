@@ -100,6 +100,36 @@ const Cursos = () => {
 
     const queryExtraParams = useMemo(() => ({ ...extraParams, ...modalidadeParams }), [extraParams, modalidadeParams]);
 
+    const gridExternalFilters = useMemo(() => {
+        const filters = [];
+
+        if (filtroStatus === 'ATIVOS') {
+            filters.push({ id: 'status-ativo', field: 'ativo', operator: 'is', value: true });
+        }
+        if (filtroStatus === 'INATIVOS') {
+            filters.push({ id: 'status-inativo', field: 'ativo', operator: 'is', value: false });
+        }
+
+        const selectedReal = selectedModalidades.filter(item => item?.value !== SEM_MODALIDADE_OPTION.value);
+        if (selectedReal.length > 0) {
+            filters.push({
+                id: 'modalidade-selecionada',
+                field: 'modalidade_rel',
+                operator: 'isAnyOf',
+                value: selectedReal.map(item => item.value),
+            });
+        } else {
+            filters.push({
+                id: 'modalidade-sem',
+                field: 'modalidade_rel',
+                operator: 'isAnyOf',
+                value: [SEM_MODALIDADE_OPTION.value],
+            });
+        }
+
+        return filters;
+    }, [filtroStatus, selectedModalidades]);
+
     const selectedSemClassificacao = currentItems.filter(
         c => selectedIds.some(id => String(id) === String(c.id)) && !c.modalidade_rel
     );
@@ -210,6 +240,7 @@ const Cursos = () => {
                     <TableCursos
                         searchQuery={searchQuery}
                         extraParams={queryExtraParams}
+                        externalFilterItems={gridExternalFilters}
                         unidadeIds={selectedUnidades.map(u => u.value)}
                         municipioIds={selectedMunicipios.map(m => m.value)}
                         selectedTypes={selectedTypes.map(t => t.value)}
