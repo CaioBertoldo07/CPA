@@ -227,8 +227,19 @@ const TableCursos = ({
     }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSelectionChange = (model) => {
-        const ids = Array.isArray(model) ? model : (model?.ids ? Array.from(model.ids) : []);
-        onSelectionChange?.(ids);
+        if (Array.isArray(model)) {
+            onSelectionChange?.(model);
+            return;
+        }
+
+        // MUI DataGrid v8 can emit { type: 'exclude', ids: Set() } when selecting all.
+        // For this screen, we operate with explicit IDs from the loaded rows.
+        if (model?.type === 'exclude') {
+            onSelectionChange?.(items.map((row) => row.id));
+            return;
+        }
+
+        onSelectionChange?.(model?.ids ? Array.from(model.ids) : []);
     };
 
     const filterModel = useMemo(() => {
@@ -249,6 +260,7 @@ const TableCursos = ({
                 getRowId={(row) => row.id}
                 loading={isLoading}
                 checkboxSelection
+                disableRowSelectionExcludeModel
                 disableRowSelectionOnClick
                 density="compact"
                 autoHeight
