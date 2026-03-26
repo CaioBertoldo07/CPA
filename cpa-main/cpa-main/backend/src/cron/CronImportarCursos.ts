@@ -58,9 +58,9 @@ class CronImportarCursos {
 
         const nivel = curso.TIPO; // Ex: GRAD, LS
         const modalidade_api = curso.MODALIDADE; // Ex: BA (Bacharelado), TE (Tecnólogo)
-        const modalidade = curso.CURSO_TIPO; // Ex: REGULAR, PARFOR
+        const curso_tipo = curso.CURSO_TIPO; // Ex: REGULAR, PARFOR
 
-        if (!identificador_api_lyceum || !nome || !modalidade) {
+        if (!identificador_api_lyceum || !nome || !curso_tipo) {
             return null;
         }
 
@@ -70,9 +70,8 @@ class CronImportarCursos {
                 identificador_api_lyceum,
                 nome,
                 nivel,
-                modalidade,
                 modalidade_api,
-                curso_tipo: modalidade,
+                curso_tipo,
                 ativo: true,
                 municipio: {
                     connectOrCreate: {
@@ -92,7 +91,7 @@ class CronImportarCursos {
                 } : undefined,
             },
             update: {
-                curso_tipo: modalidade,
+                curso_tipo,
             },
         });
     }

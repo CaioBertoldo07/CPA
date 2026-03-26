@@ -1,5 +1,4 @@
-// src/components/Tables/TableAdmins.js
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNotification } from '../../context/NotificationContext';
 import ModalAdmin from '../Modals/Modal_Admin';
 import { FaRegEdit } from "react-icons/fa";
@@ -7,7 +6,7 @@ import { IoTrashOutline } from "react-icons/io5";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { Box, IconButton, Tooltip, Typography, Skeleton, Button } from '@mui/material';
+import { Box, Tooltip, Typography, Button } from '@mui/material';
 
 import { useGetAdminsQuery } from '../../hooks/queries/useAdminQueries';
 import { useDeleteAdminMutation } from '../../hooks/mutations/useAdminMutations';

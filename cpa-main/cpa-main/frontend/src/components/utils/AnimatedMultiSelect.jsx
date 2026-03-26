@@ -27,20 +27,24 @@ export default function AnimatedMultiSelect({ options, onChange, placeholder, va
             isOptionEqualToValue={(option, val) => option.value === val.value}
             onChange={handleChange}
             disabled={disabled}
+            renderOption={(props, option) => (
+                <li {...props} key={`${option.value}-${option.label}`}>
+                    {option.label}
+                </li>
+            )}
             renderTags={(tagValue, getTagProps) =>
-                tagValue.map((option, index) => {
-                    const { key, ...tagProps } = getTagProps({ index });
-                    return (
-                        <Chip
-                            key={key}
-                            variant="outlined"
-                            label={option.label}
-                            size="small"
-                            color="primary"
-                            {...tagProps}
-                        />
-                    );
-                })
+                tagValue.map((option, index) => (
+                    <Chip
+                        key={`${option.value}-${index}`}
+                        variant="outlined"
+                        label={option.label}
+                        size="small"
+                        color="primary"
+                        {...getTagProps({ index })}
+                        // Remove the key from tagProps since we're passing it explicitly
+                        {...(({ key, ...rest }) => rest)(getTagProps({ index }))}
+                    />
+                ))
             }
             renderInput={(params) => (
                 <TextField

@@ -1,6 +1,7 @@
 import * as padraoRespostaRepository from '../repositories/padraoRespostaRepository';
 import { PadraoRespostaResponseDTO } from '../dtos/PadraoRespostaDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { createWithAlternativas } from '../repositories/padraoRespostaRepository';
 
 class PadraoRespostaService {
     async getAll(): Promise<PadraoRespostaResponseDTO[]> {
@@ -13,8 +14,17 @@ class PadraoRespostaService {
         return padrao as PadraoRespostaResponseDTO;
     }
 
-    async create(sigla: string): Promise<PadraoRespostaResponseDTO> {
-        return await padraoRespostaRepository.create({ sigla }) as PadraoRespostaResponseDTO;
+    async create(sigla: string, alternativas: { descricao: string }[]): Promise<PadraoRespostaResponseDTO> {
+        console.log('alter: ', alternativas)
+        // const alternativasFormatadas = alternativas.map(descricao => ({
+        //     descricao
+        // }));
+    
+
+        return await padraoRespostaRepository.createWithAlternativas(
+            sigla,
+            alternativas
+        ) as PadraoRespostaResponseDTO;
     }
 
     async update(id: number, sigla: string): Promise<PadraoRespostaResponseDTO> {

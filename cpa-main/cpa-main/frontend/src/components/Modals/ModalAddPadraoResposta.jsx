@@ -8,6 +8,7 @@ function ModalAddPadraoResposta(props) {
   const { show, onHide, onSuccess, data: initialData } = props;
   const [sigla, setSigla] = useState('');
   const [alternativas, setAlternativas] = useState([{ descricao: '' }]);
+  // const [alternativas,setAlternativas] = useState([])
   const [error, setError] = useState('');
 
   const adicionarMutation = useAdicionarPadraoRespostaMutation();
@@ -39,6 +40,7 @@ function ModalAddPadraoResposta(props) {
 
   const addAlternativaField = () => {
     setAlternativas([...alternativas, { descricao: '' }]);
+    console.log('Alternativas:', alternativas);
   };
 
   const removeAlternativaField = (index) => {
@@ -48,6 +50,7 @@ function ModalAddPadraoResposta(props) {
   };
 
   const handleCadastrarPadraoResposta = () => {
+    console.log('Estado das alternativas:', alternativas);
     if (!sigla.trim()) {
       return setError('A sigla é obrigatória.');
     }
