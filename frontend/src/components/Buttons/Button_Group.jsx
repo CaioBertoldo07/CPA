@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
-// ADICIONADO: mapeamento de índice para valor de status
-// null = todos, 1 = rascunho, 2 = enviada, 3 = encerrada
+// null = todos, 1 = rascunho, 2 = enviada, 3 = ativa, 4 = encerrada
 const FILTROS = [
     { label: 'Todos',      status: null },
     { label: 'Rascunho',   status: 1    },
     { label: 'Enviadas',   status: 2    },
-    { label: 'Encerradas', status: 3    },
+    { label: 'Ativas',     status: 3    },
+    { label: 'Encerradas', status: 4    },
 ];
 
 function ButtonGroup_Eixos({ onFiltroChange }) { // ADICIONADO: prop onFiltroChange

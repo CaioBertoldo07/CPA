@@ -10,9 +10,10 @@ moment.locale('pt-br');
 const localizer = momentLocalizer(moment);
 
 const STATUS_MAP = {
-    1: { label: 'Rascunho', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
-    2: { label: 'Enviada', bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
-    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+    1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
+    2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+    3: { label: 'Ativa',     bg: '#dcfce7', color: '#166534', border: '#86efac' },
+    4: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
 };
 
 const MESSAGES = {
@@ -169,10 +170,11 @@ const Agenda = () => {
     };
 
     const counts = useMemo(() => ({
-        total: avaliacoes.length,
+        total:     avaliacoes.length,
         rascunho:  avaliacoes.filter(a => Number(a.status) === 1).length,
         enviada:   avaliacoes.filter(a => Number(a.status) === 2).length,
-        encerrada: avaliacoes.filter(a => Number(a.status) === 3).length,
+        ativa:     avaliacoes.filter(a => Number(a.status) === 3).length,
+        encerrada: avaliacoes.filter(a => Number(a.status) === 4).length,
     }), [avaliacoes]);
 
     // Períodos letivos únicos → mapa { ano: [semestres] } → lista de anos
@@ -258,10 +260,11 @@ const Agenda = () => {
                 {/* Cards de resumo */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
                     {[
-                        { label: 'Total', value: counts.total, bg: '#f8fafc', color: '#1a202c', dot: '#64748b' },
-                        { label: 'Rascunho', value: counts.rascunho, bg: '#f8fafc', color: '#64748b', dot: '#94a3b8', status: 1 },
-                        { label: 'Enviadas', value: counts.enviada, bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', status: 2 },
-                        { label: 'Encerradas', value: counts.encerrada, bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444', status: 3 },
+                        { label: 'Total',      value: counts.total,     bg: '#f8fafc', color: '#1a202c', dot: '#64748b' },
+                        { label: 'Rascunho',   value: counts.rascunho,  bg: '#f8fafc', color: '#64748b', dot: '#94a3b8', status: 1 },
+                        { label: 'Enviadas',   value: counts.enviada,   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', status: 2 },
+                        { label: 'Ativas',     value: counts.ativa,     bg: '#dcfce7', color: '#166534', dot: '#22c55e', status: 3 },
+                        { label: 'Encerradas', value: counts.encerrada, bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444', status: 4 },
                     ].map(card => (
                         <button
                             key={card.label}

@@ -115,11 +115,12 @@ const findByIdSimple = (id: number) => {
 };
 
 /**
- * Busca avaliações disponíveis para o curso e data informados
+ * Busca avaliações disponíveis para o curso e data informados (apenas ATIVA = status 3)
  */
 const findDisponiveis = (cursoIdentificador: string, dataAtual: Date) => {
     return prisma.avaliacao.findMany({
         where: {
+            status: 3,
             cursos: { some: { identificador_api_lyceum: cursoIdentificador } },
             data_inicio: { lte: dataAtual },
             data_fim: { gte: dataAtual },
@@ -203,12 +204,22 @@ const update = (id: number, data: Prisma.AvaliacaoUpdateInput) => {
 };
 
 /**
- * Encerra automaticamente avaliações enviadas com data_fim vencida
+ * Ativa automaticamente avaliações enviadas quando data_inicio é atingida
+ */
+const ativarDisponiveis = () => {
+    return prisma.avaliacao.updateMany({
+        where: { status: 2, data_inicio: { lte: new Date() } },
+        data: { status: 3 },
+    });
+};
+
+/**
+ * Encerra automaticamente avaliações ativas com data_fim vencida
  */
 const encerrarVencidas = () => {
     return prisma.avaliacao.updateMany({
-        where: { status: 2, data_fim: { lt: new Date() } },
-        data: { status: 3 },
+        where: { status: 3, data_fim: { lt: new Date() } },
+        data: { status: 4 },
     });
 };
 
@@ -268,6 +279,7 @@ const findAvaliacaoQuestaoWithDetails = (id: number) => {
 
 export {
     create,
+    ativarDisponiveis,
     encerrarVencidas,
     findMany,
     findManyPaginated,

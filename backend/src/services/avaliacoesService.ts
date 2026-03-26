@@ -73,6 +73,7 @@ class AvaliacoesService {
     }
 
     async getAll(): Promise<AvaliacaoResponseDTO[]> {
+        await avaliacaoRepository.ativarDisponiveis();
         await avaliacaoRepository.encerrarVencidas();
         const avaliacoes = await avaliacaoRepository.findMany();
         return avaliacoes.map((a: any) => this.mapAvaliacao(a));
@@ -169,6 +170,7 @@ class AvaliacoesService {
         data: AvaliacaoResponseDTO[];
         meta: { total: number; page: number; limit: number; totalPages: number };
     }> {
+        await avaliacaoRepository.ativarDisponiveis();
         await avaliacaoRepository.encerrarVencidas();
         const skip = page * limit;
 
@@ -203,6 +205,7 @@ class AvaliacoesService {
     }
 
     async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
+        await avaliacaoRepository.ativarDisponiveis();
         const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
 
         if (avaliacoes.length === 0) return [];
@@ -330,7 +333,7 @@ class AvaliacoesService {
     async prorrogar(id: number, data_fim: string): Promise<AvaliacaoResponseDTO> {
         const avaliacao = await avaliacaoRepository.findByIdSimple(id);
         if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);
-        if (avaliacao.status !== 2) throw new AppError('Apenas avaliações enviadas podem ser prorrogadas.', 400);
+        if (avaliacao.status !== 2 && avaliacao.status !== 3) throw new AppError('Apenas avaliações enviadas ou ativas podem ser prorrogadas.', 400);
 
         const agora = new Date();
         const novaDataFim = new Date(data_fim);
@@ -344,7 +347,7 @@ class AvaliacoesService {
     async delete(id: number): Promise<void> {
         const avaliacao = await avaliacaoRepository.findByIdSimple(id);
         if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);
-        if (avaliacao.status === 2 || avaliacao.status === 3) throw new AppError('Avaliações enviadas/encerradas não podem ser excluídas.', 400);
+        if (avaliacao.status !== 1) throw new AppError('Apenas rascunhos podem ser excluídos.', 400);
 
         const avaliacaoQuestoes = await avaliacaoRepository.findAvaliacaoQuestoes(id);
         const idsQuestoes = avaliacaoQuestoes.map(aq => aq.id);
