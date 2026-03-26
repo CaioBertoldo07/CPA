@@ -31,7 +31,8 @@ class QuestoesService {
             padraoRespostaId,
             basica,
             tipo_questao,
-            questoesAdicionais
+            questoesAdicionais,
+            repetir_todas_disciplinas
         } = data;
 
         const categoriaIds = await Promise.all(
@@ -62,13 +63,14 @@ class QuestoesService {
             padrao_resposta: { connect: { id: parseInt(padraoRespostaId.toString(), 10) } },
             questoes_adicionais: { create: Array.isArray(questoesAdicionais) ? questoesAdicionais : [] },
             dimensoes: { connect: { numero: parseInt(dimensaoNumero.toString(), 10) } },
+            repetir_todas_disciplinas: (repetir_todas_disciplinas ?? false) as any,
             Questoes_categorias: {
                 create: categoriaIds.map(cId => ({ id_categorias: cId })),
             },
             questoes_modalidades: {
                 create: modalidadeIds.map(mId => ({ id_modalidades: mId })),
             },
-        });
+        } as any);
 
         // Re-fecth to get all relations for the DTO
         return this.getById(newQuestao.id);
@@ -93,7 +95,8 @@ class QuestoesService {
                 padraoRespostaId: data.padraoRespostaId ?? existingQuestao.id_padrao_resposta,
                 basica: data.basica ?? existingQuestao.basica,
                 tipo_questao: data.tipo_questao ?? (existingQuestao.id_questoes_tipo || 1),
-                questoesAdicionais: data.questoesAdicionais ?? (existingQuestao.questoes_adicionais?.map((qa: any) => ({ descricao: qa.descricao })) || [])
+                questoesAdicionais: data.questoesAdicionais ?? (existingQuestao.questoes_adicionais?.map((qa: any) => ({ descricao: qa.descricao })) || []),
+                repetir_todas_disciplinas: data.repetir_todas_disciplinas ?? (existingQuestao as any).repetir_todas_disciplinas,
             };
 
             const newQuestao = await this.create(mergedData);
@@ -113,6 +116,7 @@ class QuestoesService {
         if (data.tipo_questao) updateData.tipo_questao = { connect: { id: Number(data.tipo_questao) } };
         if (data.padraoRespostaId) updateData.padrao_resposta = { connect: { id: Number(data.padraoRespostaId) } };
         if (data.dimensaoNumero) updateData.dimensoes = { connect: { numero: Number(data.dimensaoNumero) } };
+        if (data.repetir_todas_disciplinas !== undefined) updateData.repetir_todas_disciplinas = data.repetir_todas_disciplinas;
 
         if (data.categorias) {
             const categoriaIds = await Promise.all(
@@ -192,15 +196,16 @@ class QuestoesService {
                     numero: questao?.dimensoes?.eixos?.numero || 'Não informado',
                 },
             },
-            categorias: questao?.Questoes_categorias.map((qc: any) => ({
+            categorias: questao?.Questoes_categorias?.map((qc: any) => ({
                 id: qc.categorias.id,
                 nome: qc.categorias.nome,
             })),
-            modalidades: questao?.questoes_modalidades.map((qm: any) => ({
+            modalidades: questao?.questoes_modalidades?.map((qm: any) => ({
                 id: qm.modalidades.id,
                 nome: qm.modalidades.mod_ensino,
             })),
             questoesAdicionais: questao?.questoes_adicionais,
+            repetir_todas_disciplinas: questao?.repetir_todas_disciplinas || false,
         };
     }
 }

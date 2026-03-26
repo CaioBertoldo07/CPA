@@ -8,7 +8,8 @@ export const createQuestaoSchema = yup.object().shape({
     padraoRespostaId: yup.number().required('ID do padrão de resposta é obrigatório'),
     basica: yup.boolean().required('Informação se é básica é obrigatória'),
     tipo_questao: yup.number().required('Tipo da questão é obrigatório'),
-    questoesAdicionais: yup.array().optional()
+    questoesAdicionais: yup.array().optional(),
+    repetir_todas_disciplinas: yup.boolean().optional()
 });
 
 export const updateQuestaoSchema = yup.object().shape({
@@ -19,5 +20,6 @@ export const updateQuestaoSchema = yup.object().shape({
     padraoRespostaId: yup.number().optional(),
     basica: yup.boolean().optional(),
     tipo_questao: yup.number().optional(),
-    questoesAdicionais: yup.array().optional()
+    questoesAdicionais: yup.array().optional(),
+    repetir_todas_disciplinas: yup.boolean().optional()
 });
