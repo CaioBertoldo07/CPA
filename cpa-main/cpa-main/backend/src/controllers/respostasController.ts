@@ -20,11 +20,28 @@ const salvarRespostas = asyncHandler(async (req: Request, res: Response) => {
 
 const getRespostasByAvaliacao = asyncHandler(async (req: Request, res: Response) => {
     const idAvaliacao = parseInt(req.params.idAvaliacao as string, 10);
-    const relatorio = await respostasService.getRespostasRelatorio(idAvaliacao);
+    const { unidade, curso, municipio } = req.query;
+    
+    const relatorio = await respostasService.getRespostasRelatorio(idAvaliacao, {
+        unidade: unidade as string,
+        curso: curso as string,
+        municipio: municipio as string
+    });
+    res.json(relatorio);
+});
+
+const getRelatorioDisciplinas = asyncHandler(async (req: Request, res: Response) => {
+    const idAvaliacao = parseInt(req.params.id as string, 10);
+    const { unidade, curso } = req.query;
+    const relatorio = await respostasService.getRelatorioDisciplinas(idAvaliacao, {
+        unidade: unidade as string,
+        curso: curso as string
+    });
     res.json(relatorio);
 });
 
 export {
     salvarRespostas,
     getRespostasByAvaliacao,
+    getRelatorioDisciplinas
 };

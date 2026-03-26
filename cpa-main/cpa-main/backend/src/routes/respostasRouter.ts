@@ -88,6 +88,7 @@ router.post('/respostas', authenticateToken, respostasController.salvarRespostas
  *                           type: integer
  */
 router.get('/avaliacoes/:idAvaliacao/respostas', authenticateToken, respostasController.getRespostasByAvaliacao);
+router.get('/avaliacoes/:id/relatorio/disciplinas', authenticateToken, respostasController.getRelatorioDisciplinas);
 
 
 export default router;

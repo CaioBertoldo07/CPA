@@ -193,6 +193,12 @@ const Alunos = () => {
                                                 {avaliacao.titulo}
                                             </Typography>
 
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'error.main', mt: 0.5 }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                    Finaliza em: {new Date(avaliacao.data_fim).toLocaleDateString('pt-BR')}
+                                                </Typography>
+                                            </Box>
+
                                             <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
                                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
