@@ -151,12 +151,23 @@ const findPaginated = async (params: {
 /**
  * Atualiza a modalidade de vários cursos e os ativa
  */
-const updateManyModality = (cursoIds: number[], idModalidade: number) => {
+const updateManyModality = async (cursoIds: number[], idModalidade: number) => {
+    const modalidade = await prisma.modalidades.findUnique({
+        where: { id: idModalidade },
+        select: { mod_ensino: true, mod_oferta: true },
+    });
+
+    if (!modalidade) {
+        throw new Error('Modalidade não encontrada para classificação dos cursos.');
+    }
+
     return prisma.cursos.updateMany({
         where: { id: { in: cursoIds } },
         data: {
             id_modalidade: idModalidade,
-            ativo: true
+            modalidade: modalidade.mod_ensino,
+            modalidade_api: modalidade.mod_oferta ?? null,
+            ativo: true,
         }
     });
 };

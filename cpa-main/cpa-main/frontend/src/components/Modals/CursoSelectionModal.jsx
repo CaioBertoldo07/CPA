@@ -204,7 +204,7 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                                             <TableCell sx={{ fontWeight: 500 }}>{curso.nome ?? curso.name ?? '—'}</TableCell>
                                             <TableCell>
                                                 <Typography variant="caption" sx={{ px: 1, py: 0.25, bgcolor: 'grey.200', borderRadius: 1 }}>
-                                                    {curso.modalidade ?? '—'}
+                                                    {curso.modalidade_rel?.mod_ensino ?? curso.modalidade ?? '—'}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
