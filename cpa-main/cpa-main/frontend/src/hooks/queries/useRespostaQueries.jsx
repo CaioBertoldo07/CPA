@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getRespostasPorAvaliacao, getRelatorioDisciplinas } from '../../api/respostas';
+import { getRespostasPorAvaliacao, getRelatorioDisciplinas, getDashboardCategorias } from '../../api/respostas';
 
 
 export const useGetRespostasPorAvaliacaoQuery = (idAvaliacao, filters = {}) => {

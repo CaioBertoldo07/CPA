@@ -48,5 +48,6 @@ const getDashboardCategorias = asyncHandler(async (_req: Request, res: Response)
 export {
     salvarRespostas,
     getRespostasByAvaliacao,
-    getRelatorioDisciplinas
+    getRelatorioDisciplinas,
+    getDashboardCategorias
 };

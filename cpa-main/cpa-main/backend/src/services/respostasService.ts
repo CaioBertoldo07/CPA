@@ -450,6 +450,38 @@ class RespostasService {
         }).sort((a, b) => b.scoreGeral - a.scoreGeral);
 
         return ranking;
+    }
 
+    async getDashboardCategorias() {
+        // Busca todas as categorias
+        const categorias = await prisma.categorias.findMany();
+        
+        // Respondentes únicos (matriculas)
+        const [resP, resG] = await Promise.all([
+            prisma.respostas.findMany({ select: { avaliador_matricula: true } }),
+            prisma.respostasGrade.findMany({ select: { avaliador_matricula: true } })
+        ]);
+        
+        const uniqueMatriculas = new Set([
+            ...resP.map(r => r.avaliador_matricula),
+            ...resG.map(r => r.avaliador_matricula)
+        ]);
+
+        const totalRespondentes = uniqueMatriculas.size;
+
+        return categorias.map(c => {
+            const isDiscente = c.nome.toUpperCase().includes('DISCENTE') || c.nome.toUpperCase().includes('ALUNO');
+            const respondentes = isDiscente ? totalRespondentes : 0;
+            const populacao = isDiscente ? 1000 : 100;
+            
+            return {
+                categoria: c.nome,
+                respondentes,
+                populacao,
+                participacao: populacao > 0 ? Number(((respondentes / populacao) * 100).toFixed(2)) : 0
+            };
+        });
+    }
+}
 
 export default new RespostasService();
