@@ -6,14 +6,14 @@ import { FaRegEdit } from "react-icons/fa";
 import { HiOutlineDocumentSearch } from "react-icons/hi";
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import Modal_IncluirCursos from '../Modals/Modal_IncluirCursos';
-import DrawerModalidadeCursos from '../DrawerModalidadeCursos';
+
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useDeleteModalidadeMutation } from '../../hooks/mutations/useModalidadeMutations';
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip, Button } from '@mui/material';
 
-const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
+const Table_Modalidades = ({ searchQuery = '', onSuccess, onOpenCursosDrawer }) => {
     const { data: modalidades = [], isLoading: loading, isError } = useGetModalidadesQuery();
     const deleteMutation = useDeleteModalidadeMutation();
     const showNotification = useNotification();
@@ -26,9 +26,6 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
 
     const [showIncludeModal, setShowIncludeModal] = useState(false);
     const [selectingModalidade, setSelectingModalidade] = useState(null);
-    const [showCursosDrawer, setShowCursosDrawer] = useState(false);
-    const [drawerModalidade, setDrawerModalidade] = useState(null);
-
     useEffect(() => { if (isError) showNotification('Erro ao carregar modalidades.', 'error'); }, [isError, showNotification]);
 
     const handleEdit = (modalidade) => {
@@ -94,16 +91,24 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
             width: 140,
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Chip
-                        label={`${params.value ?? 0} cursos`}
+                    <Button
                         size="small"
-                        onClick={() => {
-                            setDrawerModalidade(params.row);
-                            setShowCursosDrawer(true);
+                        variant="contained"
+                        onClick={() => onOpenCursosDrawer?.(params.row)}
+                        sx={{
+                            bgcolor: '#155e75',
+                            color: '#fff',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            padding: '4px 10px',
+                            minWidth: 'auto',
+                            height: 24,
+                            '&:hover': { bgcolor: '#0f3d4f' }
                         }}
-                        clickable
-                        sx={{ bgcolor: '#ecfeff', color: '#155e75', fontSize: '0.7rem', fontWeight: 600, border: '1px solid #cffafe', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }}
-                    />
+                    >
+                        {params.value ?? 0} cursos
+                    </Button>
                 </Box>
             )
         },
@@ -247,12 +252,6 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                     modalityName={selectingModalidade.mod_ensino}
                 />
             )}
-
-            <DrawerModalidadeCursos
-                open={showCursosDrawer}
-                onClose={() => setShowCursosDrawer(false)}
-                modalidade={drawerModalidade}
-            />
         </Box>
     );
 };
