@@ -79,6 +79,7 @@ const findPaginated = async (params: {
         municipio?: string;
         unidadeIds?: string;
         municipioIds?: string;
+        modalidadeIds?: string;
         unclassified?: string;
         ativo?: string; // ✅ novo
     }
@@ -114,6 +115,10 @@ const findPaginated = async (params: {
         if (filters.municipioIds) {
             const ids = filters.municipioIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
             if (ids.length > 0) where.municipio_sede = { in: ids };
+        }
+        if (filters.modalidadeIds) {
+            const ids = filters.modalidadeIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            if (ids.length > 0) where.id_modalidade = { in: ids };
         }
         if (filters.unclassified === 'true') {
             where.id_modalidade = null;

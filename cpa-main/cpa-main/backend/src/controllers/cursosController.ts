@@ -51,6 +51,7 @@ const getPaginatedCursos = asyncHandler(async (req: Request, res: Response) => {
         municipio: req.query.municipio as string,
         unidadeIds: req.query.unidadeIds as string,
         municipioIds: req.query.municipioIds as string,
+        modalidadeIds: req.query.modalidadeIds as string,
         unclassified: req.query.unclassified as string,
         ativo: req.query.ativo as string, // ✅ novo
     };

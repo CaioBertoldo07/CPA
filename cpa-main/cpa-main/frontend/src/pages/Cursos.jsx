@@ -7,8 +7,11 @@ import { useUpdateCursosStatusMutation } from '../hooks/mutations/useCursoMutati
 import { useGetUnidadesQuery } from '../hooks/queries/useUnidadeQueries';
 import { useGetMunicipiosQuery } from '../hooks/queries/useMunicipioQueries';
 import { useGetCursoTypesQuery } from '../hooks/queries/useCursoQueries';
+import { useGetModalidadesQuery } from '../hooks/queries/useModalidadeQueries';
 
 const FILTROS = ['TODOS', 'ATIVOS', 'INATIVOS'];
+const FILTRO_STATUS_INICIAL = 'ATIVOS';
+const SEM_MODALIDADE_OPTION = { value: 'SEM_MODALIDADE', label: 'Sem modalidade' };
 
 const btnBase = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -23,7 +26,7 @@ const filterLabelStyle = {
 };
 
 const Cursos = () => {
-    const [filtroStatus, setFiltroStatus] = useState('TODOS');
+    const [filtroStatus, setFiltroStatus] = useState(FILTRO_STATUS_INICIAL);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
     const [currentItems, setCurrentItems] = useState([]);
@@ -31,6 +34,7 @@ const Cursos = () => {
     const [selectedUnidades, setSelectedUnidades] = useState([]);
     const [selectedMunicipios, setSelectedMunicipios] = useState([]);
     const [selectedTypes, setSelectedTypes] = useState([]);
+    const [selectedModalidades, setSelectedModalidades] = useState([SEM_MODALIDADE_OPTION]);
 
     const showNotification = useNotification();
     const updateStatusMutation = useUpdateCursosStatusMutation();
@@ -38,6 +42,7 @@ const Cursos = () => {
     const { data: unidadesData, isLoading: isLoadingUnidades } = useGetUnidadesQuery();
     const { data: municipiosData, isLoading: isLoadingMunicipios } = useGetMunicipiosQuery();
     const { data: typesData, isLoading: isLoadingTypes } = useGetCursoTypesQuery();
+    const { data: modalidadesData, isLoading: isLoadingModalidades } = useGetModalidadesQuery();
 
     const unidadesOptions = useMemo(() => {
         if (!unidadesData) return [];
@@ -57,12 +62,43 @@ const Cursos = () => {
         typesData?.filter(Boolean).map(t => ({ value: t, label: t })) ?? [],
         [typesData]);
 
+    const modalidadesOptions = useMemo(() => {
+        const options = modalidadesData?.filter(Boolean).map(m => ({ value: m.id, label: m.mod_ensino || m.nome })) ?? [];
+        return [SEM_MODALIDADE_OPTION, ...options];
+    }, [modalidadesData]);
+
+    const handleModalidadesChange = (nextValue = []) => {
+        if (!Array.isArray(nextValue) || nextValue.length === 0) {
+            setSelectedModalidades([SEM_MODALIDADE_OPTION]);
+            return;
+        }
+
+        const selectedReal = nextValue.filter(item => item?.value !== SEM_MODALIDADE_OPTION.value);
+        if (selectedReal.length > 0) {
+            setSelectedModalidades(selectedReal);
+            return;
+        }
+
+        setSelectedModalidades([SEM_MODALIDADE_OPTION]);
+    };
+
     // filtroStatus → query param server-side
     const extraParams = useMemo(() => {
         if (filtroStatus === 'ATIVOS') return { ativo: 'true' };
         if (filtroStatus === 'INATIVOS') return { ativo: 'false' };
         return {};
     }, [filtroStatus]);
+
+    const modalidadeParams = useMemo(() => {
+        const selectedReal = selectedModalidades.filter(item => item?.value !== SEM_MODALIDADE_OPTION.value);
+        if (selectedReal.length > 0) {
+            return { modalidadeIds: selectedReal.map(item => item.value).join(',') };
+        }
+
+        return { unclassified: 'true' };
+    }, [selectedModalidades]);
+
+    const queryExtraParams = useMemo(() => ({ ...extraParams, ...modalidadeParams }), [extraParams, modalidadeParams]);
 
     const selectedSemClassificacao = currentItems.filter(
         c => selectedIds.some(id => String(id) === String(c.id)) && !c.modalidade_rel
@@ -132,8 +168,8 @@ const Cursos = () => {
                 </div>
 
                 {/* ── Toolbar ── */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', padding: 4, borderRadius: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 20, flexWrap: 'wrap', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', padding: 4, borderRadius: 10, flexShrink: 0 }}>
                         {FILTROS.map(f => (
                             <button key={f} onClick={() => setFiltroStatus(f)} style={{
                                 padding: '6px 14px', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600,
@@ -144,7 +180,7 @@ const Cursos = () => {
                             }}>{f}</button>
                         ))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '10px 16px', flex: 1, maxWidth: 420, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '10px 16px', flex: '1 1 280px', minWidth: 280, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
                         onFocusCapture={e => { e.currentTarget.style.borderColor = '#1D5E24'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(29,94,36,0.1)'; }}
                         onBlurCapture={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -156,16 +192,28 @@ const Cursos = () => {
                             </button>
                         )}
                     </div>
+                    <div style={{ minWidth: 320, flex: '0 1 420px', maxWidth: 420 }}>
+                        <label style={filterLabelStyle}>Modalidade</label>
+                        <AnimatedMultiSelect
+                            placeholder="Selecione uma ou mais modalidades"
+                            options={modalidadesOptions}
+                            value={selectedModalidades}
+                            onChange={handleModalidadesChange}
+                            disabled={isLoadingModalidades}
+                            sx={{ mt: 0 }}
+                        />
+                    </div>
                 </div>
 
                 {/* ── Tabela ── */}
                 <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', animation: 'fadeInUp 400ms 150ms both' }}>
                     <TableCursos
                         searchQuery={searchQuery}
-                        extraParams={extraParams}
+                        extraParams={queryExtraParams}
                         unidadeIds={selectedUnidades.map(u => u.value)}
                         municipioIds={selectedMunicipios.map(m => m.value)}
                         selectedTypes={selectedTypes.map(t => t.value)}
+                        modalidadeOptions={modalidadesOptions}
                         unidadesOptions={unidadesOptions}
                         municipiosOptions={municipiosOptions}
                         typesOptions={typesOptions}
