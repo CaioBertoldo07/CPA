@@ -14,6 +14,7 @@ import {
     Radio,
     Button,
     AppBar,
+    Alert,
     Toolbar,
     Divider,
     IconButton,
@@ -121,7 +122,8 @@ const AvaliacaoAlunos = () => {
     }, [avaliacao]);
 
     const groupByEixoDimensao = () => {
-        return avaliacao?.avaliacao_questoes?.reduce((acc, { id: avQuestId, questoes }) => {
+        return avaliacao?.avaliacao_questoes?.reduce((acc, avQuestData) => {
+            const { id: avQuestId, questoes, disciplina } = avQuestData;
             const eixoKey = `${questoes.dimensoes.eixos.numero} - ${questoes.dimensoes.eixos.nome}`;
             const dimensaoKey = `${questoes.dimensoes.numero} - ${questoes.dimensoes.nome}`;
 
@@ -141,7 +143,7 @@ const AvaliacaoAlunos = () => {
                 };
             }
 
-            acc[eixoKey].dimensoes[dimensaoKey].questoes.push({ ...questoes, avQuestId });
+            acc[eixoKey].dimensoes[dimensaoKey].questoes.push({ ...questoes, avQuestId, disciplina });
             return acc;
         }, {}) || {};
     };
@@ -195,16 +197,35 @@ const AvaliacaoAlunos = () => {
         );
     };
 
-    const renderQuestoes = (questao) => {
+    const renderQuestoes = (questao, isFirstInSeries = true) => {
         const subquestoes = questao.questoesAdicionais || questao.questoes_adicionais || [];
+        const isRepeating = questao.repetir_todas_disciplinas;
+        const [originalQuestaoId] = String(questao.id).split('___');
 
-        if (subquestoes.length > 0) {
-            return (
-                <Box sx={{ mb: 4 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
-                        {questao.descricao}
+        return (
+            <Box sx={{ mb: 4 }}>
+                {isRepeating && isFirstInSeries && (
+                    <Alert severity="info" sx={{ mb: 2, borderRadius: '12px', fontWeight: 500, border: '1px solid', borderColor: alpha(theme.palette.info.main, 0.2) }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <IoInformationCircleOutline size={20} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                Esta questão será respondida para cada uma de suas disciplinas abaixo.
+                            </Typography>
+                        </Box>
+                    </Alert>
+                )}
+                
+                {questao.disciplina && (
+                    <Typography variant="overline" sx={{ display: 'block', fontWeight: 800, color: 'primary.main', mb: 0.5, letterSpacing: 1.2 }}>
+                        {questao.disciplina}
                     </Typography>
-                    {subquestoes.map((sub) => (
+                )}
+                
+                <Typography variant="body1" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
+                    {questao.descricao}
+                </Typography>
+                {subquestoes.length > 0 ? (
+                    subquestoes.map((sub) => (
                         <Paper
                             key={sub.id}
                             elevation={0}
@@ -226,31 +247,15 @@ const AvaliacaoAlunos = () => {
                                 )}
                             </Grid>
                         </Paper>
-                    ))}
-                </Box>
-            );
-        }
-
-        return (
-            <Paper
-                elevation={0}
-                sx={{
-                    p: 3,
-                    mb: 3,
-                    borderRadius: '16px',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                }}
-            >
-                <Typography variant="body1" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
-                    {questao.descricao}
-                </Typography>
-                <Grid container spacing={2}>
-                    {questao.padrao_resposta.alternativas.map((alt) =>
-                        renderChoice(alt, `q-${questao.id}`, questao.id, questao.id, null)
-                    )}
-                </Grid>
-            </Paper>
+                    ))
+                ) : (
+                    <Grid container spacing={2}>
+                        {questao.padrao_resposta.alternativas.map((alt) =>
+                            renderChoice(alt, `q-${questao.id}`, questao.id, questao.id, null)
+                        )}
+                    </Grid>
+                )}
+            </Box>
         );
     };
 
@@ -427,11 +432,21 @@ const AvaliacaoAlunos = () => {
                                             </Typography>
                                         </Box>
 
-                                        {dimData.questoes.map((questao) => (
-                                            <Box key={questao.id}>
-                                                {renderQuestoes(questao)}
-                                            </Box>
-                                        ))}
+                                        {(() => {
+                                            const seenOriginalIds = new Set();
+                                            return dimData.questoes.map((questao) => {
+                                                const [originalId] = String(questao.id).split('___');
+                                                const isFirst = !seenOriginalIds.has(originalId);
+                                                if (questao.repetir_todas_disciplinas) {
+                                                    seenOriginalIds.add(originalId);
+                                                }
+                                                return (
+                                                    <Box key={questao.id}>
+                                                        {renderQuestoes(questao, isFirst)}
+                                                    </Box>
+                                                );
+                                            });
+                                        })()}
                                     </Box>
                                 ))}
                             </AccordionDetails>

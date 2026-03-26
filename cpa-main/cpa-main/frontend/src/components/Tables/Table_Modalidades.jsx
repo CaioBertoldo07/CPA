@@ -76,11 +76,13 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
             headerName: 'Num. questões',
             width: 150,
             renderCell: (params) => (
-                <Chip
-                    label={`${params.value} questões`}
-                    size="small"
-                    sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', fontWeight: 600, border: '1px solid #e2e8f0' }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Chip
+                        label={`${params.value} questões`}
+                        size="small"
+                        sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', fontWeight: 600, border: '1px solid #e2e8f0', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }}
+                    />
+                </Box>
             )
         },
         {
@@ -176,6 +178,11 @@ const Table_Modalidades = ({ searchQuery = '', onSuccess }) => {
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
                 sx={{
                     border: 'none',
+                    '& .MuiDataGrid-cell': {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                    },
                     '& .MuiDataGrid-cell:focus': { outline: 'none' },
                     '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
                     '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },

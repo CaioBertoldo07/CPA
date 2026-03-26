@@ -61,14 +61,16 @@ class RespostasService {
             }
         }
 
-        const grouped: Record<number, RespostaInputDTO[]> = {};
+        const grouped: Record<string, RespostaInputDTO[]> = {};
         for (const r of respostas) {
-            const key = Number(r.id_avaliacao_questoes);
+            const key = String(r.id_avaliacao_questoes);
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(r);
         }
 
-        for (const idQuestao of Object.keys(grouped).map(Number)) {
+        for (const idQuestaoKey of Object.keys(grouped)) {
+            const [idQuestaoStr, disciplinaFromId] = idQuestaoKey.split('___');
+            const idQuestao = Number(idQuestaoStr);
             const questaoData = await avaliacaoRepository.findAvaliacaoQuestaoWithDetails(idQuestao);
             if (!questaoData) throw new AppError(`Questão de avaliação ${idQuestao} não encontrada.`, 404);
 
@@ -83,6 +85,10 @@ class RespostasService {
                     const qAdicionalId = subResposta.id_questoes_adicionais || (subResposta as any).adicionalId || (subResposta as any).idAdicional;
                     if (!qAdicionalId) continue;
 
+                    const isDynamicSubject = typeof qAdicionalId === 'string' && qAdicionalId.startsWith('DISC_');
+                    const finalAdicionalId = isDynamicSubject ? 0 : Number(qAdicionalId);
+                    const disciplinaNome = isDynamicSubject ? qAdicionalId.replace('DISC_', '') : null;
+
                     const idAltRaw = subResposta.id_alternativa ?? subResposta.valor ?? (subResposta as any).id_alternativas;
                     const idAlternativa = Number(idAltRaw);
                     if (isNaN(idAlternativa)) {
@@ -94,15 +100,16 @@ class RespostasService {
                         throw new AppError(`Alternativa ${idAlternativa} inválida para a questão ${questao.id}.`, 400);
                     }
 
-                    await respostasRepository.createRespostaGrade({
+                    await (respostasRepository as any).createRespostaGrade({
                         avaliacao_questao: { connect: { id: idQuestao } },
-                        adicionalId: Number(qAdicionalId),
+                        adicionalId: finalAdicionalId,
                         avaliador_matricula: matriculaHash,
                         resposta: alternativa.descricao,
                         data_resposta,
                         curso,
                         unidade,
-                        municipio
+                        municipio,
+                        disciplina: disciplinaNome || disciplinaFromId || (subResposta as any).disciplina || null
                     });
                 }
             } else { // Padrão
@@ -118,14 +125,15 @@ class RespostasService {
                     throw new AppError(`Alternativa ${idAlternativa} inválida para a questão ${questao.id}.`, 400);
                 }
 
-                await respostasRepository.createResposta({
+                await (respostasRepository as any).createResposta({
                     avaliacao_questao: { connect: { id: idQuestao } },
                     avaliador_matricula: matriculaHash,
                     resposta: alternativa.descricao,
                     data_resposta,
                     curso,
                     unidade,
-                    municipio
+                    municipio,
+                    disciplina: disciplinaFromId || (r as any).disciplina || null
                 });
             }
         }

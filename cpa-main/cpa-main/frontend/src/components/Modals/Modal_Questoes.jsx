@@ -50,6 +50,7 @@ function Modal_Questoes(props) {
     const [padraoRespostaSelecionado, setPadraoRespostaSelecionado] = useState('');
     const [tipoQuestao, setTipoQuestao] = useState('');
     const [questoesAdicionais, setQuestoesAdicionais] = useState([]);
+    const [repetirTodasDisciplinas, setRepetirTodasDisciplinas] = useState(false);
 
     const modalidadesOptions = useMemo(() =>
         modalidadesRaw.map(m => ({ value: m.id, label: m.mod_ensino })),
@@ -70,6 +71,7 @@ function Modal_Questoes(props) {
             setQuestoesAdicionais(editingQuestao.questoesAdicionais?.map(qa => qa.descricao) || []);
             setCategoriasSelecionadas(editingQuestao.categorias?.map(c => c.id) || []);
             setModalidadeSelecionada(editingQuestao.modalidades?.map(m => m.id) || []);
+            setRepetirTodasDisciplinas(editingQuestao.repetir_todas_disciplinas || false);
         } else if (!show) {
             resetFormState();
         }
@@ -86,6 +88,7 @@ function Modal_Questoes(props) {
         setTipoQuestao('');
         setError('');
         setQuestoesAdicionais([]);
+        setRepetirTodasDisciplinas(false);
     };
 
     const handleQuestaoChange = (event) => setDescricaoQuestao(event.target.value);
@@ -140,6 +143,7 @@ function Modal_Questoes(props) {
             categorias: categoriasSelecionadas,
             modalidades: modalidadeSelecionada,
             questoesAdicionais: questoesAdicionais.filter(q => q.trim()).map(item => ({ descricao: item })),
+            repetir_todas_disciplinas: repetirTodasDisciplinas,
         };
 
         const mutation = editingQuestao ? editarMutation : adicionarMutation;
@@ -369,7 +373,19 @@ function Modal_Questoes(props) {
                             />
                         </Grid>
 
-                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 3 }}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={repetirTodasDisciplinas}
+                                        onChange={(e) => setRepetirTodasDisciplinas(e.target.checked)}
+                                        disabled={isLoading}
+                                        color="warning"
+                                    />
+                                }
+                                label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Repetir para todas as disciplinas</Typography>}
+                                labelPlacement="start"
+                            />
                             <FormControlLabel
                                 control={
                                     <Switch

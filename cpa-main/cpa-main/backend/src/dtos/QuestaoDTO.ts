@@ -26,6 +26,7 @@ export interface QuestaoResponseDTO {
     }>;
     questoesAdicionais?: any[];
     isUsed?: boolean;
+    repetir_todas_disciplinas: boolean;
 }
 
 /**
@@ -42,6 +43,7 @@ export interface CreateQuestaoDTO {
     questoesAdicionais?: Array<{
         descricao: string;
     }>;
+    repetir_todas_disciplinas?: boolean;
 }
 
 /**

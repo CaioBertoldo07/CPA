@@ -33,8 +33,8 @@ const StatusBadge = ({ status }) => {
                 color: s.color,
                 fontWeight: 700,
                 fontSize: '0.65rem',
-                height: 24,
-                '& .MuiChip-label': { px: 1 },
+                height: 20,
+                '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' },
                 border: `1px solid ${s.dot}44`
             }}
             icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: s.dot, ml: '8px !important' }} />}
@@ -168,11 +168,13 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             headerName: 'Código',
             width: 90,
             renderCell: (params) => (
-                <Typography variant="caption" sx={{
-                    fontFamily: 'monospace', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: '1px solid #e2e8f0'
-                }}>
-                    #{params.value}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{
+                        fontFamily: 'monospace', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: '1px solid #e2e8f0'
+                    }}>
+                        #{params.value}
+                    </Typography>
+                </Box>
             )
         },
         {
@@ -185,20 +187,20 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             filterOperators: modalidadesFilterOperators,
             valueGetter: (value) => (value || []).map(m => m.mod_ensino).join(', '),
             renderCell: (params) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
                     {(params.row.modalidades || []).map((m, i) => (
                         <Chip
                             key={i}
                             label={m.mod_ensino}
                             size="small"
                             variant="outlined"
-                            sx={{ bgcolor: '#f1f5f9', color: '#4a5568', fontSize: '0.65rem', border: '1px solid #e2e8f0' }}
+                            sx={{ bgcolor: '#f1f5f9', color: '#4a5568', fontSize: '0.65rem', border: '1px solid #e2e8f0', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }}
                         />
                     ))}
                 </Box>
             )
         },
-        { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, filterOperators: supportedStringFilterOperators, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography> },
+        { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, filterOperators: supportedStringFilterOperators, renderCell: (params) => <Box sx={{ display: 'flex', alignItems: 'center' }}><Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography></Box> },
         { field: 'ano', headerName: 'Ano', type: 'string', width: 80, filterOperators: supportedStringFilterOperators },
         {
             field: 'data_inicio',
@@ -232,7 +234,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 { value: 2, label: 'Enviada' },
                 { value: 3, label: 'Encerrada' },
             ],
-            renderCell: (params) => <StatusBadge status={params.value} />
+            renderCell: (params) => <Box sx={{ display: 'flex', alignItems: 'center' }}><StatusBadge status={params.value} /></Box>
         },
         {
             field: 'actions',
@@ -243,7 +245,8 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
             headerAlign: 'right',
             align: 'right',
             renderCell: (params) => (
-                <Box sx={{
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: '100px 80px 80px 110px 80px',
                     gap: 1,
@@ -393,9 +396,10 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                         )}
                     </Box>
                 </Box>
-            )
-        }
-    ];
+            </Box>
+        )
+    }
+];
 
     return (
         <Box sx={{ width: '100%', height: 600 }}>
@@ -419,6 +423,11 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
                 sx={{
                     border: 'none',
+                    '& .MuiDataGrid-cell': {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                    },
                     '& .MuiDataGrid-cell:focus': { outline: 'none' },
                     '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
                     '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },

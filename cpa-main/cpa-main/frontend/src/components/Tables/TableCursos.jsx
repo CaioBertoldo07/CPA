@@ -64,20 +64,25 @@ const getMultiSelectOperators = (options) => [
 
 const dataGridSx = {
     border: 'none',
-    '& .MuiDataGrid-cell:focus': { outline: 'none' },
-    '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
-    '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },
-    '& .MuiDataGrid-columnHeaders': {
-        bgcolor: '#f8fafc',
-        borderBottom: '1px solid #e2e8f0',
-        '& .MuiDataGrid-columnHeaderTitle': {
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#718096',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+        '& .MuiDataGrid-cell': {
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
         },
-    },
+        '& .MuiDataGrid-cell:focus': { outline: 'none' },
+        '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
+        '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },
+        '& .MuiDataGrid-columnHeaders': {
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+            '& .MuiDataGrid-columnHeaderTitle': {
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#718096',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+            },
+        },
 };
 
 const columns = [
@@ -86,13 +91,15 @@ const columns = [
         headerName: 'Código',
         width: 130,
         renderCell: ({ value }) => (
-            <Typography variant="caption" sx={{
-                fontFamily: 'monospace', bgcolor: '#f1f5f9',
-                px: 1, py: 0.25, borderRadius: 1,
-                border: '1px solid #e2e8f0', fontWeight: 600, color: '#64748b',
-            }}>
-                {value ?? '—'}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{
+                    fontFamily: 'monospace', bgcolor: '#f1f5f9',
+                    px: 1, py: 0.25, borderRadius: 1,
+                    border: '1px solid #e2e8f0', fontWeight: 600, color: '#64748b',
+                }}>
+                    {value ?? '—'}
+                </Typography>
+            </Box>
         ),
     },
     {
@@ -101,7 +108,9 @@ const columns = [
         flex: 1,
         minWidth: 220,
         renderCell: ({ value }) => (
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>{value}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{value}</Typography>
+            </Box>
         ),
     },
     {
@@ -109,9 +118,14 @@ const columns = [
         headerName: 'Tipo de Curso',
         width: 175,
         valueGetter: (_, row) => row.curso_tipo || null,
-        renderCell: ({ value }) => value
-            ? <Chip label={value} size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
-            : <Chip label="Sem tipo" size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />,
+        renderCell: ({ value }) => (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {value
+                    ? <Chip label={value} size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }} />
+                    : <Chip label="Sem tipo" size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }} />
+                }
+            </Box>
+        ),
         filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },
     {
@@ -121,9 +135,14 @@ const columns = [
         renderCell: ({ row }) => {
             const rel = row.modalidade_rel;
             const temDados = rel?.mod_ensino || rel?.mod_oferta;
-            return temDados
-                ? <Chip label={`${rel.mod_ensino ?? ''} - ${rel.mod_oferta ?? ''}`} size="small" sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
-                : <Chip label="Sem modalidade" size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />;
+            return (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {temDados
+                        ? <Chip label={`${rel.mod_ensino ?? ''} - ${rel.mod_oferta ?? ''}`} size="small" sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }} />
+                        : <Chip label="Sem modalidade" size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }} />
+                    }
+                </Box>
+            );
         },
     },
     {
@@ -145,14 +164,16 @@ const columns = [
         headerName: 'Status',
         width: 110,
         renderCell: ({ value }) => (
-            <Chip
-                label={value ? 'Ativo' : 'Inativo'}
-                size="small"
-                sx={value
-                    ? { bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, fontSize: '0.7rem', border: 'none' }
-                    : { bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none' }
-                }
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Chip
+                    label={value ? 'Ativo' : 'Inativo'}
+                    size="small"
+                    sx={value
+                        ? { bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }
+                        : { bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.7rem', border: 'none', height: 20, '& .MuiChip-label': { px: 1, display: 'flex', alignItems: 'center' } }
+                    }
+                />
+            </Box>
         ),
     },
 ];

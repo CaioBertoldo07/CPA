@@ -64,14 +64,16 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
             headerName: '#',
             width: 80,
             renderCell: (params) => (
-                <Typography variant="caption" sx={{
-                    fontFamily: 'monospace', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: '1px solid #e2e8f0'
-                }}>
-                    #{params.value}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{
+                        fontFamily: 'monospace', bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: 1, border: '1px solid #e2e8f0'
+                    }}>
+                        #{params.value}
+                    </Typography>
+                </Box>
             )
         },
-        { field: 'nome', headerName: 'Nome', flex: 1, minWidth: 200, renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 500 }}>{params.value}</Typography> },
+        { field: 'nome', headerName: 'Nome', flex: 1, minWidth: 200, renderCell: (params) => <Box sx={{ display: 'flex', alignItems: 'center' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{params.value}</Typography></Box> },
         {
             field: 'data_criacao',
             headerName: 'Data de Criação',
@@ -144,6 +146,11 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
                 sx={{
                     border: 'none',
+                    '& .MuiDataGrid-cell': {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                    },
                     '& .MuiDataGrid-cell:focus': { outline: 'none' },
                     '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
                     '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },

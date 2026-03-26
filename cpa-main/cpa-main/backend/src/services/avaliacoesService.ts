@@ -16,8 +16,9 @@ class AvaliacoesService {
             ...avaliacao,
             titulo: `Avaliação CPA - ${avaliacao.periodo_letivo}`,
             questoes: (avaliacao.avaliacao_questoes || []).map((aq: any) => ({
-                ...aq.questoes,
-                id_avaliacao_questao: aq.id
+                ...(aq.questoes || {}),
+                id_avaliacao_questao: aq.id,
+                disciplina: (aq as any).disciplina
             }))
         } as unknown as AvaliacaoResponseDTO;
     }
@@ -217,39 +218,53 @@ class AvaliacoesService {
     }
 
     async getById(id: number, user?: UserResponseDTO): Promise<AvaliacaoResponseDTO> {
-        const avaliacao = await avaliacaoRepository.findById(id);
-        if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);
+        try {
+            const avaliacao = await avaliacaoRepository.findById(id);
+            if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);
 
-        if (user && user.oberonPerfilNome === 'DISCENTE') {
-            const [anoAvaliacao, semestreAvaliacao] = (avaliacao.periodo_letivo as string).split('.');
-            const disciplinas = await this.getDisciplinasAluno(anoAvaliacao, semestreAvaliacao, user.universityToken);
+            if (user && user.oberonPerfilNome === 'DISCENTE') {
+                const [anoAvaliacao, semestreAvaliacao] = (avaliacao.periodo_letivo as string).split('.');
+                const disciplinas = await this.getDisciplinasAluno(anoAvaliacao, semestreAvaliacao, user.universityToken);
 
-            if (disciplinas.message?.length > 0) {
-                (avaliacao as any).avaliacao_questoes = (avaliacao.avaliacao_questoes as any[]).filter(
-                    (aq: any) => aq?.questoes?.id !== 18
-                );
+                const novasQuestoes: any[] = [];
+                const hasDisciplinas = disciplinas && Array.isArray(disciplinas.message) && disciplinas.message.length > 0;
 
-                const gradeQuestao = await avaliacaoRepository.findQuestaoGradeById(18);
-                if (gradeQuestao) {
-                    for (const disciplina of disciplinas.message) {
-                        if (!disciplina.DISC_DISCIPLINA || !disciplina.DISC_NOME) continue;
-                        const questaoClone = JSON.parse(JSON.stringify(gradeQuestao));
-                        questaoClone.questoes_adicionais.push({
-                            id: `DISC_${disciplina.DISC_DISCIPLINA}`,
-                            descricao: `${disciplina.DISC_DISCIPLINA} - ${disciplina.DISC_NOME}`,
-                            questao_id: 18,
-                        });
-                        (avaliacao as any).avaliacao_questoes.push({
-                            id: `DISC_${disciplina.DISC_DISCIPLINA}_QUESTAO`,
-                            descricao: `${disciplina.DISC_DISCIPLINA} - ${disciplina.DISC_NOME}`,
-                            questoes: questaoClone,
-                        });
+                for (const aq of (avaliacao as any).avaliacao_questoes) {
+                    if (aq.questoes?.repetir_todas_disciplinas && hasDisciplinas) {
+                        for (const d of disciplinas.message) {
+                            const discLabel = `${d.DISC_DISCIPLINA} - ${d.DISC_NOME}`;
+                            const discId = d.DISC_DISCIPLINA;
+
+                            // Clona a questão sem alterar sua descrição
+                            const questaoClone = { 
+                                ...aq.questoes,
+                                id: `${aq.questoes.id}___${discId}` // ID virtual para a questão
+                            };
+
+                            novasQuestoes.push({
+                                ...aq,
+                                id: `${aq.id}___${discId}`, // ID virtual para o vínculo
+                                questoes: questaoClone,
+                                disciplina: discLabel
+                            });
+                        }
+                    } else {
+                        novasQuestoes.push(aq);
                     }
                 }
-            }
-        }
+                (avaliacao as any).avaliacao_questoes = novasQuestoes;
 
-        return this.mapAvaliacao(avaliacao);
+                if (!hasDisciplinas && disciplinas?.message) {
+                    console.log('API University: Message is not an array or is empty:', disciplinas.message);
+                }
+            }
+
+            return this.mapAvaliacao(avaliacao);
+        } catch (error) {
+            console.error('Erro ao processar avaliação:', error);
+            if (error instanceof AppError) throw error;
+            throw new AppError('Erro interno ao carregar avaliação.', 500);
+        }
     }
 
     async hasUserResponded(matricula: string, idAvaliacao: number): Promise<boolean> {
