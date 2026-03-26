@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import TableModalidades from '../components/Tables/Table_Modalidades';
 import ModalModalidades from '../components/Modals/Modal_Modalidades';
+import DrawerModalidadeCursos from '../components/DrawerModalidadeCursos';
 import { useNotification } from '../context/NotificationContext';
 
 const Modalidades = () => {
     const [modalShow, setModalShow] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showCursosDrawer, setShowCursosDrawer] = useState(false);
+    const [drawerModalidade, setDrawerModalidade] = useState(null);
     const showNotification = useNotification();
 
     const handleSuccess = (message) => {
         showNotification(message || 'Operação realizada!', 'success');
+    };
+
+    const handleOpenCursosDrawer = (modalidade) => {
+        setDrawerModalidade(modalidade);
+        setShowCursosDrawer(true);
     };
 
     return (
@@ -60,11 +68,17 @@ const Modalidades = () => {
                     overflowX: 'auto',
                     animation: 'fadeInUp 400ms 150ms both'
                 }}>
-                    <TableModalidades searchQuery={searchQuery} onSuccess={handleSuccess} />
+                    <TableModalidades searchQuery={searchQuery} onSuccess={handleSuccess} onOpenCursosDrawer={handleOpenCursosDrawer} />
                 </div>
             </div>
 
             <ModalModalidades show={modalShow} onHide={() => setModalShow(false)} onSuccess={handleSuccess} />
+
+            <DrawerModalidadeCursos
+                open={showCursosDrawer}
+                onClose={() => setShowCursosDrawer(false)}
+                modalidade={drawerModalidade}
+            />
         </>
     );
 };
