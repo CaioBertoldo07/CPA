@@ -10,9 +10,87 @@ import ModalQuestoes from '../Modals/Modal_Questoes';
 import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { Box, IconButton, Tooltip, Typography, Chip, Button } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, Chip, Button, Autocomplete, TextField, Checkbox } from '@mui/material';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 
-const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+function MultiSelectFilterInput(props) {
+    const { item, applyValue, options } = props;
+
+    const handleChange = (_, newValue) => {
+        applyValue({ ...item, value: newValue.map(o => (o && typeof o === 'object') ? o.value : o) });
+    };
+
+    const value = (item.value || []).map(v => 
+        options.find(o => (o && typeof o === 'object' ? o.value : o) === v) || v
+    );
+
+    return (
+        <Autocomplete
+            multiple
+            options={options}
+            disableCloseOnSelect
+            getOptionLabel={(option) => (option && typeof option === 'object') ? option.label : option}
+            value={value}
+            onChange={handleChange}
+            renderOption={(props, option, { selected }) => (
+                <li {...props} key={`${(option && typeof option === 'object') ? option.value : option}`}>
+                    <Checkbox
+                        icon={icon}
+                        checkedIcon={checkedIcon}
+                        style={{ marginRight: 8 }}
+                        checked={selected}
+                    />
+                    {(option && typeof option === 'object') ? option.label : option}
+                </li>
+            )}
+            style={{ width: '100%', minWidth: 200 }}
+            renderInput={(params) => (
+                <TextField {...params} label="Valores" placeholder="Selecionar..." variant="standard" />
+            )}
+        />
+    );
+}
+
+const getMultiSelectOperators = (options) => [
+    {
+        label: 'É um de',
+        value: 'isAnyOf',
+        getApplyFilterFn: (filterItem) => {
+            if (!filterItem.value || filterItem.value.length === 0) return null;
+            
+            // Convert selected values to strings for robust comparison
+            const selectedValues = filterItem.value.map(String);
+            
+            return (value) => {
+                if (value === null || value === undefined) return false;
+                
+                // Para categorias, o valor é um array de IDs.
+                if (Array.isArray(value)) {
+                    return value.some(id => selectedValues.includes(String(id)));
+                }
+                
+                return selectedValues.includes(String(value));
+            };
+        },
+        InputComponent: MultiSelectFilterInput,
+        InputComponentProps: { options },
+    },
+];
+
+const Table_Questoes = ({ 
+    searchQuery = '', 
+    onSuccess, 
+    selectedEixoIds = [], 
+    selectedDimensaoIds = [], 
+    selectedCategoriaIds = [],
+    eixosOptions = [],
+    dimensoesOptions = [],
+    categoriasOptions = []
+}) => {
     const { data: dataQuestoes = [], isLoading: loadingTable, isError } = useGetQuestoesQuery();
     const deleteMutation = useDeleteQuestaoMutation();
     const showNotification = useNotification();
@@ -58,14 +136,18 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
         });
     };
 
-    const rows = useMemo(() => {
-        const term = searchQuery.toLowerCase();
-        return dataQuestoes.filter(q =>
-            (q.descricao || '').toLowerCase().includes(term) ||
-            (q.dimensao?.nome || '').toLowerCase().includes(term) ||
-            (q.dimensao?.eixo?.nome || '').toLowerCase().includes(term)
-        );
-    }, [dataQuestoes, searchQuery]);
+    const rows = useMemo(() => dataQuestoes, [dataQuestoes]);
+
+    const filterModel = useMemo(() => {
+        const items = [];
+        // Se houver pesquisa, aplicamos na descrição. 
+        // Nota: O DataGrid Community filtra as colunas com lógica AND.
+        if (searchQuery) items.push({ field: 'descricao', operator: 'contains', value: searchQuery });
+        if (selectedEixoIds.length > 0) items.push({ field: 'eixo', operator: 'isAnyOf', value: selectedEixoIds });
+        if (selectedDimensaoIds.length > 0) items.push({ field: 'dimensao', operator: 'isAnyOf', value: selectedDimensaoIds });
+        if (selectedCategoriaIds.length > 0) items.push({ field: 'categorias', operator: 'isAnyOf', value: selectedCategoriaIds });
+        return { items, logicOperator: 'and' }; // logicOperator é padrão, mas garantimos aqui
+    }, [searchQuery, selectedEixoIds, selectedDimensaoIds, selectedCategoriaIds]);
 
     const columns = [
         {
@@ -94,36 +176,46 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
             field: 'eixo',
             headerName: 'Eixo',
             width: 150,
-            valueGetter: (value, row) => row.dimensao?.eixo?.nome || 'N/A',
-            renderCell: (params) => (
-                <Chip
-                    label={params.value}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: '#f8fafc', borderColor: '#e2e8f0', fontSize: '0.7rem' }}
-                />
-            )
+            valueGetter: (value, row) => row.dimensao?.eixo?.numero || null,
+            filterOperators: getMultiSelectOperators(eixosOptions),
+            renderCell: (params) => {
+                const label = eixosOptions.find(o => o.value === params.value)?.label?.split('. ')[1] || params.row.dimensao?.eixo?.nome || 'N/A';
+                return (
+                    <Chip
+                        label={label}
+                        size="small"
+                        variant="outlined"
+                        sx={{ bgcolor: '#f8fafc', borderColor: '#e2e8f0', fontSize: '0.7rem' }}
+                    />
+                );
+            }
         },
         {
             field: 'dimensao',
             headerName: 'Dimensão',
             width: 180,
-            valueGetter: (value, row) => row.dimensao?.nome || 'N/A',
-            renderCell: (params) => (
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    {params.value}
-                </Typography>
-            )
+            valueGetter: (value, row) => row.dimensao?.numero || null,
+            filterOperators: getMultiSelectOperators(dimensoesOptions),
+            renderCell: (params) => {
+                const label = dimensoesOptions.find(o => o.value === params.value)?.label || params.row.dimensao?.nome || 'N/A';
+                return (
+                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        {label}
+                    </Typography>
+                );
+            }
         },
         {
             field: 'categorias',
             headerName: 'Categorias',
             width: 180,
             sortable: false,
+            valueGetter: (value, row) => row.categorias?.map(c => c.id) || [],
+            filterOperators: getMultiSelectOperators(categoriasOptions),
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {params.value?.length > 0 ? (
-                        params.value.map(c => (
+                    {params.row.categorias?.length > 0 ? (
+                        params.row.categorias.map(c => (
                             <Chip
                                 key={c.id}
                                 label={c.nome}
@@ -202,6 +294,8 @@ const Table_Questoes = ({ searchQuery = '', onSuccess }) => {
                 density="compact"
                 disableRowSelectionOnClick
                 localeText={ptBR.components.MuiDataGrid.defaultProps.localeText}
+                filterModel={filterModel}
+                onFilterModelChange={() => { }}
                 sx={{
                     border: 'none',
                     '& .MuiDataGrid-cell': { py: 1 },

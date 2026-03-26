@@ -1,12 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import TableQuestoes from '../components/Tables/Table_Questoes';
 import ModalQuestoes from '../components/Modals/Modal_Questoes';
+import AnimatedMultiSelect from '../components/utils/AnimatedMultiSelect';
 import { useNotification } from '../context/NotificationContext';
+import { useGetEixosQuery } from '../hooks/queries/useEixoQueries';
+import { useGetDimensoesQuery } from '../hooks/queries/useDimensaoQueries';
+import { useGetCategoriasQuery } from '../hooks/queries/useCategoriaQueries';
+
+const filterLabelStyle = {
+    fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block'
+};
 
 const Questoes = () => {
     const [modalShow, setModalShow] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedEixos, setSelectedEixos] = useState([]);
+    const [selectedDimensoes, setSelectedDimensoes] = useState([]);
+    const [selectedCategorias, setSelectedCategorias] = useState([]);
+
     const showNotification = useNotification();
+
+    const { data: eixosData, isLoading: isLoadingEixos } = useGetEixosQuery();
+    const { data: dimensoesData, isLoading: isLoadingDimensoes } = useGetDimensoesQuery();
+    const { data: categoriasData, isLoading: isLoadingCategorias } = useGetCategoriasQuery();
+
+    const eixosOptions = useMemo(() =>
+        eixosData?.map(e => ({ value: e.numero, label: `${e.numero}. ${e.nome}` })) ?? [],
+        [eixosData]);
+
+    const dimensoesOptions = useMemo(() => {
+        if (!dimensoesData) return [];
+        let filtered = dimensoesData;
+        if (selectedEixos.length > 0) {
+            const eixoIds = selectedEixos.map(e => e.value);
+            filtered = dimensoesData.filter(d => eixoIds.includes(d.numero_eixos));
+        }
+        return filtered.map(d => ({ value: d.numero, label: d.nome }));
+    }, [dimensoesData, selectedEixos]);
+
+    const categoriasOptions = useMemo(() =>
+        categoriasData?.map(c => ({ value: c.id, label: c.nome })) ?? [],
+        [categoriasData]);
+
+    // Limpar dimensões selecionadas se deixarem de pertencer aos eixos selecionados
+    React.useEffect(() => {
+        if (selectedEixos.length > 0 && selectedDimensoes.length > 0) {
+            const eixoIds = selectedEixos.map(e => e.value);
+            const validDimensoes = selectedDimensoes.filter(sd => {
+                const dim = dimensoesData?.find(d => d.numero === sd.value);
+                return dim && eixoIds.includes(dim.numero_eixos);
+            });
+            if (validDimensoes.length !== selectedDimensoes.length) {
+                setSelectedDimensoes(validDimensoes);
+            }
+        } else if (selectedEixos.length === 0 && selectedDimensoes.length > 0) {
+            // Se nenhum eixo selecionado, teoricamente todas as dimensões são válidas ou nenhuma?
+            // O usuário disse: "se eu escolher o eixo primeiro vai aparecer somente as dimensoes dele"
+            // Se ele desmarcar todos os eixos, as dimensões continuam lá?
+            // Geralmente é melhor deixar, mas se for estritamente hierárquico pode limpar.
+            // Para ser seguro e evitar confusão, vou manter as dimensões se nenhum eixo estiver selecionado (mostra todas).
+        }
+    }, [selectedEixos, dimensoesData, selectedDimensoes]);
 
     // Chamado quando questão é criada OU atualizada com sucesso
     const handleSuccess = (message) => {
@@ -53,6 +107,22 @@ const Questoes = () => {
                     </button>
                 </div>
 
+                {/* ── Filtros Avançados ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 24, padding: 20, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                    <div>
+                        <label style={filterLabelStyle}>Eixo</label>
+                        <AnimatedMultiSelect placeholder="Selecione os eixos" options={eixosOptions} value={selectedEixos} onChange={setSelectedEixos} disabled={isLoadingEixos} />
+                    </div>
+                    <div>
+                        <label style={filterLabelStyle}>Dimensão</label>
+                        <AnimatedMultiSelect placeholder={selectedEixos.length === 0 ? "Selecione um eixo primeiro" : "Selecione as dimensões"} options={dimensoesOptions} value={selectedDimensoes} onChange={setSelectedDimensoes} disabled={isLoadingDimensoes} />
+                    </div>
+                    <div>
+                        <label style={filterLabelStyle}>Categorias</label>
+                        <AnimatedMultiSelect placeholder="Selecione as categorias" options={categoriasOptions} value={selectedCategorias} onChange={setSelectedCategorias} disabled={isLoadingCategorias} />
+                    </div>
+                </div>
+
                 {/* ── Search bar ── */}
                 <div style={{ marginBottom: 20 }}>
                     <div
@@ -83,11 +153,6 @@ const Questoes = () => {
                             </button>
                         )}
                     </div>
-                    {searchQuery && (
-                        <p style={{ fontSize: 12, color: '#718096', marginTop: 6, marginLeft: 2 }}>
-                            Filtrando por "{searchQuery}"
-                        </p>
-                    )}
                 </div>
 
                 {/* ── Tabela ── */}
@@ -99,6 +164,12 @@ const Questoes = () => {
                     <TableQuestoes
                         searchQuery={searchQuery}
                         onSuccess={handleSuccess}
+                        selectedEixoIds={selectedEixos.map(e => e.value)}
+                        selectedDimensaoIds={selectedDimensoes.map(d => d.value)}
+                        selectedCategoriaIds={selectedCategorias.map(c => c.value)}
+                        eixosOptions={eixosOptions}
+                        dimensoesOptions={dimensoesOptions}
+                        categoriasOptions={categoriasOptions}
                     />
                 </div>
             </div>
