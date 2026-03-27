@@ -5,6 +5,8 @@ import DrawerAvaliacaoDetalhes from '../components/DrawerAvaliacaoDetalhes';
 import AnimatedMultiSelect from '../components/utils/AnimatedMultiSelect';
 import { useNotification } from '../context/NotificationContext';
 import { useGetModalidadesQuery } from '../hooks/queries/useModalidadeQueries';
+import { useGetUnidadesQuery } from '../hooks/queries/useUnidadeQueries';
+import { useGetCategoriasQuery } from '../hooks/queries/useCategoriaQueries';
 
 // Filtros de status
 const FILTROS = [
@@ -23,6 +25,8 @@ const Avaliacoes = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerAvaliacaoId, setDrawerAvaliacaoId] = useState(null);
     const [selectedModalidades, setSelectedModalidades] = useState([]);
+    const [selectedUnidades, setSelectedUnidades] = useState([]);
+    const [selectedCategorias, setSelectedCategorias] = useState([]);
     const [periodoFilter, setPeriodoFilter] = useState('');
     const [dataInicioFilter, setDataInicioFilter] = useState('');
     const [dataFimFilter, setDataFimFilter] = useState('');
@@ -32,6 +36,19 @@ const Avaliacoes = () => {
     const modalidadesOptions = useMemo(
         () => modalidadesData.filter(Boolean).map(m => ({ value: m.id, label: m.mod_ensino || m.nome })),
         [modalidadesData]
+    );
+
+    const { data: unidadesData = [] } = useGetUnidadesQuery();
+    const unidadesOptions = useMemo(() => {
+        const unique = new Map();
+        unidadesData.forEach(u => { if (u?.nome && !unique.has(u.nome)) unique.set(u.nome, { value: u.id, label: u.nome }); });
+        return Array.from(unique.values());
+    }, [unidadesData]);
+
+    const { data: categoriasData = [] } = useGetCategoriasQuery();
+    const categoriasOptions = useMemo(
+        () => categoriasData.filter(Boolean).map(c => ({ value: c.id, label: c.nome })),
+        [categoriasData]
     );
 
     const extraFilters = useMemo(() => {
@@ -48,8 +65,14 @@ const Avaliacoes = () => {
         if (selectedModalidades.length > 0) {
             filters.push({ id: 'modalidades', field: 'modalidades', operator: 'isAnyOf', value: selectedModalidades.map(m => m.label) });
         }
+        if (selectedUnidades.length > 0) {
+            filters.push({ id: 'unidade', field: 'unidade', operator: 'isAnyOf', value: selectedUnidades.map(u => u.label) });
+        }
+        if (selectedCategorias.length > 0) {
+            filters.push({ id: 'categorias', field: 'categorias', operator: 'isAnyOf', value: selectedCategorias.map(c => c.value) });
+        }
         return filters;
-    }, [periodoFilter, dataInicioFilter, dataFimFilter, selectedModalidades]);
+    }, [periodoFilter, dataInicioFilter, dataFimFilter, selectedModalidades, selectedUnidades, selectedCategorias]);
 
     const handleVerDetalhes = (id) => {
         setDrawerAvaliacaoId(id);
@@ -141,6 +164,24 @@ const Avaliacoes = () => {
                                 options={modalidadesOptions}
                                 value={selectedModalidades}
                                 onChange={setSelectedModalidades}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Unidade</label>
+                            <AnimatedMultiSelect
+                                placeholder="Selecione..."
+                                options={unidadesOptions}
+                                value={selectedUnidades}
+                                onChange={setSelectedUnidades}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Categoria</label>
+                            <AnimatedMultiSelect
+                                placeholder="Selecione..."
+                                options={categoriasOptions}
+                                value={selectedCategorias}
+                                onChange={setSelectedCategorias}
                             />
                         </div>
                     </div>

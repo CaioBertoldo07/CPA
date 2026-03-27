@@ -13,7 +13,7 @@ import {
 } from '../../hooks/mutations/useAvaliacaoMutations';
 import { DataGrid, getGridStringOperators } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autocomplete, TextField } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autocomplete, TextField, Popover } from '@mui/material';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 
 const STATUS_MAP = {
@@ -77,6 +77,71 @@ const modalidadesFilterOperators = [
     },
     ...supportedStringFilterOperators,
 ];
+
+const unidadesFilterOperators = [
+    {
+        label: 'contém alguma de',
+        value: 'isAnyOf',
+        getApplyFilterFn: (filterItem) => {
+            if (!filterItem.value?.length) return null;
+            return (value) => filterItem.value.some(v => value?.includes(v));
+        },
+    },
+];
+
+const UnidadesCell = ({ unidades = [] }) => {
+    const [anchor, setAnchor] = useState(null);
+    const visible = unidades.slice(0, 2);
+    const hidden = unidades.slice(2);
+
+    return (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+            {visible.map((u, i) => (
+                <Chip
+                    key={i}
+                    label={u.sigla?.trim() || u.nome}
+                    size="small"
+                    variant="outlined"
+                    title={u.nome}
+                    sx={{ bgcolor: '#f0f9ff', color: '#0369a1', fontSize: '0.65rem', border: '1px solid #bae6fd', height: 20, '& .MuiChip-label': { px: 1 } }}
+                />
+            ))}
+            {hidden.length > 0 && (
+                <>
+                    <Chip
+                        label={`+${hidden.length} unidade${hidden.length > 1 ? 's' : ''}`}
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); setAnchor(e.currentTarget); }}
+                        sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.65rem', height: 20, cursor: 'pointer', '& .MuiChip-label': { px: 1 }, '&:hover': { bgcolor: '#e2e8f0' } }}
+                    />
+                    <Popover
+                        open={Boolean(anchor)}
+                        anchorEl={anchor}
+                        onClose={() => setAnchor(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                        PaperProps={{ sx: { p: 1.5, maxWidth: 300, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', borderRadius: 2 } }}
+                    >
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', display: 'block', mb: 1 }}>
+                            Todas as unidades
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {unidades.map((u, i) => (
+                                <Chip
+                                    key={i}
+                                    label={u.sigla?.trim() ? `${u.sigla.trim()} — ${u.nome}` : u.nome}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ bgcolor: '#f0f9ff', color: '#0369a1', fontSize: '0.65rem', border: '1px solid #bae6fd', height: 20, '& .MuiChip-label': { px: 1 } }}
+                                />
+                            ))}
+                        </Box>
+                    </Popover>
+                </>
+            )}
+        </Box>
+    );
+};
 
 const fmt = d => {
     if (!d) return '—';
@@ -205,8 +270,39 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                 </Box>
             )
         },
+        {
+            field: 'unidade',
+            headerName: 'Unidades',
+            type: 'string',
+            flex: 1,
+            minWidth: 220,
+            filterOperators: unidadesFilterOperators,
+            valueGetter: (value) => (value || []).map(u => u.nome).join(', '),
+            renderCell: (params) => <UnidadesCell unidades={params.row.unidade || []} />,
+        },
+        {
+            field: 'categorias',
+            headerName: 'Categorias',
+            type: 'string',
+            flex: 1,
+            minWidth: 180,
+            filterOperators: unidadesFilterOperators,
+            valueGetter: (value) => (value || []).map(c => (typeof c === 'object' ? c.nome : c)).join(', '),
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                    {(params.row.categorias || []).map((c, i) => (
+                        <Chip
+                            key={i}
+                            label={typeof c === 'object' ? c.nome : c}
+                            size="small"
+                            variant="outlined"
+                            sx={{ bgcolor: '#faf5ff', color: '#6d28d9', fontSize: '0.65rem', border: '1px solid #ddd6fe', height: 20, '& .MuiChip-label': { px: 1 } }}
+                        />
+                    ))}
+                </Box>
+            ),
+        },
         { field: 'periodo_letivo', headerName: 'Período', type: 'string', width: 120, filterOperators: supportedStringFilterOperators, renderCell: (params) => <Box sx={{ display: 'flex', alignItems: 'center' }}><Typography variant="body2" sx={{ fontWeight: 600 }}>{params.value}</Typography></Box> },
-        { field: 'ano', headerName: 'Ano', type: 'string', width: 80, filterOperators: supportedStringFilterOperators },
         {
             field: 'data_inicio',
             headerName: 'Início',
@@ -421,6 +517,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                 filterModel={filterModel}
                 onFilterModelChange={() => {}}
                 pageSizeOptions={[10, 25, 50]}
+                getRowHeight={() => 'auto'}
                 initialState={{
                     pagination: { paginationModel: { pageSize: 10 } },
                 }}
