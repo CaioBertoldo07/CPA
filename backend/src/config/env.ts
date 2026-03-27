@@ -11,6 +11,7 @@ const envSchema = z.object({
     DISABLE_SSL_VALIDATION: z.enum(['true', 'false']).optional().default('false'),
     ALLOWED_ORIGINS: z.string().optional(),
     ENABLE_SWAGGER: z.enum(['true', 'false']).optional().default('true'),
+    SWAGGER_SERVER_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

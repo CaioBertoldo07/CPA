@@ -3,6 +3,12 @@ import swaggerUi from 'swagger-ui-express';
 import { Express } from 'express';
 import { env, isProduction } from './env';
 
+const swaggerServerUrl = env.SWAGGER_SERVER_URL
+    ? env.SWAGGER_SERVER_URL
+    : isProduction
+        ? '/'
+        : `http://localhost:${env.PORT}`;
+
 const options: swaggerJSDoc.Options = {
     definition: {
         openapi: '3.0.0',
@@ -13,8 +19,8 @@ const options: swaggerJSDoc.Options = {
         },
         servers: [
             {
-                url: 'http://localhost:3034',
-                description: 'Development Server',
+                url: swaggerServerUrl,
+                description: isProduction ? 'Production Server' : 'Development Server',
             },
         ],
         components: {
