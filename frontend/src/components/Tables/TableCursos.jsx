@@ -150,7 +150,7 @@ const columns = [
     {
         field: 'unidades',
         headerName: 'Cidade',
-        width: 150,
+        flex:1,
         valueGetter: (_, row) => row.unidades?.nome ?? '—',
         filterOperators: getMultiSelectOperators([]), // Será sobrescrito no componente
     },

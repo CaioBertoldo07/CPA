@@ -4,7 +4,7 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../../api/tokenStore';
 import HeaderAluno from './HeaderAluno';
-import SidebarAluno, { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './SidebarAluno';
+import SidebarAluno from './SidebarAluno';
 
 const LayoutAluno = ({ children }) => {
     const navigate = useNavigate();
@@ -32,7 +32,6 @@ const LayoutAluno = ({ children }) => {
     };
 
     const collapsed = isTablet;
-    const sidebarWidth = isMobile ? 0 : collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
@@ -48,8 +47,6 @@ const LayoutAluno = ({ children }) => {
                     flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    ml: `${sidebarWidth}px`,
-                    transition: 'margin-left 0.2s ease',
                     minWidth: 0,
                 }}
             >

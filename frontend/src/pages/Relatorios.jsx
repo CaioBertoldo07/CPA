@@ -267,7 +267,7 @@ const Relatorios = () => {
     /* ── Respondentes por categoria — GET /dashboard/estatisticas-categorias ── */
     const { data: dashboardCategorias } = useGetDashboardCategoriasQuery();
     const categoriasData = useMemo(
-        () => (dashboardCategorias?.categorias ?? []).filter(c => c.respondentes > 0),
+        () => (Array.isArray(dashboardCategorias) ? dashboardCategorias : []).filter(c => c.respondentes > 0),
         [dashboardCategorias],
     );
 
