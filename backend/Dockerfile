@@ -5,10 +5,10 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Instale as dependências separando o processo de cópia
-COPY package.json package-lock.json ./
+COPY package.json ./
 
 # Instale as dependências incluindo devDependencies
-RUN npm ci
+RUN npm install
 
 # Copie o restante do código da aplicação
 COPY . .
