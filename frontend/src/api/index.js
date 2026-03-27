@@ -6,9 +6,14 @@ const configuredBackendUrl =
     import.meta.env.VITE_API_URL ||
     import.meta.env.REACT_APP_BACKEND_URL ||
     '';
-const normalizedBackendUrl = configuredBackendUrl
-    ? configuredBackendUrl.replace(/\/+$/, '')
-    : '';
+
+const normalizeBackendBaseUrl = (rawUrl) => {
+    if (!rawUrl) return '';
+    const noTrailingSlash = rawUrl.replace(/\/+$/, '');
+    return noTrailingSlash.replace(/\/api$/i, '');
+};
+
+const normalizedBackendUrl = normalizeBackendBaseUrl(configuredBackendUrl);
 
 const fallbackBaseUrl = import.meta.env.DEV
     ? 'http://localhost:3034/api'
