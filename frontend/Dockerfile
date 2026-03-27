@@ -12,4 +12,4 @@ RUN npm run build
 
 # Instala "serve" globalmente e define o comando padrão para rodar o servidor
 RUN npm install -g serve
-CMD ["serve", "-s", "build", "-l", "3050"]
+CMD ["serve", "-s", "dist", "-l", "3050"]
