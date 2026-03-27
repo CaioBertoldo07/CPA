@@ -13,7 +13,8 @@ const fmt = d => {
 const STATUS_MAP = {
     1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
     2: { label: 'Enviada',   bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
-    3: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
+    3: { label: 'Ativa',     bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
+    4: { label: 'Encerrada', bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
 };
 
 /* ── icons ────────────────────────────────────────────────────── */

@@ -33,6 +33,12 @@ const IconDraft = () => (
         <line x1="16" y1="17" x2="8" y2="17" />
     </svg>
 );
+const IconActive = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="10 8 16 12 10 16 10 8" />
+    </svg>
+);
 const IconChart = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10" />
@@ -44,8 +50,9 @@ const IconChart = () => (
 /* ───────── Chart color palette ───────── */
 const CHART_COLORS = {
     encerrada: '#ef4444',
-    enviada: '#3b82f6',
-    rascunho: '#94a3b8',
+    ativa:     '#22c55e',
+    enviada:   '#3b82f6',
+    rascunho:  '#94a3b8',
 };
 
 /* ───────── StatCard ───────── */
@@ -218,17 +225,19 @@ const Relatorios = () => {
     }, [isError, showNotification]);
 
     const total = avaliacoes.length;
-    const enviadas = avaliacoes.filter(a => a.status === 2).length;
-    const encerradas = avaliacoes.filter(a => a.status === 3).length;
-    const rascunhos = avaliacoes.filter(a => a.status === 1).length;
+    const rascunhos  = avaliacoes.filter(a => a.status === 1).length;
+    const enviadas   = avaliacoes.filter(a => a.status === 2).length;
+    const ativas     = avaliacoes.filter(a => a.status === 3).length;
+    const encerradas = avaliacoes.filter(a => a.status === 4).length;
     const progressPct = total > 0 ? Math.round((encerradas / total) * 100) : 0;
 
     /* ── Chart data ── */
     const statusData = useMemo(() => [
-        { name: 'Rascunho', value: rascunhos, color: CHART_COLORS.rascunho },
-        { name: 'Enviada', value: enviadas, color: CHART_COLORS.enviada },
+        { name: 'Rascunho',  value: rascunhos,  color: CHART_COLORS.rascunho  },
+        { name: 'Enviada',   value: enviadas,   color: CHART_COLORS.enviada   },
+        { name: 'Ativa',     value: ativas,     color: CHART_COLORS.ativa     },
         { name: 'Encerrada', value: encerradas, color: CHART_COLORS.encerrada },
-    ].filter(d => d.value > 0), [rascunhos, enviadas, encerradas]);
+    ].filter(d => d.value > 0), [rascunhos, enviadas, ativas, encerradas]);
 
     const anoData = useMemo(() => {
         const counts = {};
@@ -263,10 +272,11 @@ const Relatorios = () => {
     );
 
     const stats = [
-        { icon: <IconClipboard />, label: 'Total de Avaliações', value: total, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
-        { icon: <IconSend />, label: 'Enviadas', value: enviadas, topColor: '#3b82f6', iconBg: '#dbeafe', delay: 70 },
-        { icon: <IconLock />, label: 'Encerradas', value: encerradas, topColor: '#ef4444', iconBg: '#fee2e2', delay: 140 },
-        { icon: <IconDraft />, label: 'Rascunhos', value: rascunhos, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 210 },
+        { icon: <IconClipboard />, label: 'Total de Avaliações', value: total,      topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0   },
+        { icon: <IconSend />,      label: 'Enviadas',             value: enviadas,   topColor: '#3b82f6', iconBg: '#dbeafe', delay: 55  },
+        { icon: <IconActive />,    label: 'Ativas',               value: ativas,     topColor: '#22c55e', iconBg: '#dcfce7', delay: 110 },
+        { icon: <IconLock />,      label: 'Encerradas',           value: encerradas, topColor: '#ef4444', iconBg: '#fee2e2', delay: 165 },
+        { icon: <IconDraft />,     label: 'Rascunhos',            value: rascunhos,  topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 220 },
     ];
 
     return (
