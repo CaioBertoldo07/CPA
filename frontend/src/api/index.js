@@ -14,12 +14,6 @@ const fallbackBaseUrl = import.meta.env.DEV
     ? 'http://localhost:3034/api'
     : '/api';
 
-if (!normalizedBackendUrl && !import.meta.env.DEV) {
-    console.warn(
-        'API URL não configurada. Usando /api. Em deploy separado (ex.: Railway), defina VITE_BACKEND_URL.'
-    );
-}
-
 const api = axios.create({
     baseURL: normalizedBackendUrl ? `${normalizedBackendUrl}/api` : fallbackBaseUrl,
 });

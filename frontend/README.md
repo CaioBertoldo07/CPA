@@ -14,6 +14,11 @@ Copie `.env.example` para `.env` e ajuste se necessário.
 	- vazio: usa `/api` (recomendado para deploy com reverse proxy)
 	- preenchido: usa URL absoluta (ex.: `https://api.seudominio.com`)
 
+- `API_PROXY_URL` (runtime do container Nginx)
+	- usado para proxy de `/api` no frontend container
+	- local Docker Compose: `http://backend:3034`
+	- Railway (frontend e backend separados): `https://<seu-backend>.up.railway.app`
+
 ## Deploy com Docker Compose
 
 Comando na raiz do projeto:

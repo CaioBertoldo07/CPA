@@ -24,6 +24,8 @@ services:
     build: ./frontend
     container_name: frontend-cpa
     restart: always
+    environment:
+      - API_PROXY_URL=http://backend:3034
     ports:
       - "3050:80"
     depends_on:
