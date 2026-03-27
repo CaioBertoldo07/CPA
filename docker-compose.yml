@@ -25,10 +25,9 @@ services:
     container_name: frontend-cpa
     restart: always
     environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
+      - API_PROXY_URL=http://backend:3034
     ports:
-      - "3050:3050"
+      - "3050:80"
     depends_on:
       - backend
     networks:

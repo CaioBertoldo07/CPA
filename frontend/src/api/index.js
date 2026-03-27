@@ -1,8 +1,26 @@
 import axios from 'axios';
 import { getToken, clearAll } from './tokenStore';
 
+const configuredBackendUrl =
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.REACT_APP_BACKEND_URL ||
+    '';
+
+const normalizeBackendBaseUrl = (rawUrl) => {
+    if (!rawUrl) return '';
+    const noTrailingSlash = rawUrl.replace(/\/+$/, '');
+    return noTrailingSlash.replace(/\/api$/i, '');
+};
+
+const normalizedBackendUrl = normalizeBackendBaseUrl(configuredBackendUrl);
+
+const baseURL = normalizedBackendUrl
+    ? `${normalizedBackendUrl}/api`
+    : (import.meta.env.DEV ? 'http://localhost:3034/api' : '/api');
+
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3034'}/api`,
+    baseURL,
 });
 
 // Interceptor de requisição para adicionar o token no cabeçalho
