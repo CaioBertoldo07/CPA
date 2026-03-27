@@ -1,6 +1,9 @@
 # Use a imagem oficial do Node.js como base
 FROM node:20-alpine
 
+# Instale dependências do sistema necessárias para o Prisma
+RUN apk add --no-cache libc6-compat openssl ca-certificates
+
 # Defina o diretório de trabalho dentro do container
 WORKDIR /app
 
