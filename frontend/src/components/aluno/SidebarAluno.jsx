@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import {
     IoDocumentTextOutline,
-    IoTimeOutline,
     IoHelpCircleOutline,
 } from 'react-icons/io5';
 
@@ -21,9 +20,8 @@ const SIDEBAR_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 const navItems = [
-    { id: 'avaliacoes', label: 'Minhas Avaliações',  path: '/alunos/avaliacoes', icon: IoDocumentTextOutline },
-    { id: 'historico',  label: 'Histórico',          path: '/alunos/historico',  icon: IoTimeOutline },
-    { id: 'ajuda',      label: 'Ajuda',              path: '/alunos/ajuda',      icon: IoHelpCircleOutline },
+    { id: 'avaliacoes', label: 'Minhas Avaliações', path: '/alunos/avaliacoes', icon: IoDocumentTextOutline },
+    { id: 'ajuda',      label: 'Ajuda',             path: '/alunos/ajuda',      icon: IoHelpCircleOutline },
 ];
 
 const SidebarContent = ({ onNavigate, collapsed }) => {

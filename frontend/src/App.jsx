@@ -11,7 +11,6 @@ import Questoes from './pages/Questoes';
 import Modalidades from './pages/Modalidades';
 import { Navigate } from 'react-router-dom';
 import AlunoAvaliacoes from './pages/aluno/AlunoAvaliacoes';
-import AlunoHistorico from './pages/aluno/AlunoHistorico';
 import AlunoAjuda from './pages/aluno/AlunoAjuda';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 import Categorias from "./pages/Categorias";
@@ -81,7 +80,6 @@ const App = () => {
                         {/* Student Routes */}
                         <Route path="/alunos" element={<Navigate to="/alunos/avaliacoes" replace />} />
                         <Route path="/alunos/avaliacoes" element={<ProtectedRoute element={AlunoAvaliacoes} />} />
-                        <Route path="/alunos/historico" element={<ProtectedRoute element={AlunoHistorico} />} />
                         <Route path="/alunos/ajuda" element={<ProtectedRoute element={AlunoAjuda} />} />
                         <Route
                             path="/alunos/avaliacao/:id"
