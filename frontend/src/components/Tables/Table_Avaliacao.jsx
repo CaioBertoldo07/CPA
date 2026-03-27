@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
 import { FaTrash, FaPencil } from 'react-icons/fa6';
 import { IoEyeOutline, IoSearchOutline } from 'react-icons/io5';
@@ -84,28 +84,32 @@ const fmt = d => {
     return new Date(datePart + 'T00:00:00').toLocaleDateString('pt-BR');
 };
 
-const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetalhes, onEditar }) => {
+const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], onSuccess, onVerDetalhes, onEditar }) => {
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-    const [filterModel, setFilterModel] = useState({ items: [] });
-    const [debouncedFilters, setDebouncedFilters] = useState([]);
+    const [debouncedExtraFilters, setDebouncedExtraFilters] = useState(extraFilters);
 
-    // Debounce dos filtros de coluna para não disparar request a cada tecla
+    // Debounce dos filtros do painel para não disparar request a cada tecla
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedFilters(filterModel.items), 400);
+        const t = setTimeout(() => setDebouncedExtraFilters(extraFilters), 400);
         return () => clearTimeout(t);
-    }, [filterModel]);
+    }, [extraFilters]);
 
     // Reseta para página 0 quando qualquer filtro muda
     useEffect(() => {
         setPaginationModel(prev => prev.page === 0 ? prev : { ...prev, page: 0 });
-    }, [filtroStatus, searchQuery, debouncedFilters]);
+    }, [filtroStatus, searchQuery, debouncedExtraFilters]);
+
+    // filterModel controlado pelos filtros do painel — exibe ícones ativos nas colunas
+    const filterModel = useMemo(() => ({
+        items: debouncedExtraFilters.map((f, i) => ({ id: f.id ?? `extra-${i}`, ...f })),
+    }), [debouncedExtraFilters]);
 
     const { data: response, isLoading: loading, isError } = useGetAvaliacoesQuery({
         page: paginationModel.page,
         pageSize: paginationModel.pageSize,
         status: filtroStatus ?? undefined,
         search: searchQuery || undefined,
-        columnFilters: debouncedFilters.length ? debouncedFilters : undefined,
+        columnFilters: debouncedExtraFilters.length ? debouncedExtraFilters : undefined,
     });
 
     const avaliacoes = response?.data ?? [];
@@ -415,7 +419,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', onSuccess, onVerDetal
                 onPaginationModelChange={setPaginationModel}
                 filterMode="server"
                 filterModel={filterModel}
-                onFilterModelChange={(model) => setFilterModel(model)}
+                onFilterModelChange={() => {}}
                 pageSizeOptions={[10, 25, 50]}
                 initialState={{
                     pagination: { paginationModel: { pageSize: 10 } },

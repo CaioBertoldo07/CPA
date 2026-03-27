@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import TableAvaliacao from '../components/Tables/Table_Avaliacao';
 import ModalAvaliacoes from '../components/Modals/Modal_Avaliacoes';
 import DrawerAvaliacaoDetalhes from '../components/DrawerAvaliacaoDetalhes';
+import AnimatedMultiSelect from '../components/utils/AnimatedMultiSelect';
 import { useNotification } from '../context/NotificationContext';
+import { useGetModalidadesQuery } from '../hooks/queries/useModalidadeQueries';
 
 // Filtros de status
 const FILTROS = [
     { label: 'Todos', status: null },
     { label: 'Rascunho', status: 1 },
     { label: 'Enviadas', status: 2 },
-    { label: 'Encerradas', status: 3 },
+    { label: 'Ativas', status: 3 },
+    { label: 'Encerradas', status: 4 },
 ];
 
 const Avaliacoes = () => {
@@ -19,7 +22,34 @@ const Avaliacoes = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerAvaliacaoId, setDrawerAvaliacaoId] = useState(null);
+    const [selectedModalidades, setSelectedModalidades] = useState([]);
+    const [periodoFilter, setPeriodoFilter] = useState('');
+    const [dataInicioFilter, setDataInicioFilter] = useState('');
+    const [dataFimFilter, setDataFimFilter] = useState('');
     const showNotification = useNotification();
+
+    const { data: modalidadesData = [] } = useGetModalidadesQuery();
+    const modalidadesOptions = useMemo(
+        () => modalidadesData.filter(Boolean).map(m => ({ value: m.id, label: m.mod_ensino || m.nome })),
+        [modalidadesData]
+    );
+
+    const extraFilters = useMemo(() => {
+        const filters = [];
+        if (periodoFilter) {
+            filters.push({ id: 'periodo', field: 'periodo_letivo', operator: 'contains', value: periodoFilter });
+        }
+        if (dataInicioFilter) {
+            filters.push({ id: 'data_inicio', field: 'data_inicio', operator: 'onOrAfter', value: new Date(dataInicioFilter + 'T00:00:00') });
+        }
+        if (dataFimFilter) {
+            filters.push({ id: 'data_fim', field: 'data_fim', operator: 'onOrBefore', value: new Date(dataFimFilter + 'T23:59:59') });
+        }
+        if (selectedModalidades.length > 0) {
+            filters.push({ id: 'modalidades', field: 'modalidades', operator: 'isAnyOf', value: selectedModalidades.map(m => m.label) });
+        }
+        return filters;
+    }, [periodoFilter, dataInicioFilter, dataFimFilter, selectedModalidades]);
 
     const handleVerDetalhes = (id) => {
         setDrawerAvaliacaoId(id);
@@ -71,6 +101,49 @@ const Avaliacoes = () => {
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
                         Nova Avaliação
                     </button>
+                </div>
+
+                {/* ── Filtros Avançados ── */}
+                <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Período Letivo</label>
+                            <input
+                                type="text"
+                                placeholder="Ex: 2024.1"
+                                value={periodoFilter}
+                                onChange={e => setPeriodoFilter(e.target.value)}
+                                style={{ borderRadius: 8, border: '1px solid #e2e8f0', padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Data Início</label>
+                            <input
+                                type="date"
+                                value={dataInicioFilter}
+                                onChange={e => setDataInicioFilter(e.target.value)}
+                                style={{ borderRadius: 8, border: '1px solid #e2e8f0', padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Data Fim</label>
+                            <input
+                                type="date"
+                                value={dataFimFilter}
+                                onChange={e => setDataFimFilter(e.target.value)}
+                                style={{ borderRadius: 8, border: '1px solid #e2e8f0', padding: '8px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Modalidade</label>
+                            <AnimatedMultiSelect
+                                placeholder="Selecione..."
+                                options={modalidadesOptions}
+                                value={selectedModalidades}
+                                onChange={setSelectedModalidades}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 {/* ── Filtros + Busca ── */}
@@ -125,6 +198,7 @@ const Avaliacoes = () => {
                     <TableAvaliacao
                         filtroStatus={filtroStatus}
                         searchQuery={searchQuery}
+                        extraFilters={extraFilters}
                         onVerDetalhes={handleVerDetalhes}
                         onEditar={handleEditar}
                     />
