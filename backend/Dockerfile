@@ -27,7 +27,7 @@ USER appuser
 EXPOSE 3034
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-	CMD wget -qO- http://127.0.0.1:3034/health >/dev/null 2>&1 || exit 1
+    CMD wget -qO- http://127.0.0.1:3034/health >/dev/null 2>&1 || exit 1
 
 # Comando modificado para garantir a inicialização correta
 CMD ["sh", "-c", "npm run migrate && npm start"]
