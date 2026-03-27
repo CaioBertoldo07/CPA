@@ -1,8 +1,27 @@
 import axios from 'axios';
 import { getToken, clearAll } from './tokenStore';
 
+const configuredBackendUrl =
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.REACT_APP_BACKEND_URL ||
+    '';
+const normalizedBackendUrl = configuredBackendUrl
+    ? configuredBackendUrl.replace(/\/+$/, '')
+    : '';
+
+const fallbackBaseUrl = import.meta.env.DEV
+    ? 'http://localhost:3034/api'
+    : '/api';
+
+if (!normalizedBackendUrl && !import.meta.env.DEV) {
+    console.warn(
+        'API URL não configurada. Usando /api. Em deploy separado (ex.: Railway), defina VITE_BACKEND_URL.'
+    );
+}
+
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3034'}/api`,
+    baseURL: normalizedBackendUrl ? `${normalizedBackendUrl}/api` : fallbackBaseUrl,
 });
 
 // Interceptor de requisição para adicionar o token no cabeçalho

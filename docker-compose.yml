@@ -24,11 +24,8 @@ services:
     build: ./frontend
     container_name: frontend-cpa
     restart: always
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
     ports:
-      - "3050:3050"
+      - "3050:80"
     depends_on:
       - backend
     networks:
