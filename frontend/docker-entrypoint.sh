@@ -1,10 +1,16 @@
 #!/bin/sh
 set -eu
 
-# Keep backward compatibility: if API_PROXY_URL is not provided,
-# reuse VITE_BACKEND_URL so /api proxy works in separated deployments.
-if [ -z "${API_PROXY_URL:-}" ] && [ -n "${VITE_BACKEND_URL:-}" ]; then
-    export API_PROXY_URL="${VITE_BACKEND_URL}"
+# Keep backward compatibility and ensure a normalized proxy URL.
+raw_url="${API_PROXY_URL:-${VITE_BACKEND_URL:-}}"
+
+if [ -n "${raw_url}" ]; then
+    # Trim optional wrapping quotes, trailing slash and optional /api suffix.
+    raw_url="${raw_url#\"}"
+    raw_url="${raw_url%\"}"
+    raw_url="${raw_url%/}"
+    raw_url="${raw_url%/api}"
+    export API_PROXY_URL="${raw_url}"
 fi
 
 exec /docker-entrypoint.sh "$@"

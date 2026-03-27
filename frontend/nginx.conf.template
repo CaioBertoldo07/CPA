@@ -5,10 +5,14 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Required when proxy_pass target is an env-injected domain (Railway URLs).
+    resolver 1.1.1.1 8.8.8.8 valid=300s ipv6=off;
+
     location /api/ {
-        proxy_pass ${VITE_BACKEND_URL}/api/;
+        proxy_pass ${API_PROXY_URL}/api/;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        proxy_ssl_server_name on;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
