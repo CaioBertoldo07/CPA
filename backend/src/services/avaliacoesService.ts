@@ -157,6 +157,20 @@ class AvaliacoesService {
                     }
                     break;
                 }
+                case 'categorias': {
+                    if (item.operator === 'isAnyOf') {
+                        const vals = (Array.isArray(item.value) ? item.value : []).map(Number).filter((n: number) => !isNaN(n));
+                        if (vals.length) conditions.push({ categorias: { some: { id: { in: vals } } } });
+                    }
+                    break;
+                }
+                case 'unidade': {
+                    if (item.operator === 'isAnyOf') {
+                        const vals = Array.isArray(item.value) ? (item.value as string[]) : [];
+                        if (vals.length) conditions.push({ unidade: { some: { nome: { in: vals } } } });
+                    }
+                    break;
+                }
             }
         }
         return conditions;

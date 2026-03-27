@@ -14,9 +14,10 @@ RUN npm install
 COPY . .
 
 RUN npx prisma generate
+RUN npm run build
 
 # Expõe a porta da aplicação
 EXPOSE 3034
 
 # Comando modificado para garantir a inicialização correta
-CMD ["sh", "-c", "npm run dev"]
+CMD ["sh", "-c", "npm run migrate && npm start"]

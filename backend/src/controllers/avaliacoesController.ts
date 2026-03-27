@@ -30,8 +30,6 @@ const getAvaliacoesDisponiveis = asyncHandler(async (req: Request, res: Response
     if (!user || !user.curso) return res.status(400).json({ error: 'Curso do usuário não encontrado no token.' });
 
     const avaliacoes = await avaliacoesService.getDisponiveis(user.curso, user.matricula);
-    if (avaliacoes.length === 0) return res.status(404).json({ message: 'Nenhuma avaliação disponível.' });
-
     res.status(200).json(avaliacoes);
 });
 
