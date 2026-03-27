@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Request, Response } from 'express';
 import Avaliador from '../models/Avaliador';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // Get all avaliadores
 const getAvaliadores = async (req: Request, res: Response) => {

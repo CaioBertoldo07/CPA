@@ -1,13 +1,14 @@
 import axios, { AxiosInstance } from 'axios';
 import https from 'https';
 import { LyceumCursoDTO } from '../dtos/LyceumDTO';
+import { env, isProduction } from '../config/env';
 
 interface LyceumUnidadesResponse {
     UNIDADECURSOS: LyceumCursoDTO[];
 }
 
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
+    rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
 });
 
 class LyceumService {

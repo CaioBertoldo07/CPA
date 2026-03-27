@@ -1,6 +1,13 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Express } from 'express';
+import { env, isProduction } from './env';
+
+const swaggerServerUrl = env.SWAGGER_SERVER_URL
+    ? env.SWAGGER_SERVER_URL
+    : isProduction
+        ? '/'
+        : `http://localhost:${env.PORT}`;
 
 const options: swaggerJSDoc.Options = {
     definition: {
@@ -12,8 +19,8 @@ const options: swaggerJSDoc.Options = {
         },
         servers: [
             {
-                url: 'http://localhost:3034',
-                description: 'Development Server',
+                url: swaggerServerUrl,
+                description: isProduction ? 'Production Server' : 'Development Server',
             },
         ],
         components: {
@@ -38,6 +45,10 @@ const options: swaggerJSDoc.Options = {
 const swaggerSpec = swaggerJSDoc(options);
 
 export const setupSwagger = (app: Express) => {
+    if (isProduction && !env.ENABLE_SWAGGER) {
+        return;
+    }
+
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
         explorer: true,
         customCss: '.swagger-ui .topbar { display: none }',
