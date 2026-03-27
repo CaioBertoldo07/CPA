@@ -1,11 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { setupSwagger } from './config/swagger';
+import { env, isProduction } from './config/env';
+import prisma from './repositories/prismaClient';
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.use(helmet());
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || env.ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error('Origin não permitida pelo CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.use(express.json({ limit: '1mb' }));
 
 // Initialize Swagger Docs
 setupSwagger(app);
@@ -28,13 +43,10 @@ import respostasRouter from './routes/respostasRouter';
 import tipoQuestoesRouter from './routes/tipoQuestoesRouter';
 import { errorHandler } from './middleware/errorMiddleware';
 
-import dotenv from 'dotenv';
-dotenv.config();
-
 import LyceumService from './services/lyceumService';
 import { CronImportarCursos } from './cron/CronImportarCursos';
 
-const shouldImportCursosOnStart = process.env.IMPORT_CURSOS_ON_START === 'true';
+const shouldImportCursosOnStart = env.IMPORT_CURSOS_ON_START;
 
 if (shouldImportCursosOnStart) {
     let lycService: LyceumService | undefined;
@@ -75,8 +87,19 @@ if (shouldImportCursosOnStart) {
     }
 }
 
-app.use(cors());
-app.use(express.json());
+app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok', environment: env.NODE_ENV });
+});
+
+app.get('/readiness', async (_req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        res.status(200).json({ ready: true });
+    } catch (error) {
+        console.error('Readiness check failed:', error);
+        res.status(503).json({ ready: false });
+    }
+});
 
 // Rota pública — login
 app.use('/api/auth', authRouter);
@@ -104,7 +127,28 @@ app.use('/api/', authenticateToken, authorize(['admin']), adminRouter);
 // Middleware de tratamento de erro (DEVE ser o último)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3034;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+const server = app.listen(env.PORT, () => {
+    console.log(`Servidor rodando na porta ${env.PORT}`);
+});
+
+const shutdown = async (signal: string) => {
+    console.log(`${signal} recebido. Encerrando servidor...`);
+    server.close(async () => {
+        await prisma.$disconnect();
+        console.log('Servidor encerrado com sucesso.');
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error('Timeout ao encerrar servidor. Forçando saída.');
+        process.exit(1);
+    }, isProduction ? 30000 : 10000);
+};
+
+process.on('SIGINT', () => {
+    void shutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
 });

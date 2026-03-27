@@ -6,7 +6,8 @@ const https = require('https');
 
 
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
+    rejectUnauthorized:
+        process.env.NODE_ENV === 'production' && process.env.DISABLE_SSL_VALIDATION !== 'true',
 });
 
 const getDisciplinasAluno = async (ano, semestre, universityToken) => {

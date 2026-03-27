@@ -5,9 +5,10 @@ import { UserResponseDTO } from '../dtos/AuthDTO';
 import axios from 'axios';
 import https from 'https';
 import { hashMatricula } from '../utils/hashUtils';
+import { env, isProduction } from '../config/env';
 
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: process.env.DISABLE_SSL_VALIDATION !== 'true',
+    rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
 });
 
 class AvaliacoesService {

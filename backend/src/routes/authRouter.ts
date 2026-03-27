@@ -1,6 +1,18 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 const router = express.Router();
 import * as authController from '../controllers/authController';
+
+const loginLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 5,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		error: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+	},
+	skipSuccessfulRequests: true,
+});
 
 /**
  * @swagger
@@ -69,7 +81,7 @@ import * as authController from '../controllers/authController';
  *       401:
  *         description: Falha na autenticação
  */
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 // router.post('/login-dev', authController.loginDev);
 
 /**

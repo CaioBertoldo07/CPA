@@ -4,6 +4,7 @@ import https from 'https';
 import * as adminRepository from '../repositories/adminRepository';
 import { AuthLoginDTO, UserResponseDTO } from '../dtos/AuthDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { env, isProduction } from '../config/env';
 
 // Configurações de Permissões
 const PERMISSIONS = {
@@ -13,7 +14,7 @@ const PERMISSIONS = {
 
 // Agente HTTPS que ignora certificados (necessário para APIs legadas da UEA)
 const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
+    rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
 });
 
 class AuthService {
@@ -93,7 +94,7 @@ class AuthService {
             };
 
             // 4. Gerar Token JWT do Backend
-            const jwtSecret = process.env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
+            const jwtSecret = env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
             const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
             user.token = token;
 
