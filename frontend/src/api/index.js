@@ -15,12 +15,12 @@ const normalizeBackendBaseUrl = (rawUrl) => {
 
 const normalizedBackendUrl = normalizeBackendBaseUrl(configuredBackendUrl);
 
-const fallbackBaseUrl = import.meta.env.DEV
-    ? 'http://localhost:3034/api'
-    : '/api';
+const baseURL = normalizedBackendUrl
+    ? `${normalizedBackendUrl}/api`
+    : (import.meta.env.DEV ? 'http://localhost:3034/api' : '/api');
 
 const api = axios.create({
-    baseURL: normalizedBackendUrl ? `${normalizedBackendUrl}/api` : fallbackBaseUrl,
+    baseURL,
 });
 
 // Interceptor de requisição para adicionar o token no cabeçalho
