@@ -1,8 +1,18 @@
 import api from './index';
 
-export const getCursosByUnidades = (unidadeIds) => {
-    const ids = Array.isArray(unidadeIds) ? unidadeIds : [unidadeIds];
-    return api.get(`/cursos/by-unidades`, { params: { unidadeIds: ids.join(',') } });
+export const getCursosByUnidades = (unidadeIds, modalidadeIds = []) => {
+    const ids = (Array.isArray(unidadeIds) ? unidadeIds : [unidadeIds])
+        .map(id => Number(id))
+        .filter(id => Number.isFinite(id));
+    const modIds = (Array.isArray(modalidadeIds) ? modalidadeIds : [modalidadeIds])
+        .map(id => Number(id))
+        .filter(id => Number.isFinite(id));
+    const params = {
+        unidadeIds: ids.join(','),
+        modalidadeIds: modIds.join(','),
+    };
+
+    return api.get(`/cursos`, { params });
 };
 
 export const getCursosByModalidades = (modalidadeIds) => {

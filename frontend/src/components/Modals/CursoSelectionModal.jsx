@@ -20,17 +20,19 @@ import { IoSearchOutline } from 'react-icons/io5';
 import MuiBaseModal from '../utils/MuiBaseModal';
 import { useGetCursosByUnidadesQuery } from '../../hooks/queries/useCursoQueries';
 
-function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas, initialSelectedCursos = [] }) {
+function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas, modalidadesSelecionadas = [], initialSelectedCursos = [] }) {
     const [selectedCursos, setSelectedCursos] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
     const unidadesIds = unidadesSelecionadas?.map(u => u.value) || [];
+    const modalidadesIds = (modalidadesSelecionadas?.map(m => Number(m.value)) || [])
+        .filter(id => Number.isFinite(id));
     const {
         data: response = [],
         isLoading: loading,
         isError,
         error: queryError
-    } = useGetCursosByUnidadesQuery(unidadesIds);
+    } = useGetCursosByUnidadesQuery(unidadesIds, modalidadesIds);
 
     // Normaliza a resposta
     const cursos = useMemo(() => {
@@ -48,7 +50,6 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
         return raw;
     }, [response]);
 
-    // Filtragem por busca
     const filteredCursos = useMemo(() => {
         if (!searchTerm.trim()) return cursos;
         const lowerSearch = searchTerm.toLowerCase();
@@ -166,6 +167,7 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                     placeholder="Buscar curso por nome, código ou modalidade..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={unidadesIds.length === 0 || modalidadesIds.length === 0}
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
@@ -201,6 +203,7 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                                     <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Código</TableCell>
                                     <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Curso</TableCell>
                                     <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Modalidade</TableCell>
+                                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 700 }}>Tipo Curso</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -227,6 +230,11 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                                                     {curso.modalidade_rel?.mod_ensino ?? curso.modalidade ?? '—'}
                                                 </Typography>
                                             </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" sx={{ px: 1, py: 0.25, bgcolor: 'grey.200', borderRadius: 1 }}>
+                                                    {curso.curso_tipo ?? '—'}
+                                                </Typography>
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })}
@@ -235,7 +243,13 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                     </TableContainer>
                 ) : (
                     <Alert severity="info">
-                        {searchTerm ? 'Nenhum curso corresponde à sua busca.' : 'Nenhum curso encontrado para as unidades selecionadas.'}
+                        {unidadesIds.length === 0
+                            ? 'Selecione ao menos uma unidade para buscar cursos.'
+                            : modalidadesIds.length === 0
+                                ? 'Selecione ao menos uma modalidade para buscar cursos.'
+                                : searchTerm
+                                    ? 'Nenhum curso corresponde à sua busca.'
+                                    : 'Nenhum curso encontrado para os filtros selecionados.'}
                     </Alert>
                 )}
             </Box>

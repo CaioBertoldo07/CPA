@@ -35,7 +35,19 @@ const getCursosByUnidadesIds = asyncHandler(async (req: Request, res: Response) 
 });
 
 const getTodosCursos = asyncHandler(async (req: Request, res: Response) => {
-    const cursos = await cursosService.getAll();
+    const filters = {
+        nome: req.query.nome as string,
+        codigo: req.query.codigo as string,
+        curso_tipo: req.query.curso_tipo as string,
+        unidade: req.query.unidade as string,
+        municipio: req.query.municipio as string,
+        unidadeIds: req.query.unidadeIds as string,
+        municipioIds: req.query.municipioIds as string,
+        modalidadeIds: req.query.modalidadeIds as string,
+        unclassified: req.query.unclassified as string,
+        ativo: req.query.ativo as string,
+    };
+    const cursos = await cursosService.getAll(filters);
     res.status(200).json(cursos);
 });
 

@@ -2,8 +2,19 @@ import * as cursosRepository from '../repositories/cursosRepository';
 import { CursoResponseDTO } from '../dtos/CursoDTO';
 
 class CursosService {
-    async getAll(): Promise<CursoResponseDTO[]> {
-        return await cursosRepository.findAll() as CursoResponseDTO[];
+    async getAll(filters?: {
+        nome?: string;
+        codigo?: string;
+        curso_tipo?: string;
+        unidade?: string;
+        municipio?: string;
+        unidadeIds?: string;
+        municipioIds?: string;
+        modalidadeIds?: string;
+        unclassified?: string;
+        ativo?: string;
+    }): Promise<CursoResponseDTO[]> {
+        return await cursosRepository.findAll(filters) as CursoResponseDTO[];
     }
 
     async getByModalidades(modalidadeIds: number[]): Promise<CursoResponseDTO[]> {
