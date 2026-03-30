@@ -50,6 +50,10 @@ class AvaliacoesService {
         };
     }
 
+    private hasDiscenteCategoriaSelecionada(categorias: Array<{ nome?: string }>): boolean {
+        return categorias.some((categoria) => this.normalizeCategoryText(categoria?.nome) === 'DISCENTE');
+    }
+
     private mapAvaliacao(avaliacao: any): AvaliacaoResponseDTO {
         return {
             ...avaliacao,
@@ -76,20 +80,39 @@ class AvaliacoesService {
             ano,
         } = data;
 
+        const cursosSelecionados = cursos || [];
+        const modalidadesSelecionadas = modalidade || [];
+
         // Validações de existência via repositório
-        const [uExist, cExist, catExist, modExist, qExist] = await Promise.all([
+        const [uExist, catExist, qExist] = await Promise.all([
             avaliacaoRepository.validateUnidades(unidade),
-            avaliacaoRepository.validateCursos(cursos),
             avaliacaoRepository.validateCategorias(categorias),
-            avaliacaoRepository.validateModalidades(modalidade),
             avaliacaoRepository.validateQuestoes(questoes)
         ]);
 
         if (uExist.length !== unidade.length) throw new AppError('Uma ou mais unidades não encontradas.', 404);
-        if (cExist.length !== cursos.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
         if (catExist.length !== categorias.length) throw new AppError('Uma ou mais categorias não encontrados.', 404);
-        if (modExist.length !== modalidade.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
         if (qExist.length !== questoes.length) throw new AppError('Uma ou mais questões não encontradas.', 404);
+
+        const temCategoriaDiscente = this.hasDiscenteCategoriaSelecionada(catExist as Array<{ nome?: string }>);
+
+        if (temCategoriaDiscente && modalidadesSelecionadas.length === 0) {
+            throw new AppError('Selecione ao menos uma modalidade quando a categoria DISCENTE for selecionada.', 400);
+        }
+
+        if (modalidadesSelecionadas.length > 0) {
+            const modExist = await avaliacaoRepository.validateModalidades(modalidadesSelecionadas);
+            if (modExist.length !== modalidadesSelecionadas.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
+        }
+
+        if (temCategoriaDiscente && cursosSelecionados.length === 0) {
+            throw new AppError('Selecione ao menos um curso quando a categoria DISCENTE for selecionada.', 400);
+        }
+
+        if (cursosSelecionados.length > 0) {
+            const cExist = await avaliacaoRepository.validateCursos(cursosSelecionados);
+            if (cExist.length !== cursosSelecionados.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
+        }
 
         const avaliacao = await avaliacaoRepository.create({
             periodo_letivo,
@@ -98,13 +121,13 @@ class AvaliacoesService {
             status,
             ano,
             unidade: { connect: unidade.map(id => ({ id })) },
-            modalidades: { connect: modalidade.map(id => ({ id })) },
+            modalidades: { connect: modalidadesSelecionadas.map(id => ({ id })) },
             avaliacao_questoes: {
                 create: questoes.map(questaoId => ({
                     questoes: { connect: { id: questaoId } },
                 })),
             },
-            cursos: { connect: cursos.map(identificador => ({ identificador_api_lyceum: identificador })) },
+            cursos: { connect: cursosSelecionados.map(identificador => ({ identificador_api_lyceum: identificador })) },
             categorias: { connect: categorias.map(id => ({ id })) },
         });
 
@@ -336,20 +359,38 @@ class AvaliacoesService {
         if (existing.status !== 1) throw new AppError('Apenas rascunhos podem ser editados.', 400);
 
         const { unidade, cursos, categorias, modalidade, questoes, periodo_letivo, data_inicio, data_fim, ano } = data;
+        const cursosSelecionados = cursos || [];
+        const modalidadesSelecionadas = modalidade || [];
 
-        const [uExist, cExist, catExist, modExist, qExist] = await Promise.all([
+        const [uExist, catExist, qExist] = await Promise.all([
             avaliacaoRepository.validateUnidades(unidade),
-            avaliacaoRepository.validateCursos(cursos),
             avaliacaoRepository.validateCategorias(categorias),
-            avaliacaoRepository.validateModalidades(modalidade),
             avaliacaoRepository.validateQuestoes(questoes)
         ]);
 
         if (uExist.length !== unidade.length) throw new AppError('Uma ou mais unidades não encontradas.', 404);
-        if (cExist.length !== cursos.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
         if (catExist.length !== categorias.length) throw new AppError('Uma ou mais categorias não encontrados.', 404);
-        if (modExist.length !== modalidade.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
         if (qExist.length !== questoes.length) throw new AppError('Uma ou mais questões não encontradas.', 404);
+
+        const temCategoriaDiscente = this.hasDiscenteCategoriaSelecionada(catExist as Array<{ nome?: string }>);
+
+        if (temCategoriaDiscente && modalidadesSelecionadas.length === 0) {
+            throw new AppError('Selecione ao menos uma modalidade quando a categoria DISCENTE for selecionada.', 400);
+        }
+
+        if (modalidadesSelecionadas.length > 0) {
+            const modExist = await avaliacaoRepository.validateModalidades(modalidadesSelecionadas);
+            if (modExist.length !== modalidadesSelecionadas.length) throw new AppError('Uma ou mais modalidades não encontradas.', 404);
+        }
+
+        if (temCategoriaDiscente && cursosSelecionados.length === 0) {
+            throw new AppError('Selecione ao menos um curso quando a categoria DISCENTE for selecionada.', 400);
+        }
+
+        if (cursosSelecionados.length > 0) {
+            const cExist = await avaliacaoRepository.validateCursos(cursosSelecionados);
+            if (cExist.length !== cursosSelecionados.length) throw new AppError('Um ou mais cursos não encontrados.', 404);
+        }
 
         const avaliacao = await avaliacaoRepository.update(id, {
             periodo_letivo,
@@ -357,8 +398,8 @@ class AvaliacoesService {
             data_fim: new Date(data_fim),
             ano,
             unidade: { set: unidade.map(uid => ({ id: uid })) },
-            modalidades: { set: modalidade.map(mid => ({ id: mid })) },
-            cursos: { set: cursos.map(identificador => ({ identificador_api_lyceum: identificador })) },
+            modalidades: { set: modalidadesSelecionadas.map(mid => ({ id: mid })) },
+            cursos: { set: cursosSelecionados.map(identificador => ({ identificador_api_lyceum: identificador })) },
             categorias: { set: categorias.map(cid => ({ id: cid })) },
             avaliacao_questoes: {
                 deleteMany: {},
@@ -424,9 +465,14 @@ class AvaliacoesService {
         if (!avaliacao.data_inicio) erros.push('Data de início não informada.');
         if (!avaliacao.data_fim) erros.push('Data de encerramento não informada.');
         if (!avaliacao.unidade?.length) erros.push('Nenhuma unidade vinculada.');
-        if (!avaliacao.cursos?.length) erros.push('Nenhum curso vinculado.');
         if (!avaliacao.categorias?.length) erros.push('Nenhuma categoria vinculada.');
-        if (!avaliacao.modalidades?.length) erros.push('Nenhuma modalidade vinculada.');
+        const temCategoriaDiscente = this.hasDiscenteCategoriaSelecionada(avaliacao.categorias || []);
+        if (temCategoriaDiscente && !avaliacao.modalidades?.length) {
+            erros.push('Nenhuma modalidade vinculada para categoria DISCENTE.');
+        }
+        if (temCategoriaDiscente && !avaliacao.cursos?.length) {
+            erros.push('Nenhum curso vinculado para categoria DISCENTE.');
+        }
         if (!avaliacao.avaliacao_questoes?.length) erros.push('Nenhuma questão vinculada.');
 
         if (erros.length > 0) throw new AppError(`Avaliação incompleta: ${erros.join(' ')}`, 400);

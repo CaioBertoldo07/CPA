@@ -29,7 +29,6 @@ const Cursos = () => {
     const [filtroStatus, setFiltroStatus] = useState(FILTRO_STATUS_INICIAL);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
-    const [currentItems, setCurrentItems] = useState([]);
     const [modalAberto, setModalAberto] = useState(false);
     const [selectedUnidades, setSelectedUnidades] = useState([]);
     const [selectedMunicipios, setSelectedMunicipios] = useState([]);
@@ -130,10 +129,7 @@ const Cursos = () => {
         return filters;
     }, [filtroStatus, selectedModalidades]);
 
-    const selectedSemClassificacao = currentItems.filter(
-        c => selectedIds.some(id => String(id) === String(c.id)) && !c.modalidade_rel
-    );
-    const canClassificar = selectedSemClassificacao.length > 0;
+    const canClassificar = selectedIds.length > 0;
     const canAtivar = filtroStatus === 'INATIVOS' && selectedIds.length > 0;
     const canInativar = filtroStatus === 'ATIVOS' && selectedIds.length > 0;
 
@@ -249,7 +245,6 @@ const Cursos = () => {
                         municipiosOptions={municipiosOptions}
                         typesOptions={typesOptions}
                         onSelectionChange={setSelectedIds}
-                        onItemsLoaded={setCurrentItems}
                     />
                 </div>
             </div>
@@ -257,7 +252,7 @@ const Cursos = () => {
             <ModalClassificarCursos
                 show={modalAberto}
                 onHide={() => setModalAberto(false)}
-                cursoIds={selectedSemClassificacao.map(c => c.id)}
+                cursoIds={selectedIds}
                 onSuccess={(msg) => { showNotification(msg || 'Operação realizada!', 'success'); setSelectedIds([]); }}
             />
         </>

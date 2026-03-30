@@ -9,9 +9,9 @@ export const createAvaliacaoSchema = yup.object().shape({
         'A data de encerramento deve ser posterior à data de início.'
     ),
     unidade: yup.array().of(yup.number()).min(1, 'Pelo menos uma unidade deve ser selecionada.').required(),
-    cursos: yup.array().of(yup.string()).min(1, 'Pelo menos um curso deve ser selecionado.').required(),
+    cursos: yup.array().of(yup.string()).required(),
     categorias: yup.array().of(yup.number()).min(1, 'Pelo menos uma categoria deve ser selecionada.').required(),
-    modalidade: yup.array().of(yup.number()).min(1, 'Pelo menos uma modalidade deve ser selecionada.').required(),
+    modalidade: yup.array().of(yup.number()).required(),
     questoes: yup.array().of(yup.number()).min(1, 'Pelo menos uma questão deve ser selecionada.').required(),
     status: yup.number().required()
 });

@@ -70,6 +70,14 @@ function Modal_Avaliacoes(props) {
     const categoriasOptions = useMemo(() =>
         categoriasData.map(c => ({ value: c.id, label: c.nome })), [categoriasData]);
 
+    const temCategoriaDiscente = useMemo(() => (
+        categoriasData.some(
+            categoria =>
+                categoria?.nome?.toUpperCase() === 'DISCENTE' &&
+                categoriasSelecionadas.includes(categoria.id)
+        )
+    ), [categoriasData, categoriasSelecionadas]);
+
     // Reset on close
     useEffect(() => {
         if (!props.show) {
@@ -128,6 +136,14 @@ function Modal_Avaliacoes(props) {
         setCategoriasSelecionadas(selected.map(s => s.value));
     };
 
+    useEffect(() => {
+        if (!temCategoriaDiscente) {
+            setModalidadeSelecionada([]);
+            setCursosSelecionados([]);
+            setCurso('');
+        }
+    }, [temCategoriaDiscente]);
+
     const handleCursoSelect = (selected) => {
         // Merge incoming list (already contains pre-seeded items from the modal) and deduplicate
         const seen = new Set();
@@ -151,7 +167,15 @@ function Modal_Avaliacoes(props) {
         if (!ano || !periodo) return setError('Preencha o período letivo.');
         if (!startDate || !endDate) return setError('Preencha as datas.');
         if (!unidadeSelecionada?.length) return setError('Selecione uma unidade.');
-        if (!cursosSelecionados.length) return setError('Selecione um curso.');
+
+        if (temCategoriaDiscente && !modalidadeSelecionada.length) {
+            return setError('Selecione ao menos uma modalidade quando a categoria DISCENTE for selecionada.');
+        }
+
+        if (temCategoriaDiscente && !cursosSelecionados.length) {
+            return setError('Selecione ao menos um curso quando a categoria DISCENTE for selecionada.');
+        }
+
         if (!questoesSelecionadas.length) return setError('Selecione uma questão.');
 
         setError('');
@@ -298,18 +322,7 @@ function Modal_Avaliacoes(props) {
                         />
                     </Grid>
 
-                    {/* Linha 3: Modalidades e Categorias */}
-                    <Grid item xs={12} sm={6}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                            Modalidades
-                        </Typography>
-                        <AnimatedMultiSelect
-                            options={modalidadesOptions}
-                            onChange={setModalidadeSelecionada}
-                            placeholder="Selecione as modalidades"
-                            value={modalidadeSelecionada}
-                        />
-                    </Grid>
+                    {/* Linha 3: Categorias e Modalidades */}
                     <Grid item xs={12} sm={6}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
                             Público Alvo (Categorias)
@@ -319,6 +332,18 @@ function Modal_Avaliacoes(props) {
                             onChange={handleCategoriasChange}
                             placeholder="Selecione as categorias"
                             value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Modalidades
+                        </Typography>
+                        <AnimatedMultiSelect
+                            options={modalidadesOptions}
+                            onChange={setModalidadeSelecionada}
+                            placeholder={temCategoriaDiscente ? 'Selecione as modalidades' : 'Modalidades não aplicáveis sem DISCENTE'}
+                            value={modalidadeSelecionada}
+                            disabled={!temCategoriaDiscente}
                         />
                     </Grid>
 
@@ -343,7 +368,7 @@ function Modal_Avaliacoes(props) {
                                     variant="outlined"
                                     startIcon={<IoAddOutline />}
                                     onClick={() => setShowCursoModal(true)}
-                                    disabled={!unidadeSelecionada || unidadeSelecionada.length === 0}
+                                    disabled={!temCategoriaDiscente || !unidadeSelecionada || unidadeSelecionada.length === 0 || !modalidadeSelecionada || modalidadeSelecionada.length === 0}
                                     sx={{ fontWeight: 600 }}
                                 >
                                     Selecionar Cursos
@@ -378,6 +403,7 @@ function Modal_Avaliacoes(props) {
                     onHide={() => setShowCursoModal(false)}
                     onCursosSelected={handleCursoSelect}
                     unidadesSelecionadas={unidadeSelecionada}
+                    modalidadesSelecionadas={modalidadeSelecionada}
                     initialSelectedCursos={cursosSelecionados}
                 />
             )}
