@@ -6,6 +6,20 @@ Projeto para gestão e realização de autoavaliação institucional.
 ### A avaliação interna é coordenada pela Comissão Própria de Avaliação (CPA) e orientada pelas diretrizes e pelo roteiro da autoavaliação institucional da Comissão Nacional de Avaliação da Educação Superior (Conaes).
 
 
+## Tecnologias Utilizadas
+
+O CPA é construído com uma stack moderna e robusta:
+
+- **Frontend:** React, Vite, Material UI (MUI), TanStack Query (React Query).
+- **Backend:** Node.js, Express.
+- **Banco de Dados:** PostgreSQL, Prisma ORM.
+- **Infraestrutura:** Docker, Docker Compose, Nginx (no frontend).
+
+## Documentação Adicional
+
+- [Indice de Documentacao](docs/README.md)
+- [Estrutura do Banco de Dados (Diagrama ER)](docs/database.md)
+
 ## Como Rodar o Projeto
 
 Este projeto utiliza **Docker** para facilitar a execução. Siga os passos abaixo:
