@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import avaliacoesService from '../services/avaliacoesService';
 import { asyncHandler } from '../middleware/errorMiddleware';
 import { createAvaliacaoSchema } from '../validators/avaliacoesValidator';
+import { normalizeQuestaoIds } from '../utils/normalizeQuestaoIds';
 
 /**
  * Controller para gerenciamento de Avaliações
@@ -41,6 +42,10 @@ const getAvaliacaoById = asyncHandler(async (req: Request, res: Response) => {
 
 const editarAvaliacao = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
+    // Strip any virtual "numero___disciplina" IDs before schema validation
+    if (Array.isArray(req.body.questoes)) {
+        req.body.questoes = normalizeQuestaoIds(req.body.questoes);
+    }
     const validatedData = await createAvaliacaoSchema.validate(req.body, { abortEarly: false });
     const avaliacao = await avaliacoesService.editar(id, validatedData as any);
     res.status(200).json({ message: 'Avaliação atualizada com sucesso!', avaliacao });

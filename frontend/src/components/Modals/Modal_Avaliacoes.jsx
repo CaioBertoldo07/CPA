@@ -28,6 +28,20 @@ import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import CursoSelectionModal from './CursoSelectionModal';
 import QuestaoSelectionModal from './QuestaoSelectionModal';
 
+/**
+ * Converts a questão ID to a plain integer.
+ * Handles virtual IDs produced by repetir_todas_disciplinas expansion:
+ *   "5___DISC001 - Cálculo"  →  5
+ *   5                        →  5
+ *   "5"                      →  5
+ */
+function normalizeVirtualQuestaoId(id) {
+    if (typeof id === 'number') return id;
+    const str = String(id);
+    const match = str.match(/^(\d+)___/);
+    return match ? parseInt(match[1], 10) : parseInt(str, 10);
+}
+
 function Modal_Avaliacoes(props) {
     // props.avaliacaoId — when set, modal is in edit mode
     const editMode = !!props.avaliacaoId;
@@ -105,7 +119,10 @@ function Modal_Avaliacoes(props) {
         setCursosSelecionados(cursosApi);
         setCurso(cursosApi.map(c => c.nome).join(', '));
 
-        setQuestoesSelecionadas((avaliacao.questoes || []).map(q => (typeof q === 'object' ? q.id : q)));
+        // Normalize: deduplicate and strip virtual "numero___disciplina" IDs
+        // (produced when the server expands repetir_todas_disciplinas for a logged-in user)
+        const rawIds = (avaliacao.questoes || []).map(q => normalizeVirtualQuestaoId(typeof q === 'object' ? q.id : q));
+        setQuestoesSelecionadas([...new Set(rawIds.filter(id => !isNaN(id)))]);
 
         const unidadeIds = (avaliacao.unidade || []).map(u => u.id);
         setEditUnidadeIds(unidadeIds);
@@ -161,7 +178,7 @@ function Modal_Avaliacoes(props) {
             cursos: cursosSelecionados.map(c => c.value ?? c.identificador_api_lyceum),
             categorias: categoriasSelecionadas,
             modalidade: modalidadeSelecionada.map(q => q.value),
-            questoes: questoesSelecionadas,
+            questoes: [...new Set(questoesSelecionadas.map(normalizeVirtualQuestaoId).filter(id => !isNaN(id)))],
             periodo_letivo: `${ano}.${periodo}`,
             data_inicio: startDate ? `${startDate}T00:00:00` : startDate,
             data_fim: endDate ? `${endDate}T23:59:59` : endDate,
