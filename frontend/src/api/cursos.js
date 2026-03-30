@@ -7,6 +7,7 @@ export const getCursosByUnidades = (unidadeIds, modalidadeIds = []) => {
     const modIds = (Array.isArray(modalidadeIds) ? modalidadeIds : [modalidadeIds])
         .map(id => Number(id))
         .filter(id => Number.isFinite(id));
+
     const params = {
         unidadeIds: ids.join(','),
         modalidadeIds: modIds.join(','),

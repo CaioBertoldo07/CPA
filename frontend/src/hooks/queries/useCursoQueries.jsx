@@ -8,7 +8,6 @@ export const useGetCursosByUnidadesQuery = (unidadeIds, modalidadeIds = []) => {
     const modalidadeIdsSafe = (Array.isArray(modalidadeIds) ? modalidadeIds : [])
         .map(id => Number(id))
         .filter(id => Number.isFinite(id));
-
     return useQuery({
         queryKey: ['cursos', 'filtered', unidadeIdsSafe, modalidadeIdsSafe],
         queryFn: () => getCursosByUnidades(unidadeIdsSafe, modalidadeIdsSafe),

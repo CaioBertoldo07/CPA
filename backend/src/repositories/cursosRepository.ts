@@ -66,7 +66,7 @@ const buildCursosWhere = async (filters?: CursosFilters) => {
             andConditions.push({
                 OR: [
                     { id_modalidade: { in: ids } },
-                    ...(modalidadeNomes.length > 0 ? [{ curso_tipo: { in: modalidadeNomes } }] : []),
+                    ...(modalidadeNomes.length > 0 ? [{ modalidade: { in: modalidadeNomes } }] : []),
                 ],
             });
         }
