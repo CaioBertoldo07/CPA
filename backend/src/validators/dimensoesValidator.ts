@@ -7,6 +7,7 @@ export const createDimensaoSchema = yup.object().shape({
 });
 
 export const updateDimensaoSchema = yup.object().shape({
+    numero: yup.number().optional(),
     nome: yup.string().optional(),
     numero_eixos: yup.number().optional(),
 });

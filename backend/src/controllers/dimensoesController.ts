@@ -34,6 +34,10 @@ const getDimensoesByEixo = asyncHandler(async (req: Request, res: Response) => {
 
 const updateDimensao = asyncHandler(async (req: Request, res: Response) => {
     const numero = parseInt(req.params.numero as string, 10);
+    if (Number.isNaN(numero)) {
+        res.status(400).json({ message: 'Parâmetro número inválido.' });
+        return;
+    }
     const validatedData = await updateDimensaoSchema.validate(req.body);
     const dimensaoAtualizada = await dimensoesService.update(numero, validatedData as any);
     res.json(dimensaoAtualizada);
