@@ -34,20 +34,32 @@ class DimensoesService {
         }) as DimensoesResponseDTO;
     }
 
-    async update(numero: number, data: { novoNumero: number; nome: string; numero_eixos: number }): Promise<DimensoesResponseDTO> {
-        const { novoNumero, nome, numero_eixos } = data;
+    async update(numero: number, data: { numero?: number; nome?: string; numero_eixos?: number }): Promise<DimensoesResponseDTO> {
+        const { numero: novoNumero, nome, numero_eixos } = data;
 
         const dimensaoExists = await dimensoesRepository.findByNumero(numero);
         if (!dimensaoExists) throw new AppError('Dimensão não encontrada para atualizar.', 404);
 
-        const eixoExists = await eixosRepository.findByNumero(numero_eixos);
-        if (!eixoExists) throw new AppError('Número de eixo fornecido não existe.', 400);
+        if (novoNumero !== undefined && novoNumero !== numero) {
+            const dimensaoComNovoNumero = await dimensoesRepository.findByNumero(novoNumero);
+            if (dimensaoComNovoNumero) throw new AppError('Já existe uma dimensão com o número informado.', 400);
+        }
 
-        return await dimensoesRepository.update(numero, {
-            numero: novoNumero,
-            nome,
-            eixos: { connect: { numero: numero_eixos } }
-        }) as DimensoesResponseDTO;
+        if (numero_eixos !== undefined) {
+            const eixoExists = await eixosRepository.findByNumero(numero_eixos);
+            if (!eixoExists) throw new AppError('Número de eixo fornecido não existe.', 400);
+        }
+
+        const updateData: any = {};
+        if (novoNumero !== undefined) updateData.numero = novoNumero;
+        if (nome !== undefined) updateData.nome = nome;
+        if (numero_eixos !== undefined) updateData.eixos = { connect: { numero: numero_eixos } };
+
+        if (Object.keys(updateData).length === 0) {
+            throw new AppError('Nenhum campo válido foi informado para atualização.', 400);
+        }
+
+        return await dimensoesRepository.update(numero, updateData) as DimensoesResponseDTO;
     }
 
     async delete(numero: number): Promise<void> {

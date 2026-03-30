@@ -13,28 +13,47 @@ const ModalUpdateDimensao = ({ show, handleClose, dimensaoData, onSuccess }) => 
 
     useEffect(() => {
         if (dimensaoData) {
-            setNovoNumero(dimensaoData.numero || '');
+            setNovoNumero(String(dimensaoData.numero ?? ''));
             setNome(dimensaoData.nome || '');
             setError('');
         }
     }, [dimensaoData]);
 
     const handleUpdate = async () => {
-        if (!novoNumero.trim() || !nome.trim()) {
+        const numeroAtual = Number(dimensaoData?.numero);
+        if (Number.isNaN(numeroAtual) || numeroAtual <= 0) {
+            return setError('Não foi possível identificar a dimensão para atualizar. Reabra o modal e tente novamente.');
+        }
+
+        const numeroTexto = String(novoNumero ?? '').trim();
+        if (!numeroTexto || !nome.trim()) {
             return setError('Todos os campos são obrigatórios.');
         }
+
+        const numeroConvertido = Number(numeroTexto);
+        if (Number.isNaN(numeroConvertido) || numeroConvertido <= 0) {
+            return setError('Número da dimensão inválido.');
+        }
+
         setError('');
 
         editDimensaoMutation.mutate({
-            numero: dimensaoData.numero,
-            data: { numero: novoNumero.trim(), nome: nome.trim(), numero_eixos: dimensaoData.numero_eixos }
+            numero: numeroAtual,
+            data: {
+                numero: numeroConvertido !== numeroAtual ? numeroConvertido : undefined,
+                nome: nome.trim(),
+                numero_eixos: dimensaoData.numero_eixos
+            }
         }, {
             onSuccess: () => {
                 if (onSuccess) onSuccess('Dimensão atualizada com sucesso');
                 handleClose();
             },
             onError: (err) => {
-                setError(err?.response?.data?.message || err?.response?.data?.error || 'Erro ao atualizar dimensão.');
+                const backendError = err?.response?.data?.message
+                    || err?.response?.data?.error
+                    || err?.message;
+                setError(backendError || 'Erro ao atualizar dimensão.');
             }
         });
     };

@@ -14,7 +14,7 @@ export const useAdicionarDimensaoMutation = () => {
 export const useEditDimensaoMutation = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, dimensao }) => editarDimensao(id, dimensao),
+        mutationFn: ({ numero, data }) => editarDimensao(numero, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['dimensoes'] });
         },

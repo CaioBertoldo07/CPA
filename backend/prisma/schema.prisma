@@ -73,7 +73,7 @@ model  QuestoesAdicionais {
 
 model Padrao_resposta {
   id           Int             @id @default(autoincrement())
-  sigla        String          @db.VarChar(10)
+  sigla        String          @db.VarChar(20)
   alternativas Alternativas[]
   Questoes     Questoes[]
 
