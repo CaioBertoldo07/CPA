@@ -1,15 +1,21 @@
-FROM node:20
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copia o package.json e instala dependências
-COPY package.json ./
-RUN npm install --force
+COPY package*.json ./
+RUN npm ci
 
-# Copia o restante dos arquivos e constrói o app
 COPY . .
 RUN npm run build
 
-# Instala "serve" globalmente e define o comando padrão para rodar o servidor
-RUN npm install -g serve
-CMD ["serve", "-s", "build", "-l", "3050"]
+FROM nginx:1.27-alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
