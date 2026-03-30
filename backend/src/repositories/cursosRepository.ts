@@ -1,10 +1,99 @@
 import prisma from './prismaClient';
 
+type CursosFilters = {
+    nome?: string;
+    codigo?: string;
+    curso_tipo?: string;
+    unidade?: string;
+    municipio?: string;
+    unidadeIds?: string;
+    municipioIds?: string;
+    modalidadeIds?: string;
+    unclassified?: string;
+    ativo?: string;
+};
+
+const buildCursosWhere = async (filters?: CursosFilters) => {
+    const where: any = {};
+    const andConditions: any[] = [];
+
+    if (!filters) return where;
+
+    if (filters.nome) {
+        andConditions.push({ OR: [
+            { nome: { contains: filters.nome, mode: 'insensitive' } },
+            { identificador_api_lyceum: { contains: filters.nome, mode: 'insensitive' } }
+        ]});
+    }
+
+    if (filters.curso_tipo) {
+        const tipos = Array.isArray(filters.curso_tipo)
+            ? filters.curso_tipo
+            : filters.curso_tipo.split(',').map(t => t.trim().toUpperCase());
+        andConditions.push({ curso_tipo: { in: tipos } });
+    }
+
+    if (filters.unidade) {
+        andConditions.push({ unidades: { nome: { contains: filters.unidade, mode: 'insensitive' } } });
+    }
+
+    if (filters.municipio) {
+        andConditions.push({ municipio: { nome: { contains: filters.municipio, mode: 'insensitive' } } });
+    }
+
+    if (filters.unidadeIds) {
+        const ids = filters.unidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        if (ids.length > 0) andConditions.push({ id_unidades: { in: ids } });
+    }
+
+    if (filters.municipioIds) {
+        const ids = filters.municipioIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        if (ids.length > 0) andConditions.push({ municipio_sede: { in: ids } });
+    }
+
+    if (filters.modalidadeIds) {
+        const ids = filters.modalidadeIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        if (ids.length > 0) {
+            const modalidades = await prisma.modalidades.findMany({
+                where: { id: { in: ids } },
+                select: { mod_ensino: true },
+            });
+
+            const modalidadeNomes = modalidades
+                .map(m => (m.mod_ensino || '').trim().toUpperCase())
+                .filter(Boolean);
+
+            andConditions.push({
+                OR: [
+                    { id_modalidade: { in: ids } },
+                    ...(modalidadeNomes.length > 0 ? [{ modalidade: { in: modalidadeNomes } }] : []),
+                ],
+            });
+        }
+    }
+
+    if (filters.unclassified === 'true') {
+        andConditions.push({ id_modalidade: null });
+    }
+
+    if (filters.ativo === 'true') andConditions.push({ ativo: true });
+    if (filters.ativo === 'false') andConditions.push({ ativo: false });
+
+    if (andConditions.length > 0) {
+        where.AND = andConditions;
+    }
+
+    return where;
+};
+
 /**
  * Busca todos os cursos
  */
-const findAll = () => {
+const findAll = async (filters?: CursosFilters) => {
+    const where = await buildCursosWhere(filters);
+
     return prisma.cursos.findMany({
+        where,
         orderBy: { nome: 'asc' }
     });
 };
@@ -60,6 +149,7 @@ const findByUnidades = (unidadeIds: number[]) => {
             identificador_api_lyceum: true,
             nome: true,
             nivel: true,
+            id_modalidade: true,
             modalidade: true,
             modalidade_api: true
         }
@@ -72,62 +162,11 @@ const findByUnidades = (unidadeIds: number[]) => {
 const findPaginated = async (params: {
     page: number;
     pageSize: number;
-    filters?: {
-        nome?: string;
-        codigo?: string;
-        curso_tipo?: string;
-        unidade?: string;
-        municipio?: string;
-        unidadeIds?: string;
-        municipioIds?: string;
-        modalidadeIds?: string;
-        unclassified?: string;
-        ativo?: string; // ✅ novo
-    }
+    filters?: CursosFilters
 }) => {
     const { page, pageSize, filters } = params;
     const skip = (page - 1) * pageSize;
-
-    const where: any = {};
-
-    if (filters) {
-        if (filters.nome) {
-            where.OR = [
-                { nome: { contains: filters.nome, mode: 'insensitive' } },
-                { identificador_api_lyceum: { contains: filters.nome, mode: 'insensitive' } }
-            ];
-        }
-        if (filters.curso_tipo) {
-            const tipos = Array.isArray(filters.curso_tipo)
-                ? filters.curso_tipo
-                : filters.curso_tipo.split(',').map(t => t.trim().toUpperCase());
-            where.curso_tipo = { in: tipos };
-        }
-        if (filters.unidade) {
-            where.unidades = { nome: { contains: filters.unidade, mode: 'insensitive' } };
-        }
-        if (filters.municipio) {
-            where.municipio = { nome: { contains: filters.municipio, mode: 'insensitive' } };
-        }
-        if (filters.unidadeIds) {
-            const ids = filters.unidadeIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-            if (ids.length > 0) where.id_unidades = { in: ids };
-        }
-        if (filters.municipioIds) {
-            const ids = filters.municipioIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-            if (ids.length > 0) where.municipio_sede = { in: ids };
-        }
-        if (filters.modalidadeIds) {
-            const ids = filters.modalidadeIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-            if (ids.length > 0) where.id_modalidade = { in: ids };
-        }
-        if (filters.unclassified === 'true') {
-            where.id_modalidade = null;
-        }
-        // ✅ filtro de status server-side
-        if (filters.ativo === 'true') where.ativo = true;
-        if (filters.ativo === 'false') where.ativo = false;
-    }
+    const where = await buildCursosWhere(filters);
 
     const [totalCount, items] = await Promise.all([
         prisma.cursos.count({ where }),
