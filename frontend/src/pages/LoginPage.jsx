@@ -38,7 +38,7 @@ const LoginPage = () => {
         if (currentUser?.isAdmin) {
           setShowAdminOptions(true);
         } else {
-          navigate('/alunos');
+          navigate('/avaliadores');
         }
       }
     });
@@ -172,10 +172,10 @@ const LoginPage = () => {
               <Button
                 fullWidth
                 variant="outlined"
-                onClick={() => handleAreaSelection('/alunos')}
+                onClick={() => handleAreaSelection('/avaliadores')}
                 sx={{ color: '#1D5E24', borderColor: '#1D5E24', '&:hover': { bgcolor: '#f0fdf4', borderColor: '#1D5E24' }, fontWeight: 600, py: 1.5, borderRadius: 2 }}
               >
-                Área do Aluno
+                Área do Avaliador
               </Button>
             </Stack>
           </Box>

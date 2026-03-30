@@ -20,7 +20,7 @@ const ProtectedRoute = ({ element: Component, isAdminRequired = false, layout: L
 
     if (isAdminRequired && !user.isAdmin) {
         window.dispatchEvent(new CustomEvent('auth:access-denied'));
-        return <Navigate to="/alunos/avaliacoes" />;
+        return <Navigate to="/avaliadores/avaliacoes" />;
     }
 
     const content = <Component {...rest} />;

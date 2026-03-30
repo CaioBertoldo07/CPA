@@ -28,9 +28,9 @@ import {
 
 import { useGetAvaliacoesDisponiveisQuery, useGetVerificarRespostaQuery } from '../hooks/queries/useAvaliacaoQueries';
 
-import LayoutAluno from '../components/aluno/LayoutAluno';
-import CardAvaliacao from '../components/aluno/CardAvaliacao';
-import BadgeStatus from '../components/aluno/BadgeStatus';
+import LayoutAvaliador from '../components/avaliador/LayoutAvaliador';
+import CardAvaliacao from '../components/avaliador/CardAvaliacao';
+import BadgeStatus from '../components/avaliador/BadgeStatus';
 
 /* ── helper: dispara a query de verificação de resposta por avaliação ── */
 const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
@@ -45,7 +45,7 @@ const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
 
 /* ===================================================================== */
 
-const Alunos = () => {
+const Avaliadores = () => {
     const navigate = useNavigate();
     const theme = useTheme();
 
@@ -66,7 +66,7 @@ const Alunos = () => {
     const progressoPct = total > 0 ? Math.round((totalRespondidas / total) * 100) : 0;
 
     return (
-        <LayoutAluno>
+        <LayoutAvaliador>
             {/* Hidden verifiers */}
             {avaliacoes.map(a => (
                 <AvaliacaoVerificada key={a.id} avaliacao={a} onClassify={handleClassify} />
@@ -82,7 +82,7 @@ const Alunos = () => {
                             color="inherit"
                             size="small"
                             endIcon={<IoArrowForwardOutline />}
-                            onClick={() => navigate('/alunos/avaliacoes')}
+                            onClick={() => navigate('/avaliadores/avaliacoes')}
                             sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
                         >
                             Ver avaliações
@@ -178,7 +178,7 @@ const Alunos = () => {
                                 <CardAvaliacao
                                     avaliacao={avaliacao}
                                     variant="disponivel"
-                                    onResponder={() => navigate(`/alunos/avaliacao/${avaliacao.id}`)}
+                                    onResponder={() => navigate(`/avaliadores/avaliacao/${avaliacao.id}`)}
                                 />
                             </Grid>
                         ))
@@ -264,8 +264,8 @@ const Alunos = () => {
                     </TableContainer>
                 </Box>
             )}
-        </LayoutAluno>
+        </LayoutAvaliador>
     );
 };
 
-export default Alunos;
+export default Avaliadores;

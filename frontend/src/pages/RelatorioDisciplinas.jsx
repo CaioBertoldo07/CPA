@@ -6,6 +6,8 @@ import {
 } from 'recharts';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorDisciplinaQuery } from '../hooks/queries/useRespostaQueries';
+import usePDFExport from '../hooks/usePDFExport';
+import { useNotification } from '../context/NotificationContext';
 import {
     Box, Typography, Paper, Grid, Card, CardContent,
     Select, MenuItem, FormControl, InputLabel,
@@ -18,12 +20,15 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import QuizIcon from '@mui/icons-material/Quiz';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const BAR_COLORS = ['#2e7d32', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
 const RelatorioDisciplinas = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { isExporting, exportDisciplinasReport } = usePDFExport();
+    const showNotification = useNotification();
     
     // Filtros
     const [selectedUnidade, setSelectedUnidade] = useState('');
@@ -76,8 +81,37 @@ const RelatorioDisciplinas = () => {
     const topItems = processedRanking.slice(0, 10);
     const bottomItems = [...processedRanking].reverse().slice(0, 10).reverse();
 
+    const selectedQuestionLabel = useMemo(() => {
+        if (selectedQuestionId === 'overall') return 'PONTUACAO GERAL (MEDIA)';
+        const q = questoesLista.find(item => item.id_avaliacao_questoes === Number(selectedQuestionId));
+        return q?.descricao || `Pergunta ${selectedQuestionId}`;
+    }, [questoesLista, selectedQuestionId]);
+
     // Handlers
     const handleBack = () => navigate(`/relatorio/${id}`);
+
+    const handleExportPDF = async () => {
+        try {
+            await exportDisciplinasReport({
+                avaliacao,
+                filtros: {
+                    unidade: selectedUnidade,
+                    curso: selectedCurso,
+                    municipio: '',
+                },
+                selectedQuestionLabel,
+                processedRanking,
+                topItems,
+                bottomItems,
+                rankingData: rankingData || [],
+            });
+
+            showNotification('Relatório de disciplinas exportado com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao exportar relatório de disciplinas:', error);
+            showNotification('Não foi possível exportar o relatório de disciplinas.', 'error');
+        }
+    };
 
     if (loadingAvaliacao || loadingRanking) {
         return (
@@ -123,6 +157,16 @@ const RelatorioDisciplinas = () => {
                     sx={{ borderRadius: 2, textTransform: 'none' }}
                 >
                     Voltar ao Dashboard
+                </Button>
+                <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExportPDF}
+                    disabled={isExporting || loadingRanking || loadingAvaliacao}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                >
+                    {isExporting ? 'Exportando...' : 'Exportar PDF'}
                 </Button>
             </Box>
 

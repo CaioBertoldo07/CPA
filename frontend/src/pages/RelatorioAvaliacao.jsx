@@ -5,7 +5,9 @@ import {
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
-import { useGetRespostasPorAvaliacaoQuery } from '../hooks/queries/useRespostaQueries';
+import { useGetRespostasPorAvaliacaoQuery, useGetRespostasPorDisciplinaQuery } from '../hooks/queries/useRespostaQueries';
+import usePDFExport from '../hooks/usePDFExport';
+import { useNotification } from '../context/NotificationContext';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -387,6 +389,8 @@ const IconList = () => (
 const RelatorioAvaliacao = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { isExporting, exportAvaliacaoReport } = usePDFExport();
+    const showNotification = useNotification();
 
     // Filtros globais
     const [filtros, setFiltros] = React.useState({ unidade: '', curso: '', municipio: '' });
@@ -394,6 +398,13 @@ const RelatorioAvaliacao = () => {
 
     const { data: avaliacao, isLoading: loadingAvaliacao, isError: isErrorAvaliacao } = useGetAvaliacaoByIdQuery(id);
     const { data: reportData, isLoading: loadingRespostas, isError: isErrorRespostas, refetch } = useGetRespostasPorAvaliacaoQuery(id, filtros);
+    const {
+        data: rankingData = [],
+        isLoading: loadingRanking,
+    } = useGetRespostasPorDisciplinaQuery(id, {
+        unidade: filtros.unidade,
+        curso: filtros.curso,
+    });
 
     const handleFiltroChange = (key, value) => {
         setFiltros(prev => ({ ...prev, [key]: value }));
@@ -477,6 +488,18 @@ const RelatorioAvaliacao = () => {
         };
     }, [reportData]);
 
+    const rankingDisciplinas = useMemo(() => {
+        if (!Array.isArray(rankingData) || rankingData.length === 0) return [];
+
+        return rankingData
+            .map(item => ({
+                name: item.disciplina,
+                score: Number(item.scoreGeral) || 0,
+                total: Number(item.totalRespostas) || 0,
+            }))
+            .sort((a, b) => b.score - a.score);
+    }, [rankingData]);
+
     // Capturar opções iniciais
     React.useEffect(() => {
         if (reportData?.participacao && !filtros.unidade && !filtros.curso && !filtros.municipio && !opcoesFiltros) {
@@ -490,6 +513,32 @@ const RelatorioAvaliacao = () => {
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
             : []),
     ];
+
+    const handleExportPDF = async () => {
+        try {
+            if (loadingRanking) {
+                showNotification('Aguarde o carregamento do ranking para exportar o PDF completo.', 'warning');
+                return;
+            }
+
+            await exportAvaliacaoReport({
+                avaliacao,
+                filtros,
+                totalAvaliadores: reportData?.totalAvaliadores || 0,
+                totalQuestoes: totalQuestoesAvaliacao || 0,
+                totalRespostas,
+                questoesRespondidas,
+                participacaoData,
+                rankingDisciplinas,
+                questoes: questoesAchatadas,
+            });
+
+            showNotification('Relatório exportado com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao exportar relatório para PDF:', error);
+            showNotification('Não foi possível exportar o relatório para PDF.', 'error');
+        }
+    };
 
     /* ── loading / error states ── */
 
@@ -567,6 +616,35 @@ const RelatorioAvaliacao = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <button
+                            onClick={handleExportPDF}
+                            disabled={isExporting}
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px',
+                                background: isExporting ? '#dcfce7' : '#1D5E24',
+                                color: isExporting ? '#166534' : '#fff',
+                                border: '1.5px solid #1D5E24', borderRadius: 10,
+                                fontSize: 13, fontWeight: 700,
+                                cursor: isExporting ? 'not-allowed' : 'pointer',
+                                transition: 'all 150ms',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                opacity: isExporting ? 0.85 : 1,
+                            }}
+                            onMouseEnter={e => {
+                                if (isExporting) return;
+                                e.currentTarget.style.background = '#166534';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                            }}
+                            onMouseLeave={e => {
+                                if (isExporting) return;
+                                e.currentTarget.style.background = '#1D5E24';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                            {isExporting ? 'Exportando...' : 'Exportar PDF'}
+                        </button>
+                        <button
                             onClick={() => navigate(`/relatorio/${id}/disciplinas`)}
                             style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -585,6 +663,7 @@ const RelatorioAvaliacao = () => {
                     </div>
                 </div>
 
+                <div id="relatorio-avaliacao-export-content" style={{ background: '#ffffff' }}>
                 {/* Info card */}
                 <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 6px rgba(0,0,0,0.07)', padding: '20px 24px', marginBottom: 24, animation: 'fadeInUp 400ms 60ms both' }}>
                     <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', margin: '0 0 16px' }}>
@@ -884,6 +963,57 @@ const RelatorioAvaliacao = () => {
                     )}
                 </div>
 
+                {/* ── Ranking por Disciplina (incluído na exportação PDF) ── */}
+                <div style={{ marginTop: 36 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534' }}>
+                            <IconChart />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#1a202c' }}>Ranking por Disciplina</div>
+                            <div style={{ fontSize: 12, color: '#718096' }}>Resumo incluído na exportação do relatório individual</div>
+                        </div>
+                    </div>
+
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 120px 140px', gap: 8, padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                            <div>Posição</div>
+                            <div>Disciplina</div>
+                            <div style={{ textAlign: 'center' }}>Respostas</div>
+                            <div style={{ textAlign: 'right' }}>Pontuação</div>
+                        </div>
+
+                        {loadingRanking ? (
+                            <div style={{ padding: '14px 16px' }}>
+                                <SkeletonBlock h={16} />
+                            </div>
+                        ) : rankingDisciplinas.length === 0 ? (
+                            <div style={{ padding: '18px 16px', color: '#718096', fontSize: 13 }}>
+                                Sem dados de ranking por disciplina para os filtros selecionados.
+                            </div>
+                        ) : (
+                            rankingDisciplinas.slice(0, 10).map((item, idx) => (
+                                <div
+                                    key={`${item.name}-${idx}`}
+                                    style={{ display: 'grid', gridTemplateColumns: '70px 1fr 120px 140px', gap: 8, padding: '11px 16px', borderBottom: idx === Math.min(rankingDisciplinas.length, 10) - 1 ? 'none' : '1px solid #f1f5f9', alignItems: 'center' }}
+                                >
+                                    <div>
+                                        <span style={{ display: 'inline-flex', width: 24, height: 24, borderRadius: '50%', alignItems: 'center', justifyContent: 'center', background: idx < 3 ? '#ecfdf5' : '#f1f5f9', color: idx < 3 ? '#166534' : '#64748b', fontSize: 12, fontWeight: 700 }}>
+                                            {idx + 1}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: 13, color: '#1f2937', fontWeight: 600 }}>{item.name}</div>
+                                    <div style={{ textAlign: 'center', fontSize: 13, color: '#475569' }}>{item.total}</div>
+                                    <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, color: item.score >= 70 ? '#166534' : (item.score >= 50 ? '#b45309' : '#b91c1c') }}>
+                                        {item.score.toFixed(1)}%
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                </div>
             </div>
         </>
     );

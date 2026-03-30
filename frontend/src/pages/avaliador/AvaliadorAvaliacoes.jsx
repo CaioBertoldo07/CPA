@@ -18,9 +18,9 @@ import {
 import { IoDocumentTextOutline, IoCheckmarkDoneOutline, IoAlertCircleOutline } from 'react-icons/io5';
 
 import { useGetAvaliacoesDisponiveisQuery, useGetVerificarRespostaQuery } from '../../hooks/queries/useAvaliacaoQueries';
-import LayoutAluno from '../../components/aluno/LayoutAluno';
-import CardAvaliacao from '../../components/aluno/CardAvaliacao';
-import BadgeStatus from '../../components/aluno/BadgeStatus';
+import LayoutAvaliador from '../../components/avaliador/LayoutAvaliador';
+import CardAvaliacao from '../../components/avaliador/CardAvaliacao';
+import BadgeStatus from '../../components/avaliador/BadgeStatus';
 
 const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
     const { data, isSuccess } = useGetVerificarRespostaQuery(avaliacao.id);
@@ -30,7 +30,7 @@ const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
     return null;
 };
 
-const AlunoAvaliacoes = () => {
+const AvaliadorAvaliacoes = () => {
     const navigate = useNavigate();
     const theme = useTheme();
 
@@ -45,7 +45,7 @@ const AlunoAvaliacoes = () => {
     const respondidas = avaliacoes.filter(a => respostasMap[a.id] === true);
 
     return (
-        <LayoutAluno>
+        <LayoutAvaliador>
             {avaliacoes.map(a => (
                 <AvaliacaoVerificada key={a.id} avaliacao={a} onClassify={handleClassify} />
             ))}
@@ -137,7 +137,7 @@ const AlunoAvaliacoes = () => {
                                 <CardAvaliacao
                                     avaliacao={avaliacao}
                                     variant="disponivel"
-                                    onResponder={() => navigate(`/alunos/avaliacao/${avaliacao.id}`)}
+                                    onResponder={() => navigate(`/avaliadores/avaliacao/${avaliacao.id}`)}
                                 />
                             </Grid>
                         ))
@@ -213,8 +213,8 @@ const AlunoAvaliacoes = () => {
                     </TableContainer>
                 </Box>
             )}
-        </LayoutAluno>
+        </LayoutAvaliador>
     );
 };
 
-export default AlunoAvaliacoes;
+export default AvaliadorAvaliacoes;

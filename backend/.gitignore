@@ -8,3 +8,5 @@ migrations/
 .env
 # package-lock.json
 package-lock.json
+
+.claude/

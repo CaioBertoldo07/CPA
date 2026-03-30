@@ -48,7 +48,7 @@ import {
 } from '../hooks/queries/useAvaliacaoQueries';
 import { useAdicionarRespostaMutation } from '../hooks/mutations/useRespostaMutations';
 
-const AvaliacaoAlunos = () => {
+const AvaliacaoAvaliadores = () => {
     const { id: avaliacaoId } = useParams();
     const navigate = useNavigate();
     const theme = useTheme();
@@ -75,12 +75,12 @@ const AvaliacaoAlunos = () => {
     useEffect(() => {
         if (jaRespondeu?.respondeu) {
             showNotification('Você já respondeu esta avaliação', 'warning');
-            setTimeout(() => navigate('/alunos'), 3000);
+            setTimeout(() => navigate('/avaliadores'), 3000);
         }
 
         if (isErrorAvaliacao) {
             showNotification('Erro ao carregar avaliação', 'error');
-            navigate('/alunos');
+            navigate('/avaliadores');
         }
     }, [avaliacaoId, navigate, jaRespondeu, isErrorAvaliacao, showNotification]);
 
@@ -207,13 +207,13 @@ const AvaliacaoAlunos = () => {
                         </Box>
                     </Alert>
                 )}
-                
+
                 {questao.disciplina && (
                     <Typography variant="overline" sx={{ display: 'block', fontWeight: 800, color: 'primary.main', mb: 0.5, letterSpacing: 1.2 }}>
                         {questao.disciplina}
                     </Typography>
                 )}
-                
+
                 <Typography variant="body1" sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}>
                     {questao.descricao}
                 </Typography>
@@ -288,7 +288,7 @@ const AvaliacaoAlunos = () => {
         adicionarRespostaMutation.mutate(payload, {
             onSuccess: () => {
                 showNotification('Avaliação enviada com sucesso! Obrigado por participar.', 'success');
-                setTimeout(() => navigate('/alunos'), 2000);
+                setTimeout(() => navigate('/avaliadores'), 2000);
             },
             onError: (error) => {
                 showNotification(error.message || 'Erro ao enviar avaliação', 'error');
@@ -312,7 +312,7 @@ const AvaliacaoAlunos = () => {
                 <IoCheckmarkCircleOutline size={64} color={theme.palette.success.main} />
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>Você já respondeu esta avaliação!</Typography>
                 <Typography color="text.secondary">Redirecionando para o painel...</Typography>
-                <Button variant="outlined" onClick={() => navigate('/alunos')} sx={{ mt: 2 }}>Voltar Agora</Button>
+                <Button variant="outlined" onClick={() => navigate('/avaliadores')} sx={{ mt: 2 }}>Voltar Agora</Button>
             </Box>
         );
     }
@@ -323,7 +323,7 @@ const AvaliacaoAlunos = () => {
                 <IoInformationCircleOutline size={64} color={theme.palette.error.main} />
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>Erro ao carregar avaliação</Typography>
                 <Typography color="text.secondary">Não foi possível encontrar os dados desta avaliação.</Typography>
-                <Button variant="contained" onClick={() => navigate('/alunos')} sx={{ mt: 2 }}>Voltar para Avaliações</Button>
+                <Button variant="contained" onClick={() => navigate('/avaliadores')} sx={{ mt: 2 }}>Voltar para Avaliações</Button>
             </Box>
         );
     }
@@ -333,7 +333,7 @@ const AvaliacaoAlunos = () => {
             <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)' }}>
                 <Toolbar sx={{ display: 'flex', flexDirection: 'column', py: 1 }}>
                     <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                        <IconButton onClick={() => navigate('/alunos')} size="small">
+                        <IconButton onClick={() => navigate('/avaliadores')} size="small">
                             <IoArrowBackOutline size={20} />
                         </IconButton>
                         <img src={logo} alt="CPA Logo" style={{ height: 32 }} />
@@ -513,4 +513,4 @@ const AvaliacaoAlunos = () => {
     );
 };
 
-export default AvaliacaoAlunos;
+export default AvaliacaoAvaliadores;

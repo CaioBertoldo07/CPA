@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { logout } from '../../api/auth';
 import { useGetCurrentUserQuery } from '../../hooks/queries/useAuthQueries';
-import HeaderAluno from './HeaderAluno';
-import SidebarAluno from './SidebarAluno';
+import HeaderAvaliador from './HeaderAvaliador';
+import SidebarAvaliador from './SidebarAvaliador';
 
-const LayoutAluno = ({ children }) => {
+const LayoutAvaliador = ({ children }) => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -33,7 +33,7 @@ const LayoutAluno = ({ children }) => {
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
-            <SidebarAluno
+            <SidebarAvaliador
                 mobileOpen={mobileOpen}
                 onMobileClose={() => setMobileOpen(false)}
                 collapsed={collapsed}
@@ -48,7 +48,7 @@ const LayoutAluno = ({ children }) => {
                     minWidth: 0,
                 }}
             >
-                <HeaderAluno
+                <HeaderAvaliador
                     usuarioNome={usuarioNome}
                     onLogout={handleLogout}
                     onMenuToggle={() => setMobileOpen(o => !o)}
@@ -61,21 +61,9 @@ const LayoutAluno = ({ children }) => {
                         {children}
                     </Box>
                 </Box>
-
-                {/* <Box
-                    component="footer"
-                    sx={{
-                        py: 2.5,
-                        px: { xs: 2, sm: 3, md: 4 },
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: 'white',
-                    }}
-                >
-                </Box> */}
             </Box>
         </Box>
     );
 };
 
-export default LayoutAluno;
+export default LayoutAvaliador;

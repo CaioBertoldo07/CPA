@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
+import usePDFExport from '../hooks/usePDFExport';
 import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetDashboardCategoriasQuery } from '../hooks/queries/useRespostaQueries';
 import {
@@ -44,6 +45,13 @@ const IconChart = () => (
         <line x1="18" y1="20" x2="18" y2="10" />
         <line x1="12" y1="20" x2="12" y2="4" />
         <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+);
+const IconDownload = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
     </svg>
 );
 
@@ -279,11 +287,24 @@ const Relatorios = () => {
         { icon: <IconDraft />,     label: 'Rascunhos',            value: rascunhos,  topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 220 },
     ];
 
+    const { isExporting, exportDashboardReport } = usePDFExport();
+
+    const handleExportPDF = async () => {
+        try {
+            await exportDashboardReport({ avaliacoes, categoriasData });
+            showNotification('PDF exportado com sucesso!', 'success');
+        } catch (err) {
+            console.error('[usePDFExport] Erro ao exportar:', err);
+            showNotification('Erro ao gerar o PDF. Tente novamente.', 'error');
+        }
+    };
+
     return (
         <>
             <style>{`
                 @keyframes fadeInUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes skeletonPulse { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+                @keyframes spin { to { transform: rotate(360deg); } }
                 .rel-row:hover td { background:#f8fafc !important; }
                 .recharts-tooltip-cursor { fill: rgba(0,0,0,0.04) !important; }
                 @media (max-width: 768px) {
@@ -293,10 +314,53 @@ const Relatorios = () => {
 
             <div style={{ width: '100%' }}>
 
+                {/* ── Área capturada para o PDF ── */}
+                <div id="dashboard-export-content" style={{ background: '#fff' }}>
+
                 {/* ── Cabeçalho ── */}
-                <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
-                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Dashboard</h1>
-                    <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Acompanhe o desempenho e os resultados das avaliações institucionais</p>
+                <div style={{
+                    marginBottom: 28,
+                    paddingBottom: 20,
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                }}>
+                    <div>
+                        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Dashboard</h1>
+                        <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Acompanhe o desempenho e os resultados das avaliações institucionais</p>
+                    </div>
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting || loading}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 7,
+                            padding: '7px 16px', borderRadius: 8,
+                            border: '1px solid #2e7d32',
+                            background: isExporting || loading ? '#f1f5f9' : '#2e7d32',
+                            color: isExporting || loading ? '#94a3b8' : '#fff',
+                            fontSize: 13, fontWeight: 600,
+                            cursor: isExporting || loading ? 'not-allowed' : 'pointer',
+                            transition: 'background 200ms, color 200ms',
+                            outline: 'none', lineHeight: 1.4,
+                        }}
+                        onMouseEnter={e => { if (!isExporting && !loading) e.currentTarget.style.background = '#1b5e20'; }}
+                        onMouseLeave={e => { if (!isExporting && !loading) e.currentTarget.style.background = '#2e7d32'; }}
+                    >
+                        {isExporting ? (
+                            <>
+                                <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite' }}>↻</span>
+                                Gerando PDF…
+                            </>
+                        ) : (
+                            <>
+                                <IconDownload />
+                                Exportar PDF
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 {/* ── StatCards ── */}
@@ -549,6 +613,7 @@ const Relatorios = () => {
                     </ChartCard>
                 </div>
 
+                </div>{/* end #dashboard-export-content */}
             </div>
         </>
     );

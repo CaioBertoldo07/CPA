@@ -12,7 +12,7 @@ import {
 import { IoExitOutline, IoNotificationsOutline, IoMenuOutline } from 'react-icons/io5';
 import logo from '../../assets/imgs/cpa_logo.svg';
 
-const HeaderAluno = ({ usuarioNome, onLogout, onMenuToggle, showMenuButton }) => {
+const HeaderAvaliador = ({ usuarioNome, onLogout, onMenuToggle, showMenuButton }) => {
     const theme = useTheme();
 
     const initials = usuarioNome
@@ -63,7 +63,7 @@ const HeaderAluno = ({ usuarioNome, onLogout, onMenuToggle, showMenuButton }) =>
                             fontSize: '0.65rem',
                         }}
                     >
-                        Portal do Aluno
+                        Portal do Avaliador
                     </Typography>
                 </Box>
 
@@ -102,7 +102,7 @@ const HeaderAluno = ({ usuarioNome, onLogout, onMenuToggle, showMenuButton }) =>
                                 {usuarioNome || 'Usuário'}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1 }}>
-                                Aluno
+                                Avaliador
                             </Typography>
                         </Box>
                     </Box>
@@ -127,4 +127,4 @@ const HeaderAluno = ({ usuarioNome, onLogout, onMenuToggle, showMenuButton }) =>
     );
 };
 
-export default HeaderAluno;
+export default HeaderAvaliador;
