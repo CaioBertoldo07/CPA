@@ -2,6 +2,7 @@
 import express from 'express';
 const router = express.Router();
 import * as dimensoesController from '../controllers/dimensoesController';
+import { authorize } from '../middleware/authMiddleware';
 
 // Rota para obter uma dimensão pelo número
 router.get('/numero/:numero', dimensoesController.getDimensaoByNumero);
@@ -78,12 +79,12 @@ router.get('/eixo/numero/:numeroDimensao', dimensoesController.getNumeroEixoByDi
  *                   type: integer
  */
 router.get('/', dimensoesController.getDimensoes);
-router.post('/', dimensoesController.postDimensoes);
+router.post('/', authorize(['admin']), dimensoesController.postDimensoes);
 
 // Rota para deletar uma dimensão pelo número
-router.delete('/:numero', dimensoesController.deleteDimensao);
+router.delete('/:numero', authorize(['admin']), dimensoesController.deleteDimensao);
 
 // Rota para atualizar uma dimensão
-router.put('/:numero', dimensoesController.updateDimensao);
+router.put('/:numero', authorize(['admin']), dimensoesController.updateDimensao);
 
 export default router;

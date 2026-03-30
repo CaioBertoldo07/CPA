@@ -6,6 +6,7 @@ import axios from 'axios';
 import https from 'https';
 import { hashMatricula } from '../utils/hashUtils';
 import { env, isProduction } from '../config/env';
+import { getUniversityToken } from './universityTokenStore';
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
@@ -242,7 +243,12 @@ class AvaliacoesService {
 
             if (user && user.oberonPerfilNome === 'DISCENTE') {
                 const [anoAvaliacao, semestreAvaliacao] = (avaliacao.periodo_letivo as string).split('.');
-                const disciplinas = await this.getDisciplinasAluno(anoAvaliacao, semestreAvaliacao, user.universityToken);
+                const universityToken = user.email ? getUniversityToken(user.email) : undefined;
+                if (!universityToken) {
+                    throw new AppError('Sessão da universidade expirada. Faça login novamente.', 401);
+                }
+
+                const disciplinas = await this.getDisciplinasAluno(anoAvaliacao, semestreAvaliacao, universityToken);
 
                 const novasQuestoes: any[] = [];
                 const hasDisciplinas = disciplinas && Array.isArray(disciplinas.message) && disciplinas.message.length > 0;

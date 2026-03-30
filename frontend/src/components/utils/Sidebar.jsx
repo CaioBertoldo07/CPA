@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
     RiDashboardLine,
     RiAdminLine,
@@ -19,20 +19,15 @@ import { IoLogOutOutline } from 'react-icons/io5';
 import { FiX } from 'react-icons/fi';
 import logo from '../../assets/imgs/cpa_logo.svg';
 import './Sidebar.css';
+import { logout } from '../../api/auth';
+import { useGetCurrentUserQuery } from '../../hooks/queries/useAuthQueries';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-    const [userEmail, setUserEmail] = useState('');
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const email = localStorage.getItem('userEmail') || 'Usuário';
-        setUserEmail(email);
-    }, []);
+    const { data: currentUser } = useGetCurrentUserQuery();
+    const userEmail = currentUser?.email || 'Usuário';
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userEmail');
-        navigate('/login');
+        void logout();
     };
 
     const navItems = [

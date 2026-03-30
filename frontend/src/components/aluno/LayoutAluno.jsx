@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
-import { jwtDecode } from 'jwt-decode';
-import { getToken } from '../../api/tokenStore';
+import { logout } from '../../api/auth';
+import { useGetCurrentUserQuery } from '../../hooks/queries/useAuthQueries';
 import HeaderAluno from './HeaderAluno';
 import SidebarAluno from './SidebarAluno';
 
@@ -12,23 +12,21 @@ const LayoutAluno = ({ children }) => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-    const token = getToken();
     const [usuarioNome, setUsuarioNome] = useState('');
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { data: currentUser, isError } = useGetCurrentUserQuery();
 
     useEffect(() => {
-        if (!token) { navigate('/login'); return; }
-        try {
-            const decoded = jwtDecode(token);
-            setUsuarioNome(decoded.usuarioNome || 'Usuário');
-        } catch {
+        if (isError) {
             navigate('/login');
+            return;
         }
-    }, [token, navigate]);
+
+        setUsuarioNome(currentUser?.usuarioNome || currentUser?.nome || 'Usuário');
+    }, [currentUser, isError, navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        navigate('/login');
+        void logout();
     };
 
     const collapsed = isTablet;

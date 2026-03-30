@@ -62,8 +62,8 @@ import { authenticateToken, authorize } from '../middleware/authMiddleware';
  *                 nome:
  *                   type: string
  */
-router.get('/eixos', authorize(['read:eixos']), eixosController.getEixos);
-router.post('/eixos', authorize(['write:eixos']), eixosController.postEixos);
+router.get('/eixos', authorize(['admin']), eixosController.getEixos);
+router.post('/eixos', authorize(['admin']), eixosController.postEixos);
 
 /**
  * @swagger
@@ -120,8 +120,8 @@ router.post('/eixos', authorize(['write:eixos']), eixosController.postEixos);
  *       200:
  *         description: Eixo removido
  */
-router.get('/eixos/:numeroEixo', authorize(['read:eixos']), eixosController.getEixoByNumero);
-router.put('/eixos/:numero', eixosController.updateEixos);  // Corrigido para incluir o parâmetro :id
-router.delete('/eixos/:numero', eixosController.deleteEixos);
+router.get('/eixos/:numeroEixo', authorize(['admin']), eixosController.getEixoByNumero);
+router.put('/eixos/:numero', authorize(['admin']), eixosController.updateEixos);  // Corrigido para incluir o parâmetro :id
+router.delete('/eixos/:numero', authorize(['admin']), eixosController.deleteEixos);
 
 export default router;

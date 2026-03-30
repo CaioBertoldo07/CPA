@@ -12,7 +12,7 @@ import {
     prorrogarAvaliacao,
     deleteAvaliacao,
 } from '../controllers/avaliacoesController';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authenticateToken, authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -94,7 +94,7 @@ import { authenticateToken } from '../middleware/authMiddleware';
  *                   type: string
  *                   format: date-time
  */
-router.post('/avaliacoes', createAvaliacao);
+router.post('/avaliacoes', authorize(['admin']), createAvaliacao);
 router.get('/avaliacoes', getAvaliacoes);
 
 /**
@@ -192,8 +192,8 @@ router.get('/avaliacoes/disponiveis', authenticateToken, getAvaliacoesDisponivei
  *                   example: Avaliação removida
  */
 router.get('/avaliacoes/:id', authenticateToken, getAvaliacaoById);
-router.put('/avaliacoes/:id', authenticateToken, editarAvaliacao);
-router.delete('/avaliacoes/:id', authenticateToken, deleteAvaliacao);
+router.put('/avaliacoes/:id', authenticateToken, authorize(['admin']), editarAvaliacao);
+router.delete('/avaliacoes/:id', authenticateToken, authorize(['admin']), deleteAvaliacao);
 
 /**
  * @swagger
@@ -248,7 +248,7 @@ router.get('/verificar-resposta/:idAvaliacao', authenticateToken, verificarSeUsu
  *                   type: string
  *                   example: Avaliação enviada com sucesso
  */
-router.put('/avaliacoes/:id/enviar', authenticateToken, enviarAvaliacao);
+router.put('/avaliacoes/:id/enviar', authenticateToken, authorize(['admin']), enviarAvaliacao);
 
 /**
  * @swagger
@@ -286,6 +286,6 @@ router.put('/avaliacoes/:id/enviar', authenticateToken, enviarAvaliacao);
  *                   type: string
  *                   example: Avaliação prorrogada com sucesso
  */
-router.put('/avaliacoes/:id/prorrogar', authenticateToken, prorrogarAvaliacao);
+router.put('/avaliacoes/:id/prorrogar', authenticateToken, authorize(['admin']), prorrogarAvaliacao);
 
 export default router;

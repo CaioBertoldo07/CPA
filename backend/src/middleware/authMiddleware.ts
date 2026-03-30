@@ -1,11 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 require('dotenv').config(); // Carregar variáveis do .env
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { UserResponseDTO } from '../dtos/AuthDTO';
 
+const AUTH_COOKIE_NAME = 'cpa_auth';
+
+function getCookieToken(cookieHeader: string | undefined): string | null {
+    if (!cookieHeader) return null;
+
+    const parts = cookieHeader.split(';');
+    for (const part of parts) {
+        const [name, ...valueParts] = part.trim().split('=');
+        if (name === AUTH_COOKIE_NAME) {
+            return decodeURIComponent(valueParts.join('='));
+        }
+    }
+
+    return null;
+}
+
+const jwtUserSchema = z.object({
+    email: z.string().email(),
+    role: z.enum(['admin', 'user']),
+    isAdmin: z.boolean(),
+    matricula: z.string().optional(),
+    curso: z.string().optional(),
+    categoria: z.string().optional(),
+    oberonPerfilNome: z.string().optional(),
+    oberonPerfilId: z.union([z.string(), z.number()]).optional(),
+    nome: z.string().optional(),
+    unidade: z.string().optional(),
+});
+
 function authenticateToken(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && (authHeader as string).split(' ')[1];
+    const cookieToken = getCookieToken(req.headers.cookie);
+    const token = cookieToken;
 
     if (!token) {
         return res.sendStatus(401); // Token ausente
@@ -24,28 +54,23 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
             }
             return res.sendStatus(403); // Outro erro, como token inválido
         }
-        req.user = user as UserResponseDTO & { role: string };
+
+        const parsed = jwtUserSchema.safeParse(user);
+        if (!parsed.success) {
+            return res.sendStatus(403);
+        }
+
+        req.user = parsed.data as UserResponseDTO;
         next();
     });
 }
 
-function authorize(requiredPermissions: string[]) {
+function authorize(requiredRoles: string[]) {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) return res.sendStatus(401);
 
-        const isAdmin = req.user.role === 'admin';
-
-        if (isAdmin) {
-            return next();
-        }
-
-        // Se houver permissões específicas futuramente
-        const userPermissions: string[] = (req.user as any).permissions || [];
-        const hasPermission = requiredPermissions.every((permission: string) =>
-            userPermissions.includes(permission)
-        );
-
-        if (!hasPermission) {
+        const hasRole = requiredRoles.includes(req.user.role);
+        if (!hasRole) {
             return res.sendStatus(403);
         }
 

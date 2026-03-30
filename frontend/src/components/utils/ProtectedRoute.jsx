@@ -1,17 +1,24 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { getToken, getIsAdmin } from '../../api/tokenStore';
+import { Box, CircularProgress } from '@mui/material';
+import { useGetCurrentUserQuery } from '../../hooks/queries/useAuthQueries';
 
 const ProtectedRoute = ({ element: Component, isAdminRequired = false, layout: Layout, ...rest }) => {
-    const token = getToken();
-    const userIsAdmin = getIsAdmin();
+    const { data: user, isLoading, isError } = useGetCurrentUserQuery();
 
-    // Verificar se o token existe e se está expirado
-    if (!token) {
+    if (isLoading) {
+        return (
+            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (isError || !user) {
         return <Navigate to="/login" />;
     }
 
-    if (isAdminRequired && !userIsAdmin) {
+    if (isAdminRequired && !user.isAdmin) {
         window.dispatchEvent(new CustomEvent('auth:access-denied'));
         return <Navigate to="/alunos/avaliacoes" />;
     }

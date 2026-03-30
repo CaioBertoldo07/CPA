@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import * as alternativasController from '../controllers/alternativasController';
+import { authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -71,7 +72,7 @@ import * as alternativasController from '../controllers/alternativasController';
  *                   type: integer
  */
 router.get('/alternativas', alternativasController.getAlternativas);
-router.post('/alternativas', alternativasController.postAlternativas);
+router.post('/alternativas', authorize(['admin']), alternativasController.postAlternativas);
 
 /**
  * @swagger
@@ -165,8 +166,8 @@ router.post('/alternativas', alternativasController.postAlternativas);
  *                   example: Alternativa deletada
  */
 router.get('/alternativas/:id', alternativasController.getAlternativaById);
-router.put('/alternativas/:id', alternativasController.putAlternativas);
-router.delete('/alternativas/:id', alternativasController.deleteAlternativas);
+router.put('/alternativas/:id', authorize(['admin']), alternativasController.putAlternativas);
+router.delete('/alternativas/:id', authorize(['admin']), alternativasController.deleteAlternativas);
 
 /**
  * @swagger
