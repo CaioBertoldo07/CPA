@@ -17,6 +17,7 @@ import {
 import logo from '../assets/imgs/cpa_logo.svg';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../hooks/mutations/useAuthMutations';
+import { getCurrentUser } from '../api/auth';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -32,8 +33,9 @@ const LoginPage = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     loginMutation.mutate({ email, senha }, {
-      onSuccess: (data) => {
-        if (data.user?.isAdmin) {
+      onSuccess: async () => {
+        const currentUser = await getCurrentUser();
+        if (currentUser?.isAdmin) {
           setShowAdminOptions(true);
         } else {
           navigate('/avaliadores');

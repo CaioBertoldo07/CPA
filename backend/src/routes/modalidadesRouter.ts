@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import * as modalidadesController from '../controllers/modalidadesController';
+import { authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -59,7 +60,7 @@ import * as modalidadesController from '../controllers/modalidadesController';
  *                   type: string
  */
 router.get('/modalidades', modalidadesController.getModalidades);
-router.post('/modalidades', modalidadesController.postModalidades);
+router.post('/modalidades', authorize(['admin']), modalidadesController.postModalidades);
 
 /**
  * @swagger
@@ -143,7 +144,7 @@ router.post('/modalidades', modalidadesController.postModalidades);
  *                   example: Modalidade removida
  */
 router.get('/modalidades/:id', modalidadesController.getModalidadesByNumero);
-router.put('/modalidades/:id', modalidadesController.updateModalidades);
-router.delete('/modalidades/:id', modalidadesController.deleteModalidades);
+router.put('/modalidades/:id', authorize(['admin']), modalidadesController.updateModalidades);
+router.delete('/modalidades/:id', authorize(['admin']), modalidadesController.deleteModalidades);
 
 export default router;

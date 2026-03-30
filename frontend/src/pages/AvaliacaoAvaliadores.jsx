@@ -47,14 +47,12 @@ import {
     useGetVerificarRespostaQuery
 } from '../hooks/queries/useAvaliacaoQueries';
 import { useAdicionarRespostaMutation } from '../hooks/mutations/useRespostaMutations';
-import { getToken } from '../api/tokenStore';
 
 const AvaliacaoAvaliadores = () => {
     const { id: avaliacaoId } = useParams();
     const navigate = useNavigate();
     const theme = useTheme();
     const showNotification = useNotification();
-    const token = getToken();
 
     const {
         data: avaliacao,
@@ -75,11 +73,6 @@ const AvaliacaoAvaliadores = () => {
     const [showConfirm, setShowConfirm] = useState(false);
 
     useEffect(() => {
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-
         if (jaRespondeu?.respondeu) {
             showNotification('Você já respondeu esta avaliação', 'warning');
             setTimeout(() => navigate('/avaliadores'), 3000);
@@ -89,7 +82,7 @@ const AvaliacaoAvaliadores = () => {
             showNotification('Erro ao carregar avaliação', 'error');
             navigate('/avaliadores');
         }
-    }, [avaliacaoId, token, navigate, jaRespondeu, isErrorAvaliacao, showNotification]);
+    }, [avaliacaoId, navigate, jaRespondeu, isErrorAvaliacao, showNotification]);
 
     useEffect(() => {
         let total = 0;

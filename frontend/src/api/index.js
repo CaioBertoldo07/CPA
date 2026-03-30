@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken, clearAll } from './tokenStore';
+import { clearAll } from './tokenStore';
 
 const configuredBackendUrl =
     import.meta.env.VITE_BACKEND_URL ||
@@ -15,25 +15,32 @@ const normalizeBackendBaseUrl = (rawUrl) => {
 
 const normalizedBackendUrl = normalizeBackendBaseUrl(configuredBackendUrl);
 
-const baseURL = normalizedBackendUrl
-    ? `${normalizedBackendUrl}/api`
-    : (import.meta.env.DEV ? 'http://localhost:3034/api' : '/api');
+const resolveBaseURL = () => {
+    if (!normalizedBackendUrl) {
+        return '/api';
+    }
+
+    // Para sessão com cookie, prioriza mesma origem quando houver proxy /api.
+    if (typeof window !== 'undefined') {
+        try {
+            const backendOrigin = new URL(normalizedBackendUrl).origin;
+            if (backendOrigin !== window.location.origin) {
+                return '/api';
+            }
+        } catch {
+            return '/api';
+        }
+    }
+
+    return `${normalizedBackendUrl}/api`;
+};
+
+const baseURL = resolveBaseURL();
 
 const api = axios.create({
     baseURL,
+    withCredentials: true,
 });
-
-// Interceptor de requisição para adicionar o token no cabeçalho
-api.interceptors.request.use(
-    (config) => {
-        const token = getToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
 
 // Interceptor de resposta para lidar com erros de autenticação
 api.interceptors.response.use(

@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import * as padraoRespostaController from '../controllers/padraoRespostaController';
+import { authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -59,7 +60,7 @@ import * as padraoRespostaController from '../controllers/padraoRespostaControll
  *                   type: string
  */
 router.get('/padraoresposta', padraoRespostaController.getPadraoResposta);
-router.post('/padraoresposta', padraoRespostaController.postPadraoResposta);
+router.post('/padraoresposta', authorize(['admin']), padraoRespostaController.postPadraoResposta);
 
 /**
  * @swagger
@@ -143,8 +144,8 @@ router.post('/padraoresposta', padraoRespostaController.postPadraoResposta);
  *                   example: Padrão deletado
  */
 router.get('/padraoresposta/:id', padraoRespostaController.getPadraoRespostaById);
-router.put('/padraoresposta/:id', padraoRespostaController.putPadraoResposta);
-router.delete('/padraoresposta/:id', padraoRespostaController.deletePadraoResposta);
+router.put('/padraoresposta/:id', authorize(['admin']), padraoRespostaController.putPadraoResposta);
+router.delete('/padraoresposta/:id', authorize(['admin']), padraoRespostaController.deletePadraoResposta);
 
 
 
