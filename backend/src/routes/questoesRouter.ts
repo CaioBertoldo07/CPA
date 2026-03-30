@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import * as questoesController from '../controllers/questoesController';
+import { authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -83,7 +84,7 @@ import * as questoesController from '../controllers/questoesController';
  *                   type: integer
  */
 router.get('/questoes', questoesController.getQuestoes);
-router.post('/questoes', questoesController.postQuestoes)
+router.post('/questoes', authorize(['admin']), questoesController.postQuestoes)
 
 /**
  * @swagger
@@ -183,8 +184,8 @@ router.post('/questoes', questoesController.postQuestoes)
  *                   example: Questão deletada
  */
 router.get('/questoes/:id', questoesController.getQuestaoById)
-router.put('/questoes/:id', questoesController.updateQuestoes)
-router.delete('/questoes/:id', questoesController.deleteQuestoes)
+router.put('/questoes/:id', authorize(['admin']), questoesController.updateQuestoes)
+router.delete('/questoes/:id', authorize(['admin']), questoesController.deleteQuestoes)
 
 
 export default router;

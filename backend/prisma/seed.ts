@@ -318,11 +318,11 @@ async function main() {
     console.log('❓ Inserindo questões...');
 
     // Buscar IDs das categorias seedadas
-    const catProfessor = await prisma.categorias.findFirst({ where: { nome: 'Professor' } });
-    const catTecnico = await prisma.categorias.findFirst({ where: { nome: 'Tecnico' } });
-    const catAluno = await prisma.categorias.findFirst({ where: { nome: 'Aluno' } });
+    const catDiscente = await prisma.categorias.findFirst({ where: { nome: 'DISCENTE' } });
+    const catDocente = await prisma.categorias.findFirst({ where: { nome: 'DOCENTE' } });
+    const catTecnico = await prisma.categorias.findFirst({ where: { nome: 'TÉCNICO' } });
 
-    if (!catProfessor || !catTecnico || !catAluno) {
+    if (!catDiscente || !catDocente || !catTecnico) {
         console.warn('⚠️ Uma ou mais categorias não encontradas. Verifique o database.json.');
     }
 
@@ -344,7 +344,7 @@ async function main() {
             padrao_sigla: 'ESC',
             tipo_id: 1,
             dimensao_numero: 2,
-            categorias_ids: [catAluno?.id].filter(Boolean) as number[],
+            categorias_ids: [catDiscente?.id].filter(Boolean) as number[],
             modalidades_ensino: ['REGULAR'],
         },
         {
@@ -353,7 +353,7 @@ async function main() {
             padrao_sigla: 'CONC',
             tipo_id: 1,
             dimensao_numero: 7,
-            categorias_ids: [catAluno?.id, catProfessor?.id].filter(Boolean) as number[],
+            categorias_ids: [catDiscente?.id, catDocente?.id].filter(Boolean) as number[],
             modalidades_ensino: ['REGULAR', 'PARFOR'],
         },
         {
@@ -362,7 +362,7 @@ async function main() {
             padrao_sigla: 'SIMNAO',
             tipo_id: 1,
             dimensao_numero: 3,
-            categorias_ids: [catProfessor?.id, catTecnico?.id].filter(Boolean) as number[],
+            categorias_ids: [catDocente?.id, catTecnico?.id].filter(Boolean) as number[],
             modalidades_ensino: ['REGULAR'],
         },
         {
@@ -371,7 +371,7 @@ async function main() {
             padrao_sigla: 'ESC',
             tipo_id: 2,
             dimensao_numero: 9,
-            categorias_ids: [catAluno?.id].filter(Boolean) as number[],
+            categorias_ids: [catDiscente?.id].filter(Boolean) as number[],
             modalidades_ensino: ['REGULAR', 'PARFOR'],
             adicionais: [
                 'Agilidade no atendimento',

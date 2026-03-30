@@ -6,7 +6,7 @@ dotenv.config();
 const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(3034),
-    JWT_SECRET: z.string().min(1).default('change-me-in-production'),
+    JWT_SECRET: z.string().min(32),
     IMPORT_CURSOS_ON_START: z.enum(['true', 'false']).optional().default('false'),
     DISABLE_SSL_VALIDATION: z.enum(['true', 'false']).optional().default('false'),
     ALLOWED_ORIGINS: z.string().optional(),
@@ -22,7 +22,7 @@ if (!parsed.success) {
 
 const allowedOrigins = parsed.data.ALLOWED_ORIGINS
     ? parsed.data.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:3001'];
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3050', 'http://localhost:5173'];
 
 export const env = {
     ...parsed.data,

@@ -1,8 +1,8 @@
 {
   "categorias": [
-    { "nome": "Professor" },
-    { "nome": "Tecnico" },
-    { "nome": "Aluno" }
+    { "nome": "DISCENTE" },
+    { "nome": "DOCENTE" },
+    { "nome": "TÉCNICO" }
   ],
   
   "eixos": [

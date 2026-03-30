@@ -5,23 +5,23 @@ import * as adminRepository from '../repositories/adminRepository';
 import { AuthLoginDTO, UserResponseDTO } from '../dtos/AuthDTO';
 import { AppError } from '../middleware/errorMiddleware';
 import { env, isProduction } from '../config/env';
-
-// Configurações de Permissões
-const PERMISSIONS = {
-    admin: ['read:eixos', 'read:dimensoes', 'write:eixos', 'write:dimensoes', 'admin'],
-    aluno: ['read:eixos', 'read:dimensoes', 'read:modalidades'],
-};
+import { setUniversityToken } from './universityTokenStore';
 
 // Agente HTTPS que ignora certificados (necessário para APIs legadas da UEA)
 const httpsAgent = new https.Agent({
     rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
 });
 
+type LoginResponseDTO = {
+    token: string;
+    user: UserResponseDTO;
+};
+
 class AuthService {
     /**
      * Login Real usando as APIs da UEA (Lyceum/Oberon)
      */
-    async login(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
+    async login(data: AuthLoginDTO): Promise<LoginResponseDTO> {
         const { email, senha } = data;
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -47,9 +47,12 @@ class AuthService {
                 throw new AppError('Token da universidade não encontrado.', 403);
             }
 
+            // O token da universidade fica apenas em memória no backend para reduzir exposição no cliente.
+            setUniversityToken(normalizedEmail, universityToken);
+
             // 2. Obter informações de matrícula/curso
             const alunoResponse = await axios.get(
-                'https://api-carteira.uea.edu.br/lyceum/cadu/aluno/matriculapessoal',
+                'https://api.uea.edu.br/lyceum/aluno/listar/matriculapessoal',
                 {
                     headers: {
                         'Content-Type': 'application/json',
@@ -68,13 +71,13 @@ class AuthService {
             const unidade = alunoData.UNIDADE_NOME;
             const matricula = alunoData.ALUNO;
             const oberonPerfilNome = authData.APILYCEUM.usuario.OberonPerfilNome;
+            const OberonPerfilid = authData.APILYCEUM.usuario.OberonPerfilid;
             const usuarioNome = authData.APILYCEUM.usuario.UsuarioNome;
 
             // 3. Verificar se é Admin no banco local
             const admin = await adminRepository.findByEmail(normalizedEmail);
             const isAdmin = !!admin;
             const role = isAdmin ? 'admin' : 'user';
-            const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
             const user: UserResponseDTO = {
                 // id: 1,
@@ -83,20 +86,30 @@ class AuthService {
                 matricula,
                 curso,
                 unidade,
-                categoria: isAdmin ? 'ADMIN' : 'DISCENTE',
+                categoria: oberonPerfilNome || 'DISCENTE',
                 oberonPerfilNome,
+                OberonPerfilid,
                 usuarioNome,
                 role,
                 isAdmin,
-                permissions,
-                universityToken,
-                token: '',
             };
 
             // 4. Gerar Token JWT do Backend
-            const jwtSecret = env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
-            const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
-            user.token = token;
+            const tokenPayload = {
+                nome: user.nome,
+                email: user.email,
+                matricula: user.matricula,
+                curso: user.curso,
+                unidade: user.unidade,
+                categoria: user.categoria,
+                oberonPerfilNome: user.oberonPerfilNome,
+                oberonPerfilId: user.OberonPerfilid,
+                usuarioNome: user.usuarioNome,
+                role: user.role,
+                isAdmin: user.isAdmin,
+            };
+
+            const token = jwt.sign(tokenPayload, env.JWT_SECRET, { expiresIn: '24h' });
 
             return { token, user };
 
@@ -108,57 +121,19 @@ class AuthService {
     }
 
     /**
-     * Login de Desenvolvimento (Falso) para testes rápidos
-     */
-    // async loginDev(data: AuthLoginDTO): Promise<{ token: string; user: UserResponseDTO }> {
-    //     const { email } = data;
-    //     const normalizedEmail = email.trim().toLowerCase();
-
-    //     const admin = await adminRepository.findByEmail(normalizedEmail);
-    //     const isAdmin = !!admin;
-    //     const role = isAdmin ? 'admin' : 'user';
-    //     const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
-
-    //     const user: UserResponseDTO = {
-    //         // id: 1,
-    //         nome: isAdmin ? 'Administrador' : 'Usuário Dev',
-    //         email: normalizedEmail,
-    //         matricula: '1234567',
-    //         curso: 'CURSO_TESTE', // Usando TESTE em vez de DEV para ficar mais claro
-    //         unidade: 'UNIDADE_TESTE',
-    //         categoria: isAdmin ? 'ADMIN' : 'DISCENTE',
-    //         oberonPerfilNome: isAdmin ? 'ADMIN' : 'DISCENTE',
-    //         usuarioNome: normalizedEmail.split('@')[0],
-    //         role,
-    //         isAdmin,
-    //         permissions,
-    //         universityToken: 'fake-token-dev',
-    //         token: '',
-    //     };
-
-    //     const jwtSecret = process.env.JWT_SECRET || process.env.SECRET_KEY || 'secret';
-    //     const token = jwt.sign(user, jwtSecret, { expiresIn: '24h' });
-    //     user.token = token;
-
-    //     return { token, user };
-    // }
-
-    /**
      * Verifica e atualiza os dados do usuário a partir do seu token JWT
      */
     async verifyUser(user: any): Promise<UserResponseDTO> {
         const admin = await adminRepository.findByEmail(user.email.trim().toLowerCase());
         const isAdmin = !!admin;
         const role = isAdmin ? 'admin' : 'user';
-        const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
 
         return {
             ...user,
             role,
             isAdmin,
-            permissions,
-            categoria: isAdmin ? 'ADMIN' : (user.categoria || 'DISCENTE'),
-            oberonPerfilNome: isAdmin ? 'ADMIN' : (user.oberonPerfilNome || 'DISCENTE'),
+            categoria: user.categoria || user.oberonPerfilNome || 'DISCENTE',
+            oberonPerfilNome: user.oberonPerfilNome || 'DISCENTE',
         };
     }
 }

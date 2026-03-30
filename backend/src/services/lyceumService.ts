@@ -61,7 +61,7 @@ class LyceumService {
     async getAlunoInfo(universityToken: string): Promise<any> {
         try {
             const response = await axios.get(
-                'https://api-carteira.uea.edu.br/lyceum/cadu/aluno/matriculapessoal',
+                'https://api.uea.edu.br/lyceum/aluno/listar/matriculapessoal',
                 {
                     headers: {
                         'Content-Type': 'application/json',

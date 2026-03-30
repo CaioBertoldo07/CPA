@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import * as categoriasController from '../controllers/categoriasController';
+import { authorize } from '../middleware/authMiddleware';
 
 /**
  * @swagger
@@ -59,7 +60,7 @@ import * as categoriasController from '../controllers/categoriasController';
  *                   type: string
  */
 router.get('/categorias', categoriasController.getCategorias)
-router.post('/categorias', categoriasController.postCategorias)
+router.post('/categorias', authorize(['admin']), categoriasController.postCategorias)
 
 /**
  * @swagger
@@ -119,8 +120,8 @@ router.post('/categorias', categoriasController.postCategorias)
  *                   type: string
  *                   example: Categoria removida
  */
-router.delete('/categorias/:id', categoriasController.deleteCategorias)
-router.put('/categorias/:id', categoriasController.updateCategorias)
+router.delete('/categorias/:id', authorize(['admin']), categoriasController.deleteCategorias)
+router.put('/categorias/:id', authorize(['admin']), categoriasController.updateCategorias)
 
 
 export default router;
