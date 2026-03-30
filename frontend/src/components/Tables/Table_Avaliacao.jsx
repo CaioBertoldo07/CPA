@@ -380,9 +380,9 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                         </Tooltip>
                     </Box>
 
-                    {/* Ver relatório (apenas para avaliações enviadas ou encerradas) */}
+                    {/* Ver relatório (apenas para avaliações ativas ou encerradas) */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        {params.row.status !== 1 && (
+                        {(params.row.status === 3 || params.row.status === 4) && (
                             <Tooltip title="Ver relatório">
                                 <MuiButton
                                     size="small"
@@ -398,7 +398,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                                         '&:hover': { bgcolor: '#e8f5e9' }
                                     }}
                                 >
-                                    Ver
+                                    Resultados
                                 </MuiButton>
                             </Tooltip>
                         )}
