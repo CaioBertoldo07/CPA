@@ -1,6 +1,7 @@
 import * as avaliacaoRepository from '../repositories/avaliacaoRepository';
 import { AvaliacaoResponseDTO, CreateAvaliacaoDTO } from '../dtos/AvaliacaoDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { normalizeQuestaoIds } from '../utils/normalizeQuestaoIds';
 import { UserResponseDTO } from '../dtos/AuthDTO';
 import axios from 'axios';
 import https from 'https';
@@ -358,9 +359,10 @@ class AvaliacoesService {
         if (!existing) throw new AppError('Avaliação não encontrada.', 404);
         if (existing.status !== 1) throw new AppError('Apenas rascunhos podem ser editados.', 400);
 
-        const { unidade, cursos, categorias, modalidade, questoes, periodo_letivo, data_inicio, data_fim, ano } = data;
-        const cursosSelecionados = cursos || [];
-        const modalidadesSelecionadas = modalidade || [];
+        const { unidade, cursos, categorias, modalidade, periodo_letivo, data_inicio, data_fim, ano } = data;
+        // Defensive normalization: converts any virtual "numero___disciplina" IDs
+        // that may have slipped through (keeps the contract: number[])
+        const questoes = normalizeQuestaoIds(data.questoes);
 
         const [uExist, catExist, qExist] = await Promise.all([
             avaliacaoRepository.validateUnidades(unidade),
