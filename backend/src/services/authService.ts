@@ -52,7 +52,7 @@ class AuthService {
 
             // 2. Obter informações de matrícula/curso
             const alunoResponse = await axios.get(
-                'https://api-carteira.uea.edu.br/lyceum/cadu/aluno/matriculapessoal',
+                'https://api.uea.edu.br/lyceum/aluno/listar/matriculapessoal',
                 {
                     headers: {
                         'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ class AuthService {
             ...user,
             role,
             isAdmin,
-            categoria: user.categoria || 'DISCENTE',
+            categoria: user.categoria || user.oberonPerfilNome || 'DISCENTE',
             oberonPerfilNome: user.oberonPerfilNome || 'DISCENTE',
         };
     }
