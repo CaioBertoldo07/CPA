@@ -9,7 +9,7 @@ import { env, isProduction } from '../config/env';
 // Configurações de Permissões
 const PERMISSIONS = {
     admin: ['read:eixos', 'read:dimensoes', 'write:eixos', 'write:dimensoes', 'admin'],
-    aluno: ['read:eixos', 'read:dimensoes', 'read:modalidades'],
+    avaliador: ['read:eixos', 'read:dimensoes', 'read:modalidades'],
 };
 
 // Agente HTTPS que ignora certificados (necessário para APIs legadas da UEA)
@@ -74,7 +74,7 @@ class AuthService {
             const admin = await adminRepository.findByEmail(normalizedEmail);
             const isAdmin = !!admin;
             const role = isAdmin ? 'admin' : 'user';
-            const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
+            const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.avaliador;
 
             const user: UserResponseDTO = {
                 // id: 1,
@@ -117,7 +117,7 @@ class AuthService {
     //     const admin = await adminRepository.findByEmail(normalizedEmail);
     //     const isAdmin = !!admin;
     //     const role = isAdmin ? 'admin' : 'user';
-    //     const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
+    //     const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.avaliador;
 
     //     const user: UserResponseDTO = {
     //         // id: 1,
@@ -150,7 +150,7 @@ class AuthService {
         const admin = await adminRepository.findByEmail(user.email.trim().toLowerCase());
         const isAdmin = !!admin;
         const role = isAdmin ? 'admin' : 'user';
-        const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.aluno;
+        const permissions = isAdmin ? PERMISSIONS.admin : PERMISSIONS.avaliador;
 
         return {
             ...user,
