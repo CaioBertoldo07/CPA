@@ -360,6 +360,8 @@ class AvaliacoesService {
         if (existing.status !== 1) throw new AppError('Apenas rascunhos podem ser editados.', 400);
 
         const { unidade, cursos, categorias, modalidade, periodo_letivo, data_inicio, data_fim, ano } = data;
+        const cursosSelecionados = cursos || [];
+        const modalidadesSelecionadas = modalidade || [];
         // Defensive normalization: converts any virtual "numero___disciplina" IDs
         // that may have slipped through (keeps the contract: number[])
         const questoes = normalizeQuestaoIds(data.questoes);
