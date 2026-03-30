@@ -129,8 +129,16 @@ function Modal_Avaliacoes(props) {
     };
 
     const handleCursoSelect = (selected) => {
-        setCursosSelecionados(selected);
-        setCurso(selected.map(c => c.nome).join(', '));
+        // Merge incoming list (already contains pre-seeded items from the modal) and deduplicate
+        const seen = new Set();
+        const merged = selected.filter(c => {
+            const key = c.identificador_api_lyceum ?? c.id;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+        setCursosSelecionados(merged);
+        setCurso(merged.map(c => c.nome).join(', '));
         setShowCursoModal(false);
     };
 
@@ -370,6 +378,7 @@ function Modal_Avaliacoes(props) {
                     onHide={() => setShowCursoModal(false)}
                     onCursosSelected={handleCursoSelect}
                     unidadesSelecionadas={unidadeSelecionada}
+                    initialSelectedCursos={cursosSelecionados}
                 />
             )}
 

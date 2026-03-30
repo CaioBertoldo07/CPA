@@ -9,7 +9,7 @@ import {
     alpha,
 } from '@mui/material';
 import { IoHelpCircleOutline, IoChevronDownOutline } from 'react-icons/io5';
-import LayoutAluno from '../../components/aluno/LayoutAluno';
+import LayoutAvaliador from '../../components/avaliador/LayoutAvaliador';
 
 const faqs = [
     {
@@ -22,7 +22,7 @@ const faqs = [
     },
     {
         pergunta: 'Posso responder uma avaliação mais de uma vez?',
-        resposta: 'Não. Cada avaliação pode ser respondida apenas uma vez por aluno. Após o envio, a avaliação aparecerá na seção "Respondidas".',
+        resposta: 'Não. Cada avaliação pode ser respondida apenas uma vez por avaliador. Após o envio, a avaliação aparecerá na seção "Respondidas".',
     },
     {
         pergunta: 'O que acontece se eu fechar a avaliação no meio?',
@@ -38,11 +38,11 @@ const faqs = [
     },
 ];
 
-const AlunoAjuda = () => {
+const AvaliadorAjuda = () => {
     const theme = useTheme();
 
     return (
-        <LayoutAluno>
+        <LayoutAvaliador>
             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{
                     p: 0.75, borderRadius: '8px',
@@ -95,8 +95,8 @@ const AlunoAjuda = () => {
                     </Accordion>
                 ))}
             </Paper>
-        </LayoutAluno>
+        </LayoutAvaliador>
     );
 };
 
-export default AlunoAjuda;
+export default AvaliadorAjuda;

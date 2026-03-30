@@ -10,11 +10,11 @@ import Relatorios from './pages/Relatorios';
 import Questoes from './pages/Questoes';
 import Modalidades from './pages/Modalidades';
 import { Navigate } from 'react-router-dom';
-import AlunoAvaliacoes from './pages/aluno/AlunoAvaliacoes';
-import AlunoAjuda from './pages/aluno/AlunoAjuda';
+import AvaliadorAvaliacoes from './pages/avaliador/AvaliadorAvaliacoes';
+import AvaliadorAjuda from './pages/avaliador/AvaliadorAjuda';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 import Categorias from "./pages/Categorias";
-import AvaliacaoAlunos from './pages/AvaliacaoAlunos';
+import AvaliacaoAvaliadores from './pages/AvaliacaoAvaliadores';
 import PadraoResposta from './pages/Padrao_Resposta';
 import RelatorioAvaliacao from './pages/RelatorioAvaliacao';
 import RelatorioDisciplinas from './pages/RelatorioDisciplinas';
@@ -77,13 +77,13 @@ const App = () => {
                         <Route path="/agenda" element={<ProtectedRoute element={Agenda} isAdminRequired={true} layout={Layout} />} />
                         <Route path="/cursos" element={<ProtectedRoute element={Cursos} isAdminRequired={true} layout={Layout} />} />
 
-                        {/* Student Routes */}
-                        <Route path="/alunos" element={<Navigate to="/alunos/avaliacoes" replace />} />
-                        <Route path="/alunos/avaliacoes" element={<ProtectedRoute element={AlunoAvaliacoes} />} />
-                        <Route path="/alunos/ajuda" element={<ProtectedRoute element={AlunoAjuda} />} />
+                        {/* Avaliador Routes */}
+                        <Route path="/avaliadores" element={<Navigate to="/avaliadores/avaliacoes" replace />} />
+                        <Route path="/avaliadores/avaliacoes" element={<ProtectedRoute element={AvaliadorAvaliacoes} />} />
+                        <Route path="/avaliadores/ajuda" element={<ProtectedRoute element={AvaliadorAjuda} />} />
                         <Route
-                            path="/alunos/avaliacao/:id"
-                            element={<ProtectedRoute element={AvaliacaoAlunos} />}
+                            path="/avaliadores/avaliacao/:id"
+                            element={<ProtectedRoute element={AvaliacaoAvaliadores} />}
                         />
 
                         {/* Relatório can also have Layout if it's for admins */}

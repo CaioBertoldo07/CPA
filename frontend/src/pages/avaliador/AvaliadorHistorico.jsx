@@ -16,8 +16,8 @@ import {
 import { IoTimeOutline, IoCheckmarkDoneOutline } from 'react-icons/io5';
 
 import { useGetAvaliacoesDisponiveisQuery, useGetVerificarRespostaQuery } from '../../hooks/queries/useAvaliacaoQueries';
-import LayoutAluno from '../../components/aluno/LayoutAluno';
-import BadgeStatus from '../../components/aluno/BadgeStatus';
+import LayoutAvaliador from '../../components/avaliador/LayoutAvaliador';
+import BadgeStatus from '../../components/avaliador/BadgeStatus';
 
 const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
     const { data, isSuccess } = useGetVerificarRespostaQuery(avaliacao.id);
@@ -27,7 +27,7 @@ const AvaliacaoVerificada = ({ avaliacao, onClassify }) => {
     return null;
 };
 
-const AlunoHistorico = () => {
+const AvaliadorHistorico = () => {
     const theme = useTheme();
 
     const { data: avaliacoes = [], isLoading } = useGetAvaliacoesDisponiveisQuery();
@@ -42,7 +42,7 @@ const AlunoHistorico = () => {
         avaliacoes.every(a => respostasMap[a.id] !== undefined);
 
     return (
-        <LayoutAluno>
+        <LayoutAvaliador>
             {avaliacoes.map(a => (
                 <AvaliacaoVerificada key={a.id} avaliacao={a} onClassify={handleClassify} />
             ))}
@@ -132,8 +132,8 @@ const AlunoHistorico = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
-        </LayoutAluno>
+        </LayoutAvaliador>
     );
 };
 
-export default AlunoHistorico;
+export default AvaliadorHistorico;

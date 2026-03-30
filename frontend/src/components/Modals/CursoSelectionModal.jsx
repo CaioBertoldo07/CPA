@@ -20,7 +20,7 @@ import { IoSearchOutline } from 'react-icons/io5';
 import MuiBaseModal from '../utils/MuiBaseModal';
 import { useGetCursosByUnidadesQuery } from '../../hooks/queries/useCursoQueries';
 
-function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas }) {
+function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSelecionadas, initialSelectedCursos = [] }) {
     const [selectedCursos, setSelectedCursos] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -62,11 +62,20 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
     const error = isError ? (queryError?.response?.data?.error || queryError?.message || 'Erro ao carregar cursos.') : '';
 
     useEffect(() => {
-        if (!show) {
-            setSelectedCursos([]);
+        if (show) {
+            // Seed with previously confirmed courses, deduplicating by stable key
+            const seen = new Set();
+            const seeded = initialSelectedCursos.filter(c => {
+                const key = c.identificador_api_lyceum ?? c.id;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            setSelectedCursos(seeded);
+        } else {
             setSearchTerm('');
         }
-    }, [show]);
+    }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSelectCurso = (curso) => {
         const key = curso.identificador_api_lyceum ?? curso.id;
@@ -81,10 +90,15 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
     };
 
     const handleSelectAll = () => {
-        if (selectedCursos.length === filteredCursos.length) {
-            setSelectedCursos([]);
+        if (isAllFilteredSelected) {
+            // Deselect only the items currently visible in the filtered list
+            const filteredKeys = new Set(filteredCursos.map(c => c.identificador_api_lyceum ?? c.id));
+            setSelectedCursos(prev => prev.filter(c => !filteredKeys.has(c.identificador_api_lyceum ?? c.id)));
         } else {
-            setSelectedCursos(filteredCursos);
+            // Add missing filtered items (keep pre-seeded items from other pages/batches)
+            const existingKeys = new Set(selectedCursos.map(c => c.identificador_api_lyceum ?? c.id));
+            const toAdd = filteredCursos.filter(c => !existingKeys.has(c.identificador_api_lyceum ?? c.id));
+            setSelectedCursos(prev => [...prev, ...toAdd]);
         }
     };
 
@@ -93,7 +107,13 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
         onHide();
     };
 
-    const isAllSelected = filteredCursos.length > 0 && selectedCursos.length === filteredCursos.length;
+    const isAllFilteredSelected = filteredCursos.length > 0 &&
+        filteredCursos.every(c =>
+            selectedCursos.some(s => (s.identificador_api_lyceum ?? s.id) === (c.identificador_api_lyceum ?? c.id))
+        );
+    const isSomeFilteredSelected = filteredCursos.some(c =>
+        selectedCursos.some(s => (s.identificador_api_lyceum ?? s.id) === (c.identificador_api_lyceum ?? c.id))
+    );
 
     const modalActions = (
         <>
@@ -172,8 +192,8 @@ function CursoSelectionModal({ show, onHide, onCursosSelected, unidadesSeleciona
                                 <TableRow>
                                     <TableCell padding="checkbox" sx={{ bgcolor: 'grey.50' }}>
                                         <Checkbox
-                                            indeterminate={selectedCursos.length > 0 && selectedCursos.length < filteredCursos.length}
-                                            checked={isAllSelected}
+                                            indeterminate={isSomeFilteredSelected && !isAllFilteredSelected}
+                                            checked={isAllFilteredSelected}
                                             onChange={handleSelectAll}
                                             size="small"
                                         />

@@ -20,8 +20,8 @@ const SIDEBAR_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 const navItems = [
-    { id: 'avaliacoes', label: 'Minhas Avaliações', path: '/alunos/avaliacoes', icon: IoDocumentTextOutline },
-    { id: 'ajuda',      label: 'Ajuda',             path: '/alunos/ajuda',      icon: IoHelpCircleOutline },
+    { id: 'avaliacoes', label: 'Minhas Avaliações', path: '/avaliadores/avaliacoes', icon: IoDocumentTextOutline },
+    { id: 'ajuda',      label: 'Ajuda',             path: '/avaliadores/ajuda',      icon: IoHelpCircleOutline },
 ];
 
 const SidebarContent = ({ onNavigate, collapsed }) => {
@@ -144,7 +144,7 @@ const SidebarContent = ({ onNavigate, collapsed }) => {
     );
 };
 
-const SidebarAluno = ({ mobileOpen, onMobileClose, collapsed }) => {
+const SidebarAvaliador = ({ mobileOpen, onMobileClose, collapsed }) => {
     const navigate = useNavigate();
 
     const handleNavigate = (path) => {
@@ -197,4 +197,4 @@ const SidebarAluno = ({ mobileOpen, onMobileClose, collapsed }) => {
 };
 
 export { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH };
-export default SidebarAluno;
+export default SidebarAvaliador;
