@@ -12,8 +12,12 @@ import {
   Modal as MuiModal,
   Fade,
   Backdrop,
-  Stack
+  Stack,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import logo from '../assets/imgs/cpa_logo.svg';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../hooks/mutations/useAuthMutations';
@@ -22,6 +26,7 @@ import { getCurrentUser } from '../api/auth';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [showAdminOptions, setShowAdminOptions] = useState(false);
   const navigate = useNavigate();
   const loginMutation = useLoginMutation();
@@ -89,16 +94,37 @@ const LoginPage = () => {
                 onChange={e => setEmail(e.target.value)}
                 autoFocus
                 required
+                name="email"
+                autoComplete="email"
               />
               <TextField
                 fullWidth
                 label="Senha"
                 variant="outlined"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={senha}
                 onChange={e => setSenha(e.target.value)}
                 required
+                name="password"
+                autoComplete="current-password"
+                slotProps={{
+                  htmlInput: { enterKeyHint: 'go' },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                          onClick={() => setShowPassword(prev => !prev)}
+                          onMouseDown={e => e.preventDefault()}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }
+                }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Link href="#" variant="body2" sx={{ color: '#1D5E24', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
