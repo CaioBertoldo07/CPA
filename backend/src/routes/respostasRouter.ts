@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authenticateToken, authorize } from '../middleware/authMiddleware';
 import * as respostasController from '../controllers/respostasController';
 
 const router = express.Router();
@@ -87,8 +87,8 @@ router.post('/respostas', authenticateToken, respostasController.salvarRespostas
  *                         idAlternativa:
  *                           type: integer
  */
-router.get('/avaliacoes/:idAvaliacao/respostas', authenticateToken, respostasController.getRespostasByAvaliacao);
-router.get('/avaliacoes/:id/relatorio/disciplinas', authenticateToken, respostasController.getRelatorioDisciplinas);
+router.get('/avaliacoes/:idAvaliacao/respostas', authenticateToken, authorize(['admin']), respostasController.getRespostasByAvaliacao);
+router.get('/avaliacoes/:id/relatorio/disciplinas', authenticateToken, authorize(['admin']), respostasController.getRelatorioDisciplinas);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.get('/avaliacoes/:id/relatorio/disciplinas', authenticateToken, respostas
  *                       participacao:
  *                         type: number
  */
-router.get('/dashboard/estatisticas-categorias', authenticateToken, respostasController.getDashboardCategorias);
+router.get('/dashboard/estatisticas-categorias', authenticateToken, authorize(['admin']), respostasController.getDashboardCategorias);
 
 export default router;
 
