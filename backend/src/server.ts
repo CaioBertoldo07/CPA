@@ -104,24 +104,22 @@ app.get('/readiness', async (_req, res) => {
 // Rota pública — login
 app.use('/api/auth', authRouter);
 
-// Rotas protegidas — qualquer usuário autenticado
-app.use('/api/', authenticateToken, padraoRespostaRouter);
-app.use('/api/', authenticateToken, questoesRouter);
-app.use('/api/', authenticateToken, categoriasRouter);
-app.use('/api/', authenticateToken, modalidadesRouter);
+// Rotas protegidas — avaliador (usuário comum) e admin
 app.use('/api/', authenticateToken, avaliacoesRouter);
-app.use('/api/', authenticateToken, alternativasRouter);
-app.use('/api/', authenticateToken, unidadesRouter);
-app.use('/api/', authenticateToken, municipiosRouter);
-app.use('/api/', authenticateToken, cursosRouter);
 app.use('/api/', authenticateToken, respostasRouter);
-app.use('/api/', authenticateToken, tipoQuestoesRouter);
-
-// Rotas protegidas com permissão específica
-app.use('/api/', authenticateToken, eixosRouter);
-app.use('/api/dimensoes', authenticateToken, dimensoesRouter);
 
 // Rotas exclusivas para admin
+app.use('/api/', authenticateToken, authorize(['admin']), padraoRespostaRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), questoesRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), categoriasRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), modalidadesRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), alternativasRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), unidadesRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), municipiosRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), cursosRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), tipoQuestoesRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), eixosRouter);
+app.use('/api/dimensoes', authenticateToken, authorize(['admin']), dimensoesRouter);
 app.use('/api/', authenticateToken, authorize(['admin']), adminRouter);
 
 // Middleware de tratamento de erro (DEVE ser o último)

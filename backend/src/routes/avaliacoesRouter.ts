@@ -95,7 +95,7 @@ import { authenticateToken, authorize } from '../middleware/authMiddleware';
  *                   format: date-time
  */
 router.post('/avaliacoes', authorize(['admin']), createAvaliacao);
-router.get('/avaliacoes', getAvaliacoes);
+router.get('/avaliacoes', authorize(['admin']), getAvaliacoes);
 
 /**
  * @swagger
