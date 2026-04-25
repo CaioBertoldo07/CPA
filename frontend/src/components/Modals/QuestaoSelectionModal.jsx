@@ -25,7 +25,7 @@ import Modal_Questoes from './Modal_Questoes';
 import { getQuestaoById } from '../../api/questoes';
 import { useGetQuestoesQuery } from '../../hooks/queries/useQuestaoQueries';
 
-function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelectedIds = [] }) {
+function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelectedIds = [], categoriaIds = [] }) {
     const [dimensaoSelecionada, setDimensaoSelecionada] = React.useState('');
     const [questoesSelecionadas, setQuestoesSelecionadas] = React.useState([]);
     const [showEditModal, setShowEditModal] = React.useState(false);
@@ -45,10 +45,26 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelect
         error: queryError
     } = useGetQuestoesQuery();
 
-    const dimensoes = React.useMemo(() => Array.from(new Set(questoes
+    const questoesFiltradasPorCategoria = React.useMemo(() => {
+        const categoriaIdsNormalizados = (categoriaIds || []).map(Number).filter(id => !Number.isNaN(id));
+
+        if (categoriaIdsNormalizados.length === 0) {
+            return [];
+        }
+
+        return (questoes || []).filter((questao) => {
+            const categoriasDaQuestao = (questao?.categorias || [])
+                .map((categoria) => Number(categoria?.id))
+                .filter(id => !Number.isNaN(id));
+
+            return categoriasDaQuestao.some((id) => categoriaIdsNormalizados.includes(id));
+        });
+    }, [questoes, categoriaIds]);
+
+    const dimensoes = React.useMemo(() => Array.from(new Set(questoesFiltradasPorCategoria
         .map(q => q?.dimensao?.nome)
         .filter(Boolean)
-    )).sort(), [questoes]);
+    )).sort(), [questoesFiltradasPorCategoria]);
 
     React.useEffect(() => {
         if (isError) {
@@ -64,8 +80,8 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelect
     };
 
     const filteredQuestoes = React.useMemo(() => dimensaoSelecionada
-        ? questoes.filter(q => q?.dimensao?.nome === dimensaoSelecionada)
-        : questoes, [questoes, dimensaoSelecionada]);
+        ? questoesFiltradasPorCategoria.filter(q => q?.dimensao?.nome === dimensaoSelecionada)
+        : questoesFiltradasPorCategoria, [questoesFiltradasPorCategoria, dimensaoSelecionada]);
 
     const handleQuestaoToggle = (questaoId) => {
         setQuestoesSelecionadas(prev =>
@@ -221,7 +237,11 @@ function QuestaoSelectionModal({ show, onHide, onQuestoesSelected, initialSelect
                 <Box sx={{ maxHeight: '50vh', overflowY: 'auto', pr: 1 }}>
                     {Object.keys(groupedQuestoes).length === 0 ? (
                         <Box sx={{ p: 4, textAlign: 'center' }}>
-                            <Typography color="text.secondary">Nenhuma questão encontrada para este filtro.</Typography>
+                            <Typography color="text.secondary">
+                                {categoriaIds.length === 0
+                                    ? 'Selecione uma categoria na avaliação para listar questões.'
+                                    : 'Nenhuma questão encontrada para a categoria selecionada.'}
+                            </Typography>
                         </Box>
                     ) : (
                         Object.entries(groupedQuestoes).map(([eixoKey, dimensoesObj]) => {

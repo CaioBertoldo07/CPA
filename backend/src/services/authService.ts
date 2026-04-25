@@ -37,8 +37,8 @@ class AuthService {
         try {
             // 1. Autenticação na API do Lyceum
             const response = await axios.post(
-                // "https://api.uea.edu.br/lyceum/login",
-                `${lyceumBaseUrl}${loginPath}`,
+                "https://api.uea.edu.br/lyceum/login",
+                // `${lyceumBaseUrl}${loginPath}`,
                 { email, senha },
                 {
                     headers: { 'Content-Type': 'application/json' },

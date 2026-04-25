@@ -150,7 +150,8 @@ function Modal_Avaliacoes(props) {
     }, [unidadesData, editUnidadeIds, editMode]);
 
     const handleCategoriasChange = (selected) => {
-        setCategoriasSelecionadas(selected.map(s => s.value));
+        const ultimaCategoriaSelecionada = selected?.length ? selected[selected.length - 1] : null;
+        setCategoriasSelecionadas(ultimaCategoriaSelecionada ? [ultimaCategoriaSelecionada.value] : []);
     };
 
     useEffect(() => {
@@ -347,7 +348,7 @@ function Modal_Avaliacoes(props) {
                         <AnimatedMultiSelect
                             options={categoriasOptions}
                             onChange={handleCategoriasChange}
-                            placeholder="Selecione as categorias"
+                            placeholder="Selecione uma categoria"
                             value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
                         />
                     </Grid>
@@ -402,6 +403,7 @@ function Modal_Avaliacoes(props) {
                                 color="success"
                                 startIcon={<IoListOutline />}
                                 onClick={() => setShowQuestaoModal(true)}
+                                disabled={!categoriasSelecionadas.length}
                                 sx={{ fontWeight: 700 }}
                             >
                                 Incluir Questões
@@ -430,6 +432,7 @@ function Modal_Avaliacoes(props) {
                     show={showQuestaoModal}
                     onHide={() => setShowQuestaoModal(false)}
                     initialSelectedIds={questoesSelecionadas}
+                    categoriaIds={categoriasSelecionadas}
                     onQuestoesSelected={handleQuestoesSelect}
                 />
             )}
