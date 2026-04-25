@@ -3,6 +3,7 @@ import * as categoriasRepository from '../repositories/categoriasRepository';
 import * as modalidadesRepository from '../repositories/modalidadesRepository';
 import { QuestaoResponseDTO, CreateQuestaoDTO, UpdateQuestaoDTO } from '../dtos/QuestaoDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class QuestoesService {
     async getAll(): Promise<QuestaoResponseDTO[]> {
@@ -84,7 +85,7 @@ class QuestoesService {
 
         const usage = await questoesRepository.getQuestionUsage(id);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             // Clonagem (Versionamento)
             const mergedData: CreateQuestaoDTO = {
@@ -165,7 +166,7 @@ class QuestoesService {
         const usage = await questoesRepository.getQuestionUsage(id);
 
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             if (hasActiveOrDraft) {
                 // Bloqueia a exclusão pois afetaria uma avaliação em rascunho ou ativa

@@ -66,7 +66,10 @@ const create = (data: Prisma.AlternativasCreateInput) => {
 /**
  * Atualiza uma alternativa
  */
-const update = (id: number, data: any) => {
+const update = (
+    id: number,
+    data: Prisma.AlternativasUpdateInput | Prisma.AlternativasUncheckedUpdateInput
+) => {
     return prisma.alternativas.update({
         where: { id },
         data

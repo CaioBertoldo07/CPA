@@ -71,7 +71,10 @@ const create = (data: Prisma.EixosCreateInput) => {
 /**
  * Atualiza um eixo
  */
-const update = (numero: number, data: any) => {
+const update = (
+    numero: number,
+    data: Prisma.EixosUpdateInput | Prisma.EixosUncheckedUpdateInput
+) => {
     return prisma.eixos.update({
         where: { numero },
         data

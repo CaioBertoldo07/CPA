@@ -97,7 +97,10 @@ const create = (data: Prisma.ModalidadesCreateInput) => {
 /**
  * Atualiza uma modalidade
  */
-const update = (id: number, data: any) => {
+const update = (
+    id: number,
+    data: Prisma.ModalidadesUpdateInput | Prisma.ModalidadesUncheckedUpdateInput
+) => {
     return prisma.modalidades.update({
         where: { id },
         data

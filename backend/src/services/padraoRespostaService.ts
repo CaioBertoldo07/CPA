@@ -2,14 +2,12 @@ import * as padraoRespostaRepository from '../repositories/padraoRespostaReposit
 import { PadraoRespostaResponseDTO } from '../dtos/PadraoRespostaDTO';
 import { AppError } from '../middleware/errorMiddleware';
 import prisma from '../repositories/prismaClient';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class PadraoRespostaService {
     async getAll(): Promise<PadraoRespostaResponseDTO[]> {
         const padroes = await padraoRespostaRepository.findAll();
-        return padroes.map(p => ({
-            ...p,
-            isUsed: false
-        })) as PadraoRespostaResponseDTO[];
+        return padroes as PadraoRespostaResponseDTO[];
     }
 
     async getById(id: number): Promise<PadraoRespostaResponseDTO> {
@@ -42,7 +40,7 @@ class PadraoRespostaService {
 
         const usage = await padraoRespostaRepository.getUsage(id);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             // Se está em uso, cria um novo (clona) e desativa o antigo
             // Usa as novas alternativas se fornecidas, senão as existentes
@@ -65,18 +63,21 @@ class PadraoRespostaService {
         }
 
         // Se não estiver em uso e houver alternativas novas, precisamos atualizar as alternativas também
-        // Nota: O método update abaixo só atualiza a sigla. Se houver alternativas, precisaríamos
-        // de um método de repositório mais completo ou fazer manual aqui.
         if (alternativas) {
-             // Como é um update simples (sem uso prévio), podemos deletar as antigas e criar novas
-             await prisma.alternativas.deleteMany({ where: { id_padrao_resp: id } });
-             await padraoRespostaRepository.update(id, {
-                 sigla,
-                 alternativas: {
-                     create: alternativas.map(a => ({ descricao: a.descricao }))
-                 }
-             });
-             return await padraoRespostaRepository.findById(id) as PadraoRespostaResponseDTO;
+            const alternativasFiltradas = alternativas.filter(a => a.descricao && a.descricao.trim());
+            await prisma.$transaction(async (tx) => {
+                await tx.alternativas.deleteMany({ where: { id_padrao_resp: id } });
+                await tx.padrao_resposta.update({
+                    where: { id },
+                    data: {
+                        sigla,
+                        alternativas: {
+                            create: alternativasFiltradas.map(a => ({ descricao: a.descricao }))
+                        }
+                    }
+                });
+            });
+            return await padraoRespostaRepository.findById(id) as PadraoRespostaResponseDTO;
         }
 
         return await padraoRespostaRepository.update(id, { sigla }) as PadraoRespostaResponseDTO;
@@ -88,19 +89,29 @@ class PadraoRespostaService {
 
         const usage = await padraoRespostaRepository.getUsage(id);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível excluir este padrão de resposta pois ele está sendo utilizado em uma avaliação ativa ou rascunho.', 400);
             } else {
-                // Soft delete
-                await padraoRespostaRepository.update(id, { ativo: false });
+                // Soft delete cascading to alternativas
+                await prisma.$transaction(async (tx) => {
+                    await tx.alternativas.updateMany({
+                        where: { id_padrao_resp: id },
+                        data: { ativo: false }
+                    });
+                    await tx.padrao_resposta.update({
+                        where: { id },
+                        data: { ativo: false }
+                    });
+                });
             }
         } else {
             // Hard delete
-            // Temos que deletar as alternativas antes se não houver cascade no BD
-            await prisma.alternativas.deleteMany({ where: { id_padrao_resp: id } });
-            await padraoRespostaRepository.remove(id);
+            await prisma.$transaction(async (tx) => {
+                await tx.alternativas.deleteMany({ where: { id_padrao_resp: id } });
+                await tx.padrao_resposta.delete({ where: { id } });
+            });
         }
     }
 

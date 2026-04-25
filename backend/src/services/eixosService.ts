@@ -3,14 +3,12 @@ import * as dimensoesRepository from '../repositories/dimensoesRepository';
 import { EixoResponseDTO, CreateEixoDTO } from '../dtos/EixoDTO';
 import { AppError } from '../middleware/errorMiddleware';
 import prisma from '../repositories/prismaClient';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class EixosService {
     async getAll(): Promise<EixoResponseDTO[]> {
         const eixos = await eixosRepository.findAll();
-        return eixos.map(e => ({
-            ...e,
-            isUsed: false
-        })) as EixoResponseDTO[];
+        return eixos as EixoResponseDTO[];
     }
 
     async getByNumero(numero: number): Promise<EixoResponseDTO> {
@@ -44,7 +42,7 @@ class EixosService {
 
         const usage = await eixosRepository.getUsage(numero);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível editar este eixo pois ele está sendo utilizado em uma avaliação ativa ou rascunho.', 400);
             }
@@ -61,7 +59,7 @@ class EixosService {
 
         const usage = await eixosRepository.getUsage(numero);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível excluir este eixo pois ele está sendo utilizado em uma avaliação ativa ou rascunho.', 400);
             } else {

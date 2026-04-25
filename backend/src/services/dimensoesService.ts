@@ -2,14 +2,12 @@ import * as dimensoesRepository from '../repositories/dimensoesRepository';
 import * as eixosRepository from '../repositories/eixosRepository';
 import { DimensoesResponseDTO } from '../dtos/EixoDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class DimensoesService {
     async getAll(): Promise<DimensoesResponseDTO[]> {
         const dimensoes = await dimensoesRepository.findAll();
-        return dimensoes.map(d => ({
-            ...d,
-            isUsed: false
-        })) as DimensoesResponseDTO[];
+        return dimensoes as DimensoesResponseDTO[];
     }
 
     async getByNumero(numero: number): Promise<DimensoesResponseDTO> {
@@ -65,7 +63,7 @@ class DimensoesService {
             // Para mudar o nome, poderíamos clonar se o ID fosse serial, mas como é 'numero',
             // apenas permitimos a edição se for apenas o nome e o usuário estiver ciente,
             // ou bloqueamos se for ativo/rascunho.
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível editar esta dimensão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
             }
@@ -93,7 +91,7 @@ class DimensoesService {
 
         const usage = await dimensoesRepository.getUsage(numero);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível excluir esta dimensão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
             } else {

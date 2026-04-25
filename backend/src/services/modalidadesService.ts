@@ -1,14 +1,12 @@
 import * as modalidadesRepository from '../repositories/modalidadesRepository';
 import { ModalidadeResponseDTO } from '../dtos/UtilityDTOs';
 import { AppError } from '../middleware/errorMiddleware';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class ModalidadesService {
     async getAll(): Promise<ModalidadeResponseDTO[]> {
         const modalidades = await modalidadesRepository.findAll();
-        return modalidades.map(m => ({
-            ...m,
-            isUsed: false // Podemos simplificar ou carregar usage aqui se necessário para a tabela
-        })) as ModalidadeResponseDTO[];
+        return modalidades as ModalidadeResponseDTO[];
     }
 
     async getById(id: number): Promise<ModalidadeResponseDTO> {
@@ -36,7 +34,7 @@ class ModalidadesService {
 
         const usage = await modalidadesRepository.getUsage(id);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             // Se está em uso, cria uma nova (clona) e desativa a antiga
             const newModalidade = await modalidadesRepository.create({
@@ -62,7 +60,7 @@ class ModalidadesService {
 
         const usage = await modalidadesRepository.getUsage(id);
         if (usage.length > 0) {
-            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
 
             if (hasActiveOrDraft) {
                 throw new AppError('Não é possível excluir esta modalidade pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);

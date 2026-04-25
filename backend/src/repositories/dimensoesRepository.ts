@@ -76,7 +76,10 @@ const create = (data: Prisma.DimensoesCreateInput) => {
 /**
  * Atualiza uma dimensão
  */
-const update = (numero: number, data: any) => {
+const update = (
+    numero: number,
+    data: Prisma.DimensoesUpdateInput | Prisma.DimensoesUncheckedUpdateInput
+) => {
     return prisma.dimensoes.update({
         where: { numero },
         data

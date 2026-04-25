@@ -7,7 +7,7 @@ import prisma from './prismaClient';
 const findAll = () => {
     return prisma.padrao_resposta.findMany({
         where: { ativo: true },
-        include: { alternativas: true },
+        include: { alternativas: { where: { ativo: true } } },
         orderBy: { id: 'asc' }
     });
 };
@@ -18,7 +18,7 @@ const findAll = () => {
 const findById = (id: number) => {
     return prisma.padrao_resposta.findUnique({
         where: { id },
-        include: { alternativas: true }
+        include: { alternativas: { where: { ativo: true } } }
     });
 };
 
@@ -67,7 +67,10 @@ const create = (data: Prisma.Padrao_respostaCreateInput) => {
 /**
  * Atualiza um padrão de resposta
  */
-const update = (id: number, data: any) => {
+const update = (
+    id: number,
+    data: Prisma.Padrao_respostaUpdateInput | Prisma.Padrao_respostaUncheckedUpdateInput
+) => {
     return prisma.padrao_resposta.update({
         where: { id },
         data
