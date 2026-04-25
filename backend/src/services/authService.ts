@@ -33,12 +33,10 @@ class AuthService {
         const normalizedEmail = email.trim().toLowerCase();
         const lyceumBaseUrl = env.LYCEUM_API_BASE_URL;
         const loginPath = isProduction ? '/lyceum/login' : '/lyceum/loginteste';
-        // const loginPath = '/lyceum/login';
         try {
             // 1. Autenticação na API do Lyceum
             const response = await axios.post(
-                "https://api.uea.edu.br/lyceum/login",
-                // `${lyceumBaseUrl}${loginPath}`,
+                `${lyceumBaseUrl}${loginPath}`,
                 { email, senha },
                 {
                     headers: { 'Content-Type': 'application/json' },

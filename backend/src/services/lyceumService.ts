@@ -13,7 +13,8 @@ const httpsAgent = new https.Agent({
 
 class LyceumService {
     private axiosInstance: AxiosInstance;
-    private lyceumBaseUrl = 'https://api.uea.edu.br/lyceum/';
+    // Usa homolog-api em dev/staging, api.uea.edu.br em produção (resolvido via env.LYCEUM_API_BASE_URL)
+    private lyceumBaseUrl = env.LYCEUM_API_BASE_URL + '/lyceum/';
     private lyceumConsumerEmail: string;
     private lyceumConsumerPassword: string;
 
@@ -61,7 +62,7 @@ class LyceumService {
     async getAlunoInfo(universityToken: string): Promise<any> {
         try {
             const response = await axios.get(
-                'https://api.uea.edu.br/lyceum/aluno/listar/matriculapessoal',
+                `${this.lyceumBaseUrl}aluno/listar/matriculapessoal`,
                 {
                     headers: {
                         'Content-Type': 'application/json',
@@ -83,9 +84,12 @@ class LyceumService {
         }
     }
 
+
     async getConsumerJwtToken(): Promise<string> {
         try {
-            const response = await axios.post<{ APILYCEUM: { token: string } }>(`${this.lyceumBaseUrl}login`, {
+            // Usa homolog em dev, produção em prod (resolvido por lyceumBaseUrl)
+            const loginPath = isProduction ? 'login' : 'loginteste';
+            const response = await axios.post<{ APILYCEUM: { token: string } }>(`${this.lyceumBaseUrl}${loginPath}`, {
                 email: this.lyceumConsumerEmail,
                 senha: this.lyceumConsumerPassword
             });
