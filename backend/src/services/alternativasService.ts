@@ -32,8 +32,21 @@ class AlternativasService {
         const existing = await alternativasRepository.findById(id);
         if (!existing) throw new AppError('Alternativa não encontrada.', 404);
 
-        const padrao = await padraoRespostaRepository.findById(data.id_padrao_resp);
-        if (!padrao) throw new AppError('Padrão de resposta não encontrado.', 400);
+        const usage = await alternativasRepository.getUsage(id);
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            
+            // Se está em uso, cria uma nova alternativa e desativa a antiga
+            const newAlt = await alternativasRepository.create({
+                descricao: data.descricao,
+                padrao_resp: { connect: { id: data.id_padrao_resp } }
+            });
+
+            if (!hasActiveOrDraft) {
+                await alternativasRepository.update(id, { ativo: false });
+            }
+            return newAlt as AlternativaResponseDTO;
+        }
 
         return await alternativasRepository.update(id, {
             descricao: data.descricao,
@@ -44,7 +57,18 @@ class AlternativasService {
     async delete(id: number): Promise<void> {
         const existing = await alternativasRepository.findById(id);
         if (!existing) throw new AppError('Alternativa não encontrada.', 404);
-        await alternativasRepository.remove(id);
+
+        const usage = await alternativasRepository.getUsage(id);
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === 1 || s === 2);
+            if (hasActiveOrDraft) {
+                throw new AppError('Não é possível excluir esta alternativa pois ela possui respostas em uma avaliação ativa ou rascunho.', 400);
+            } else {
+                await alternativasRepository.update(id, { ativo: false });
+            }
+        } else {
+            await alternativasRepository.remove(id);
+        }
     }
 }
 
