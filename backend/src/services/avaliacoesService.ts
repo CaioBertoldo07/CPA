@@ -357,20 +357,17 @@ class AvaliacoesService {
             throw new AppError('Curso do usuário não encontrado no token.', 400);
         }
 
-        let avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters, unidade, unidadeSigla);
-
-        // Fallback para perfis sem curso (docente/técnico):
-        // se não houver match por unidade, retorna por categoria no período.
-        if (!isDiscente && avaliacoes.length === 0) {
-            avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters);
-
-            // Fallback extra para docente/técnico:
-            // quando a avaliação foi cadastrada sem categoria correta,
-            // usa o vínculo de unidade para não ocultar avaliações do campus.
-            if (avaliacoes.length === 0) {
-                avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), undefined, unidade, unidadeSigla);
-            }
-        }
+        // Filtra sempre por categoria + unidade (nome ou sigla).
+        // Para discente: também filtra por curso.
+        // Não há fallbacks que ignorem unidade ou categoria — cada usuário só vê
+        // avaliações da sua própria unidade e categoria.
+        const avaliacoes = await avaliacaoRepository.findDisponiveis(
+            cursoUsuario,
+            new Date(),
+            categoriaFilters,
+            unidade,
+            unidadeSigla,
+        );
 
         if (avaliacoes.length === 0) return [];
 
@@ -613,7 +610,9 @@ class AvaliacoesService {
     }
 
     private async getDisciplinasAluno(ano: string, semestre: string, token: string): Promise<any[]> {
-        const url = `https://api.uea.edu.br/lyceum/cadu/aluno/historico/matriculapessoal/ano/${ano}/semestre/${semestre}`;
+        // Usa homolog-api em desenvolvimento, igual ao endpoint do docente
+        const apiHost = isProduction ? 'https://api.uea.edu.br' : 'https://homolog-api.uea.edu.br';
+        const url = `${apiHost}/lyceum/cadu/aluno/historico/matriculapessoal/ano/${ano}/semestre/${semestre}`;
         try {
             const response = await axios.get(url, {
                 headers: { 'Authorization': `Bearer ${token}` },

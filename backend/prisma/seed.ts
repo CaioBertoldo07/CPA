@@ -34,25 +34,36 @@ async function main() {
     }
     console.log('✅ Tipos de questões inseridos.');
 
-    // 3. Carregar dados do database.json
+    // 3. Categorias fixas — DISCENTE, DOCENTE, TÉCNICO (somente leitura na UI)
+    const categoriasFixas = ['DISCENTE', 'DOCENTE', 'TÉCNICO'];
+    for (const nomeCategoria of categoriasFixas) {
+        // Verifica se já existe pelo nome
+        const existing = await prisma.categorias.findFirst({ where: { nome: nomeCategoria } });
+        if (existing) {
+            // Garante que o nome está correto (maiúsculo com acento)
+            if (existing.nome !== nomeCategoria) {
+                await prisma.categorias.update({ where: { id: existing.id }, data: { nome: nomeCategoria } });
+                console.log(`  ~ Categoria atualizada: "${nomeCategoria}"`);
+            }
+        } else {
+            await prisma.categorias.create({ data: { nome: nomeCategoria } });
+            console.log(`  + Categoria criada: "${nomeCategoria}"`);
+        }
+    }
+    console.log('✅ Categorias fixas verificadas/inseridas (DISCENTE, DOCENTE, TÉCNICO).');
+
+    // 4. Carregar dados do database.json
     const dataPath = path.join(__dirname, 'database.json');
     if (fs.existsSync(dataPath)) {
         const rawData = fs.readFileSync(dataPath, 'utf-8');
         const data = JSON.parse(rawData);
 
-        // Categorias
-        if (data.categorias) {
-            for (const cat of data.categorias) {
-                await prisma.$executeRaw`
-                    INSERT INTO "Categorias" (nome)
-                    VALUES (${cat.nome})
-                    ON CONFLICT DO NOTHING
-                `;
-            }
-            console.log('✅ Categorias inseridas.');
-        }
+        // Categorias — nomes fixos e imutáveis (DISCENTE, DOCENTE, TÉCNICO)
+        // Não utiliza mais o database.json para categorias; nomes definidos aqui diretamente.
+        // Ignorado: data.categorias do database.json
 
-    //     // Eixos
+
+        //     // Eixos
         if (data.eixos) {
             for (const eixo of data.eixos) {
                 await prisma.$executeRaw`
@@ -64,7 +75,7 @@ async function main() {
             console.log('✅ Eixos inseridos.');
         }
 
-    //     // Dimensoes
+        //     // Dimensoes
         if (data.dimensoes) {
             for (const dim of data.dimensoes) {
                 await prisma.$executeRaw`
@@ -79,72 +90,6 @@ async function main() {
         console.warn('⚠️ prisma/database.json não encontrado.');
     }
 
-    // // -------------------------------------------------------------------------
-    // // 4. Municípios com presença da UEA
-    // // -------------------------------------------------------------------------
-    // console.log('🏙️ Inserindo municípios...');
-
-    // const municipiosData = [
-    //     { nome: 'Manaus', UF: 'AM' },
-    //     { nome: 'Coari', UF: 'AM' },
-    //     { nome: 'Parintins', UF: 'AM' },
-    //     { nome: 'Tefé', UF: 'AM' },
-    //     { nome: 'Apuí', UF: 'AM' },
-    //     { nome: 'Tapauá', UF: 'AM' },
-    //     { nome: 'Itacoatiara', UF: 'AM' },
-    //     { nome: 'Iranduba', UF: 'AM' },
-    // ];
-
-    // const municipioMap: Record<string, number> = {};
-
-    // for (const mun of municipiosData) {
-    //     const record = await prisma.municipios.upsert({
-    //         where: { nome: mun.nome },
-    //         update: { UF: mun.UF },
-    //         create: { nome: mun.nome, UF: mun.UF },
-    //     });
-    //     municipioMap[mun.nome] = record.id;
-    // }
-    // console.log(`✅ Municípios inseridos: ${Object.keys(municipioMap).join(', ')}`);
-
-    // // -------------------------------------------------------------------------
-    // // 5. Unidades da UEA
-    // // -------------------------------------------------------------------------
-    // console.log('🏫 Inserindo unidades...');
-
-    // const unidadesData = [
-    //     // Manaus - Capital
-    //     { nome: 'Escola Superior de Ciências Sociais', sigla: 'ESO', municipio_vinculo: 'Manaus' },
-    //     { nome: 'Escola Superior de Ciências da Saúde', sigla: 'ESA', municipio_vinculo: 'Manaus' },
-    //     { nome: 'Escola Normal Superior', sigla: 'ENS', municipio_vinculo: 'Manaus' },
-    //     { nome: 'Escola de Direito', sigla: 'ED', municipio_vinculo: 'Manaus' },
-    //     { nome: 'Escola Superior de Artes e Turismo', sigla: 'ESAT', municipio_vinculo: 'Manaus' },
-    //     { nome: 'Escola Superior de Tecnologia', sigla: 'EST', municipio_vinculo: 'Manaus' },
-    //     // Interior
-    //     { nome: 'Núcleo de Ensino Superior de Coari', sigla: 'COARI', municipio_vinculo: 'Coari' },
-    //     { nome: 'Centro de Estudos Superiores de Parintins', sigla: 'PARINTS', municipio_vinculo: 'Parintins' },
-    //     { nome: 'Casa do Estudante de Tefé', sigla: 'TEFE', municipio_vinculo: 'Tefé' },
-    //     { nome: 'Núcleo de Ensino Superior de Apuí', sigla: 'APUI', municipio_vinculo: 'Apuí' },
-    //     { nome: 'Núcleo de Ensino Superior de Tapauá', sigla: 'TAPUA', municipio_vinculo: 'Tapauá' },
-    //     { nome: 'Polo Rural de Novo Remanso', sigla: 'NREM', municipio_vinculo: 'Itacoatiara' },
-    //     { nome: 'Cidade Universitária de Iranduba', sigla: 'IRAND', municipio_vinculo: 'Iranduba' },
-    // ];
-
-    // const unidadeMap: Record<string, number> = {};
-
-    // for (const uni of unidadesData) {
-    //     const record = await prisma.unidades.upsert({
-    //         where: { sigla: uni.sigla },
-    //         update: { nome: uni.nome, municipio_vinculo: uni.municipio_vinculo },
-    //         create: { nome: uni.nome, sigla: uni.sigla, municipio_vinculo: uni.municipio_vinculo },
-    //     });
-    //     unidadeMap[uni.sigla] = record.id;
-    // }
-    // console.log(`✅ Unidades inseridas: ${Object.keys(unidadeMap).join(', ')}`);
-
-    // // -------------------------------------------------------------------------
-    // // 6. Modalidades
-    // // -------------------------------------------------------------------------
     console.log('📋 Inserindo modalidades...');
 
     const modalidadesData = [
@@ -168,102 +113,6 @@ async function main() {
     }
     console.log(`✅ Modalidades inseridas: ${Object.keys(modalidadeMap).join(', ')}`);
 
-    // // -------------------------------------------------------------------------
-    // // 7. Cursos (>= 2 por unidade)
-    // // -------------------------------------------------------------------------
-    // console.log('🎓 Inserindo cursos...');
-
-    // type CursoSeed = {
-    //     identificador_api_lyceum: string;
-    //     nome: string;
-    //     nivel: string;
-    //     municipio_nome: string;
-    //     unidade_sigla: string;
-    //     modalidade: string;
-    //     modalidade_api: string;
-    // };
-
-    // const cursosData: CursoSeed[] = [
-    //     // ESO - Manaus
-    //     { identificador_api_lyceum: 'ESO-CIENCIAS-SOCIAIS-001', nome: 'Ciências Sociais', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESO', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'ESO-GESTAO-PUBLICA-001', nome: 'Gestão Pública', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESO', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // ESA - Manaus
-    //     { identificador_api_lyceum: 'ESA-ENFERMAGEM-001', nome: 'Enfermagem', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESA', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'ESA-MEDICINA-001', nome: 'Medicina', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESA', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // ENS - Manaus
-    //     { identificador_api_lyceum: 'ENS-PEDAGOGIA-001', nome: 'Pedagogia', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ENS', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'ENS-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ENS', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // ED - Manaus
-    //     { identificador_api_lyceum: 'ED-DIREITO-DIURNO-001', nome: 'Direito (Diurno)', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ED', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'ED-DIREITO-NOTURNO-001', nome: 'Direito (Noturno)', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ED', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // ESAT - Manaus
-    //     { identificador_api_lyceum: 'ESAT-ARTES-VISUAIS-001', nome: 'Artes Visuais', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESAT', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'ESAT-TURISMO-001', nome: 'Turismo', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'ESAT', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // EST - Manaus
-    //     { identificador_api_lyceum: 'EST-ENG-CIVIL-001', nome: 'Engenharia Civil', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'EST', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'EST-ENG-COMPUTAÇÃO-001', nome: 'Engenharia de Computação', nivel: 'GRAD', municipio_nome: 'Manaus', unidade_sigla: 'EST', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // COARI
-    //     { identificador_api_lyceum: 'COARI-ADM-001', nome: 'Administração', nivel: 'GRAD', municipio_nome: 'Coari', unidade_sigla: 'COARI', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'COARI-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Coari', unidade_sigla: 'COARI', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // PARINTS
-    //     { identificador_api_lyceum: 'PARINTS-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Parintins', unidade_sigla: 'PARINTS', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'PARINTS-PEDAGOGIA-001', nome: 'Pedagogia', nivel: 'GRAD', municipio_nome: 'Parintins', unidade_sigla: 'PARINTS', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // TEFE
-    //     { identificador_api_lyceum: 'TEFE-ADM-001', nome: 'Administração', nivel: 'GRAD', municipio_nome: 'Tefé', unidade_sigla: 'TEFE', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'TEFE-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Tefé', unidade_sigla: 'TEFE', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // APUI
-    //     { identificador_api_lyceum: 'APUI-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Apuí', unidade_sigla: 'APUI', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'APUI-ADM-001', nome: 'Administração', nivel: 'GRAD', municipio_nome: 'Apuí', unidade_sigla: 'APUI', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // TAPUA
-    //     { identificador_api_lyceum: 'TAPUA-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Tapauá', unidade_sigla: 'TAPUA', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'TAPUA-PEDAGOGIA-001', nome: 'Pedagogia', nivel: 'GRAD', municipio_nome: 'Tapauá', unidade_sigla: 'TAPUA', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // NREM (Novo Remanso - municipio_vinculo = Itacoatiara)
-    //     { identificador_api_lyceum: 'NREM-LETRAS-001', nome: 'Letras - Língua Portuguesa', nivel: 'GRAD', municipio_nome: 'Itacoatiara', unidade_sigla: 'NREM', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'NREM-ADM-001', nome: 'Administração', nivel: 'GRAD', municipio_nome: 'Itacoatiara', unidade_sigla: 'NREM', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     // IRAND
-    //     { identificador_api_lyceum: 'IRAND-ENG-PROD-001', nome: 'Engenharia de Produção', nivel: 'GRAD', municipio_nome: 'Iranduba', unidade_sigla: 'IRAND', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    //     { identificador_api_lyceum: 'IRAND-ADM-001', nome: 'Administração', nivel: 'GRAD', municipio_nome: 'Iranduba', unidade_sigla: 'IRAND', modalidade: 'REGULAR', modalidade_api: 'BA' },
-    // ];
-
-    // for (const curso of cursosData) {
-    //     const municipioId = municipioMap[curso.municipio_nome];
-    //     const unidadeId = unidadeMap[curso.unidade_sigla];
-
-    //     if (!municipioId) {
-    //         console.warn(`⚠️ Município não encontrado para curso: ${curso.nome} (${curso.municipio_nome})`);
-    //         continue;
-    //     }
-    //     if (!unidadeId) {
-    //         console.warn(`⚠️ Unidade não encontrada para curso: ${curso.nome} (${curso.unidade_sigla})`);
-    //         continue;
-    //     }
-
-    //     await prisma.cursos.upsert({
-    //         where: { identificador_api_lyceum: curso.identificador_api_lyceum },
-    //         update: {
-    //             nome: curso.nome,
-    //             nivel: curso.nivel,
-    //             municipio_sede: municipioId,
-    //             id_unidades: unidadeId,
-    //             modalidade: curso.modalidade,
-    //             modalidade_api: curso.modalidade_api,
-    //         },
-    //         create: {
-    //             identificador_api_lyceum: curso.identificador_api_lyceum,
-    //             nome: curso.nome,
-    //             nivel: curso.nivel,
-    //             municipio_sede: municipioId,
-    //             id_unidades: unidadeId,
-    //             modalidade: curso.modalidade,
-    //             modalidade_api: curso.modalidade_api,
-    //         },
-    //     });
-    // }
-    // console.log(`✅ Cursos inseridos: ${cursosData.length} curso(s) processado(s).`);
-
-    // // -------------------------------------------------------------------------
-    // // 8. Padrões de Resposta + Alternativas
-    // // -------------------------------------------------------------------------
     console.log('📝 Inserindo padrões de resposta...');
 
     type PadraoSeed = {
@@ -422,8 +271,8 @@ async function main() {
                 },
                 questoes_adicionais: q.adicionais
                     ? {
-                          create: q.adicionais.map((descricao) => ({ descricao })),
-                      }
+                        create: q.adicionais.map((descricao) => ({ descricao })),
+                    }
                     : undefined,
             },
         });
