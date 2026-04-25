@@ -2,16 +2,23 @@ import * as dimensoesRepository from '../repositories/dimensoesRepository';
 import * as eixosRepository from '../repositories/eixosRepository';
 import { DimensoesResponseDTO } from '../dtos/EixoDTO';
 import { AppError } from '../middleware/errorMiddleware';
+import { AVALIACAO_STATUS } from '../utils/avaliacaoStatus';
 
 class DimensoesService {
     async getAll(): Promise<DimensoesResponseDTO[]> {
-        return await dimensoesRepository.findAll() as DimensoesResponseDTO[];
+        const dimensoes = await dimensoesRepository.findAll();
+        return dimensoes as DimensoesResponseDTO[];
     }
 
     async getByNumero(numero: number): Promise<DimensoesResponseDTO> {
         const dimensao = await dimensoesRepository.findByNumero(numero);
         if (!dimensao) throw new AppError('Dimensão não encontrada.', 404);
-        return dimensao as DimensoesResponseDTO;
+        
+        const usage = await dimensoesRepository.getUsage(numero);
+        return {
+            ...dimensao,
+            isUsed: usage.length > 0
+        } as DimensoesResponseDTO;
     }
 
     async getByEixo(numeroEixo: number): Promise<DimensoesResponseDTO[]> {
@@ -50,6 +57,22 @@ class DimensoesService {
             if (!eixoExists) throw new AppError('Número de eixo fornecido não existe.', 400);
         }
 
+        const usage = await dimensoesRepository.getUsage(numero);
+        if (usage.length > 0) {
+            // Se já foi usada, não permitimos mudar o número pois quebraria o histórico.
+            // Para mudar o nome, poderíamos clonar se o ID fosse serial, mas como é 'numero',
+            // apenas permitimos a edição se for apenas o nome e o usuário estiver ciente,
+            // ou bloqueamos se for ativo/rascunho.
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
+            if (hasActiveOrDraft) {
+                throw new AppError('Não é possível editar esta dimensão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
+            }
+            // Se for apenas encerrada, permitimos editar o nome mas protegemos o número
+            if (novoNumero !== undefined && novoNumero !== numero) {
+                throw new AppError('Não é possível alterar o número de uma dimensão que já possui histórico de avaliações.', 400);
+            }
+        }
+
         const updateData: any = {};
         if (novoNumero !== undefined) updateData.numero = novoNumero;
         if (nome !== undefined) updateData.nome = nome;
@@ -66,7 +89,19 @@ class DimensoesService {
         const dimensaoExists = await dimensoesRepository.findByNumero(numero);
         if (!dimensaoExists) throw new AppError('Dimensão não encontrada.', 404);
 
-        await dimensoesRepository.remove(numero);
+        const usage = await dimensoesRepository.getUsage(numero);
+        if (usage.length > 0) {
+            const hasActiveOrDraft = usage.some(s => s === AVALIACAO_STATUS.RASCUNHO || s === AVALIACAO_STATUS.ATIVA);
+            if (hasActiveOrDraft) {
+                throw new AppError('Não é possível excluir esta dimensão pois ela está sendo utilizada em uma avaliação ativa ou rascunho.', 400);
+            } else {
+                // Soft delete
+                await dimensoesRepository.update(numero, { ativo: false });
+            }
+        } else {
+            // Hard delete
+            await dimensoesRepository.remove(numero);
+        }
     }
 }
 

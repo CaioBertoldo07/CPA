@@ -2,12 +2,40 @@ import { Prisma } from '@prisma/client';
 import prisma from './prismaClient';
 
 /**
- * Busca todas as alternativas
+ * Busca todas as alternativas (ativas)
  */
 const findAll = () => {
     return prisma.alternativas.findMany({
+        where: { ativo: true },
         orderBy: { id: 'asc' }
     });
+};
+
+/**
+ * Retorna os status de todas as avaliações vinculadas a esta alternativa (via respostas)
+ */
+const getUsage = async (id: number) => {
+    const alternativa = await prisma.alternativas.findUnique({
+        where: { id },
+        include: {
+            Respostas: {
+                include: {
+                    avaliacao_questoes: { include: { avaliacao: { select: { status: true } } } }
+                }
+            }
+        }
+    });
+
+    if (!alternativa) return [];
+
+    const statuses = new Set<number>();
+    alternativa.Respostas.forEach(r => {
+        if (r.avaliacao_questoes?.avaliacao?.status !== undefined) {
+            statuses.add(r.avaliacao_questoes.avaliacao.status);
+        }
+    });
+
+    return Array.from(statuses);
 };
 
 /**
@@ -24,7 +52,7 @@ const findById = (id: number) => {
  */
 const findByIds = (ids: number[]) => {
     return prisma.alternativas.findMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids }, ativo: true }
     });
 };
 
@@ -38,7 +66,10 @@ const create = (data: Prisma.AlternativasCreateInput) => {
 /**
  * Atualiza uma alternativa
  */
-const update = (id: number, data: Prisma.AlternativasUpdateInput) => {
+const update = (
+    id: number,
+    data: Prisma.AlternativasUpdateInput | Prisma.AlternativasUncheckedUpdateInput
+) => {
     return prisma.alternativas.update({
         where: { id },
         data
@@ -59,7 +90,7 @@ const remove = (id: number) => {
  */
 const findByPadraoResposta = (idPadraoResp: number) => {
     return prisma.alternativas.findMany({
-        where: { id_padrao_resp: idPadraoResp },
+        where: { id_padrao_resp: idPadraoResp, ativo: true },
         orderBy: { id: 'asc' }
     });
 };
@@ -68,6 +99,7 @@ export {
     findAll,
     findById,
     findByIds,
+    getUsage,
     create,
     update,
     remove,
