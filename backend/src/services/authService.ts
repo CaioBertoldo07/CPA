@@ -18,17 +18,27 @@ type LoginResponseDTO = {
 };
 
 class AuthService {
+    private normalizeText(value?: string): string {
+        return (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toUpperCase();
+    }
+
     /**
      * Login Real usando as APIs da UEA (Lyceum/Oberon)
      */
     async login(data: AuthLoginDTO): Promise<LoginResponseDTO> {
         const { email, senha } = data;
         const normalizedEmail = email.trim().toLowerCase();
-
+        const lyceumBaseUrl = env.LYCEUM_API_BASE_URL;
+        const loginPath = isProduction ? '/lyceum/login' : '/lyceum/loginteste';
+        // const loginPath = '/lyceum/login';
         try {
             // 1. Autenticação na API do Lyceum
             const response = await axios.post(
-                'https://api.uea.edu.br/lyceum/login',
+                "https://api.uea.edu.br/lyceum/login",
+                // `${lyceumBaseUrl}${loginPath}`,
                 { email, senha },
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -50,29 +60,40 @@ class AuthService {
             // O token da universidade fica apenas em memória no backend para reduzir exposição no cliente.
             setUniversityToken(normalizedEmail, universityToken);
 
-            // 2. Obter informações de matrícula/curso
-            const alunoResponse = await axios.get(
-                'https://api.uea.edu.br/lyceum/aluno/listar/matriculapessoal',
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${universityToken}`,
-                    },
-                    httpsAgent,
+            const usuarioLyceum = authData.APILYCEUM.usuario || {};
+            const oberonPerfilNome = usuarioLyceum.OberonPerfilNome || 'DISCENTE';
+            const OberonPerfilid = usuarioLyceum.OberonPerfilid;
+            const usuarioNome = usuarioLyceum.UsuarioNome || normalizedEmail;
+            const cpf = usuarioLyceum.Cpf || undefined;
+            let matricula = usuarioLyceum.Matricula || '';
+            let unidade = usuarioLyceum.UnidadeNome || '';
+            const unidadeSigla = usuarioLyceum.UnidadeSigla || undefined;
+            let curso = '';
+
+            const isDiscente = this.normalizeText(oberonPerfilNome).includes('DISCENTE');
+
+            // 2. Complementa dados acadêmicos apenas para perfis com DISCENTE
+            if (isDiscente) {
+                const alunoResponse = await axios.get(
+                    `${lyceumBaseUrl}/lyceum/aluno/listar/matriculapessoal`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${universityToken}`,
+                        },
+                        httpsAgent,
+                    }
+                );
+
+                if (alunoResponse.status !== 200 || !alunoResponse.data.status) {
+                    throw new AppError('Erro ao obter informações detalhadas do aluno.', 500);
                 }
-            );
 
-            if (alunoResponse.status !== 200 || !alunoResponse.data.status) {
-                throw new AppError('Erro ao obter informações detalhadas do aluno.', 500);
+                const alunoData = (alunoResponse.data.message || [])[0] || {};
+                curso = alunoData.CURSO || curso;
+                unidade = alunoData.UNIDADE_NOME || unidade;
+                matricula = alunoData.ALUNO || matricula;
             }
-
-            const alunoData = alunoResponse.data.message[0];
-            const curso = alunoData.CURSO;
-            const unidade = alunoData.UNIDADE_NOME;
-            const matricula = alunoData.ALUNO;
-            const oberonPerfilNome = authData.APILYCEUM.usuario.OberonPerfilNome;
-            const OberonPerfilid = authData.APILYCEUM.usuario.OberonPerfilid;
-            const usuarioNome = authData.APILYCEUM.usuario.UsuarioNome;
 
             // 3. Verificar se é Admin no banco local
             const admin = await adminRepository.findByEmail(normalizedEmail);
@@ -86,10 +107,12 @@ class AuthService {
                 matricula,
                 curso,
                 unidade,
+                unidadeSigla,
                 categoria: oberonPerfilNome || 'DISCENTE',
                 oberonPerfilNome,
                 OberonPerfilid,
                 usuarioNome,
+                cpf,
                 role,
                 isAdmin,
             };
@@ -101,10 +124,12 @@ class AuthService {
                 matricula: user.matricula,
                 curso: user.curso,
                 unidade: user.unidade,
+                unidadeSigla: user.unidadeSigla,
                 categoria: user.categoria,
                 oberonPerfilNome: user.oberonPerfilNome,
                 oberonPerfilId: user.OberonPerfilid,
                 usuarioNome: user.usuarioNome,
+                cpf: user.cpf,
                 role: user.role,
                 isAdmin: user.isAdmin,
             };

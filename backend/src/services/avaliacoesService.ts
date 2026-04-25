@@ -28,6 +28,17 @@ class AvaliacoesService {
         return categoria.includes(lookup) || perfil.includes(lookup);
     }
 
+    private getCategoryFilters(categoria?: string): string[] {
+        const normalized = this.normalizeCategoryText(categoria);
+        const categories: string[] = [];
+
+        if (normalized.includes('DISCENTE')) categories.push('DISCENTE');
+        if (normalized.includes('DOCENTE')) categories.push('DOCENTE');
+        if (normalized.includes('TECNICO')) categories.push('TECNICO');
+
+        return categories;
+    }
+
     private parsePeriodoLetivo(periodoLetivo: string): { ano: string; semestre: string } {
         const [ano, semestre] = (periodoLetivo || '').split('.');
         if (!ano || !semestre) {
@@ -40,6 +51,52 @@ class AvaliacoesService {
         if (Array.isArray(message)) return message;
         if (message && typeof message === 'object') return [message];
         return [];
+    }
+
+    private extractLyceumMessageRows(payload: any): any[] {
+        // Suporta ambos os formatos:
+        // 1) { message: [...] }
+        // 2) [ { message: [...] } ]
+        const topLevel = this.normalizeMessageAsArray(payload);
+        const nested = topLevel.flatMap((entry: any) => this.normalizeMessageAsArray(entry?.message));
+        if (nested.length > 0) return nested;
+
+        const directMessage = this.normalizeMessageAsArray(payload?.message);
+        if (directMessage.length > 0) return directMessage;
+
+        // 3) [ {...linha de disciplina...}, {...} ]
+        // Se não houver wrapper "message", usa o topo como linhas.
+        return topLevel;
+    }
+
+    private hasValidDisciplina(item: any, perfil: 'DISCENTE' | 'DOCENTE'): boolean {
+        if (!item || typeof item !== 'object') return false;
+
+        // Evita gerar questões dinâmicas quando a API retorna payload genérico sem turma/disciplina.
+        if (perfil === 'DOCENTE') {
+            return Boolean(item.TUR_DISCIPLINA && String(item.TUR_DISCIPLINA).trim());
+        }
+
+        return Boolean(item.DISC_DISCIPLINA && String(item.DISC_DISCIPLINA).trim());
+    }
+
+    private dedupeDisciplinas(items: any[], perfil: 'DISCENTE' | 'DOCENTE'): any[] {
+        const seen = new Set<string>();
+        const result: any[] = [];
+
+        for (const item of items) {
+            const key = perfil === 'DOCENTE'
+                ? String(item?.TUR_DISCIPLINA || '').trim()
+                : String(item?.DISC_DISCIPLINA || '').trim();
+
+            if (!key) continue;
+            if (seen.has(key)) continue;
+
+            seen.add(key);
+            result.push(item);
+        }
+
+        return result;
     }
 
     private buildDisciplinaLabel(disciplina: any): { id: string; label: string } {
@@ -73,13 +130,16 @@ class AvaliacoesService {
             cursos,
             categorias,
             modalidade,
-            questoes,
+            questoes: questoesInput,
             periodo_letivo,
             data_inicio,
             data_fim,
             status,
             ano,
         } = data;
+
+        // Defensive normalization: prevent duplicated links of same questão in avaliação.
+        const questoes = normalizeQuestaoIds(questoesInput as any[]);
 
         const cursosSelecionados = cursos || [];
         const modalidadesSelecionadas = modalidade || [];
@@ -281,9 +341,36 @@ class AvaliacoesService {
         };
     }
 
-    async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
+    async getDisponiveis(
+        cursoUsuario: string | undefined,
+        matricula: string,
+        categoria?: string,
+        unidade?: string,
+        unidadeSigla?: string,
+    ): Promise<AvaliacaoResponseDTO[]> {
         await avaliacaoRepository.ativarDisponiveis();
-        const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
+        const categoriaNormalizada = this.normalizeCategoryText(categoria);
+        const isDiscente = categoriaNormalizada.includes('DISCENTE');
+        const categoriaFilters = this.getCategoryFilters(categoria);
+
+        if (isDiscente && !cursoUsuario) {
+            throw new AppError('Curso do usuário não encontrado no token.', 400);
+        }
+
+        let avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters, unidade, unidadeSigla);
+
+        // Fallback para perfis sem curso (docente/técnico):
+        // se não houver match por unidade, retorna por categoria no período.
+        if (!isDiscente && avaliacoes.length === 0) {
+            avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters);
+
+            // Fallback extra para docente/técnico:
+            // quando a avaliação foi cadastrada sem categoria correta,
+            // usa o vínculo de unidade para não ocultar avaliações do campus.
+            if (avaliacoes.length === 0) {
+                avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), undefined, unidade, unidadeSigla);
+            }
+        }
 
         if (avaliacoes.length === 0) return [];
 
@@ -302,32 +389,55 @@ class AvaliacoesService {
             const avaliacao = await avaliacaoRepository.findById(id);
             if (!avaliacao) throw new AppError('Avaliação não encontrada.', 404);
 
-            if (user) {
-                const { ano: anoAvaliacao, semestre: semestreAvaliacao } = this.parsePeriodoLetivo(avaliacao.periodo_letivo as string);
-                const universityToken = user.email ? getUniversityToken(user.email) : undefined;
-                if (!universityToken) {
-                    throw new AppError('Sessão da universidade expirada. Faça login novamente.', 401);
-                }
+            const shouldApplyDynamicDisciplinas = Boolean(user && !user.isAdmin);
 
-                const disciplinas = await this.getDisciplinasPorPerfil(anoAvaliacao, semestreAvaliacao, user, universityToken);
+            if (shouldApplyDynamicDisciplinas && user) {
+                const { ano: anoAvaliacao, semestre: semestreAvaliacao } = this.parsePeriodoLetivo(avaliacao.periodo_letivo as string);
+                const hasQuestoesDinamicas = ((avaliacao as any).avaliacao_questoes || [])
+                    .some((aq: any) => Boolean(aq.questoes?.repetir_todas_disciplinas));
+
+                let disciplinas: any[] = [];
+                if (hasQuestoesDinamicas) {
+                    const universityToken = user.email ? getUniversityToken(user.email) : undefined;
+                    if (!universityToken) {
+                        throw new AppError('Sessão da universidade expirada. Faça login novamente.', 401);
+                    }
+
+                    // Busca disciplinas estritamente no período da avaliação.
+                    disciplinas = await this.getDisciplinasPorPerfil(anoAvaliacao, semestreAvaliacao, user, universityToken);
+                }
 
                 const novasQuestoes: any[] = [];
                 const hasDisciplinas = disciplinas.length > 0;
+                const seenDynamicKeys = new Set<string>();
 
                 for (const aq of (avaliacao as any).avaliacao_questoes) {
-                    if (aq.questoes?.repetir_todas_disciplinas && hasDisciplinas) {
-                        for (const d of disciplinas) {
+                    if (aq.questoes?.repetir_todas_disciplinas) {
+                        // Sem disciplinas no período, a questão dinâmica não deve aparecer.
+                        if (!hasDisciplinas) {
+                            continue;
+                        }
+
+                        for (const [idx, d] of disciplinas.entries()) {
                             const { id: discId, label: discLabel } = this.buildDisciplinaLabel(d);
+                            const stableDiscId = String(discId || '').trim();
+                            const dedupeKey = `${aq.questoes.id}::${stableDiscId}`;
+                            if (seenDynamicKeys.has(dedupeKey)) {
+                                continue;
+                            }
+                            seenDynamicKeys.add(dedupeKey);
+
+                            const uniqueTag = `${discLabel}___${idx}`;
 
                             // Clona a questão sem alterar sua descrição
-                            const questaoClone = { 
+                            const questaoClone = {
                                 ...aq.questoes,
-                                id: `${aq.questoes.id}___${discLabel}` // ID virtual para a questão com label completo
+                                id: `${aq.questoes.id}___${uniqueTag}` // ID virtual único para evitar colisão entre disciplinas repetidas
                             };
 
                             novasQuestoes.push({
                                 ...aq,
-                                id: `${aq.id}___${discLabel}`, // ID virtual para o vínculo com o label completo
+                                id: `${aq.id}___${uniqueTag}`, // ID virtual único para o vínculo com o label completo
                                 questoes: questaoClone,
                                 disciplina: discLabel,
                                 disciplina_id: discId,
@@ -488,7 +598,7 @@ class AvaliacoesService {
         const hasTecnico = this.hasCategory(user, 'TECNICO');
 
         if (hasDocente) {
-            return this.getDisciplinasDocente(ano, semestre, user.matricula, token);
+            return this.getDisciplinasDocente(ano, semestre, user.cpf || '', token);
         }
 
         if (hasDiscente) {
@@ -509,21 +619,31 @@ class AvaliacoesService {
                 headers: { 'Authorization': `Bearer ${token}` },
                 httpsAgent,
             });
-            return this.normalizeMessageAsArray(response.data?.message);
+
+            const parsedRows = this.extractLyceumMessageRows(response.data);
+            const filteredRows = parsedRows.filter((item: any) => this.hasValidDisciplina(item, 'DISCENTE'));
+
+            return this.dedupeDisciplinas(filteredRows, 'DISCENTE');
         } catch (error) {
             console.error('Erro API University (discente):', error);
             return [];
         }
     }
 
-    private async getDisciplinasDocente(ano: string, semestre: string, func: string, token: string): Promise<any[]> {
-        const url = `https://api.uea.edu.br/lyceum/docente/listar/turmas/ano/${ano}/func/${func}/semestre/${semestre}`;
+    private async getDisciplinasDocente(ano: string, semestre: string, cpf: string, token: string): Promise<any[]> {
+        // URL: produção usa api.uea.edu.br, desenvolvimento/homolog usa homolog-api.uea.edu.br
+        const apiHost = isProduction ? 'https://api.uea.edu.br' : 'https://homolog-api.uea.edu.br';
+        const url = `${apiHost}/lyceum/docente/listar/turmas/cpfpessoal/ano/${ano}/semestre/${semestre}`;
         try {
             const response = await axios.get(url, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 httpsAgent,
             });
-            return this.normalizeMessageAsArray(response.data?.message);
+
+            const parsedRows = this.extractLyceumMessageRows(response.data);
+            const filteredRows = parsedRows.filter((item: any) => this.hasValidDisciplina(item, 'DOCENTE'));
+
+            return this.dedupeDisciplinas(filteredRows, 'DOCENTE');
         } catch (error) {
             console.error('Erro API University (docente):', error);
             return [];

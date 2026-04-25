@@ -31,6 +31,7 @@ const jwtUserSchema = z.object({
     oberonPerfilId: z.union([z.string(), z.number()]).optional(),
     nome: z.string().optional(),
     unidade: z.string().optional(),
+    unidadeSigla: z.string().optional(),
 });
 
 function authenticateToken(req: Request, res: Response, next: NextFunction) {
