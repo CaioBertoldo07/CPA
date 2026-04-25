@@ -403,6 +403,7 @@ function Modal_Avaliacoes(props) {
                                 color="success"
                                 startIcon={<IoListOutline />}
                                 onClick={() => setShowQuestaoModal(true)}
+                                disabled={!categoriasSelecionadas.length}
                                 sx={{ fontWeight: 700 }}
                             >
                                 Incluir Questões
@@ -431,6 +432,7 @@ function Modal_Avaliacoes(props) {
                     show={showQuestaoModal}
                     onHide={() => setShowQuestaoModal(false)}
                     initialSelectedIds={questoesSelecionadas}
+                    categoriaIds={categoriasSelecionadas}
                     onQuestoesSelected={handleQuestoesSelect}
                 />
             )}
