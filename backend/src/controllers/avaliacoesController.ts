@@ -28,9 +28,9 @@ const getAvaliacoes = asyncHandler(async (req: Request, res: Response) => {
 
 const getAvaliacoesDisponiveis = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user;
-    if (!user || !user.curso) return res.status(400).json({ error: 'Curso do usuário não encontrado no token.' });
+    if (!user || !user.matricula) return res.status(401).json({ error: 'Usuário não autenticado.' });
 
-    const avaliacoes = await avaliacoesService.getDisponiveis(user.curso, user.matricula);
+    const avaliacoes = await avaliacoesService.getDisponiveis(user.curso, user.matricula, user.categoria, user.unidade, user.unidadeSigla);
     res.status(200).json(avaliacoes);
 });
 

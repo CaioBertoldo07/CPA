@@ -28,6 +28,17 @@ class AvaliacoesService {
         return categoria.includes(lookup) || perfil.includes(lookup);
     }
 
+    private getCategoryFilters(categoria?: string): string[] {
+        const normalized = this.normalizeCategoryText(categoria);
+        const categories: string[] = [];
+
+        if (normalized.includes('DISCENTE')) categories.push('DISCENTE');
+        if (normalized.includes('DOCENTE')) categories.push('DOCENTE');
+        if (normalized.includes('TECNICO')) categories.push('TECNICO');
+
+        return categories;
+    }
+
     private parsePeriodoLetivo(periodoLetivo: string): { ano: string; semestre: string } {
         const [ano, semestre] = (periodoLetivo || '').split('.');
         if (!ano || !semestre) {
@@ -281,9 +292,46 @@ class AvaliacoesService {
         };
     }
 
-    async getDisponiveis(cursoUsuario: string, matricula: string): Promise<AvaliacaoResponseDTO[]> {
+    async getDisponiveis(
+        cursoUsuario: string | undefined,
+        matricula: string,
+        categoria?: string,
+        unidade?: string,
+        unidadeSigla?: string,
+    ): Promise<AvaliacaoResponseDTO[]> {
         await avaliacaoRepository.ativarDisponiveis();
-        const avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date());
+        const categoriaNormalizada = this.normalizeCategoryText(categoria);
+        const isDiscente = categoriaNormalizada.includes('DISCENTE');
+        const categoriaFilters = this.getCategoryFilters(categoria);
+
+        console.log('[CPA][disponiveis] filtros entrada', {
+            cursoUsuario,
+            categoria,
+            categoriaFilters,
+            unidade,
+            unidadeSigla,
+            isDiscente,
+        });
+
+        if (isDiscente && !cursoUsuario) {
+            throw new AppError('Curso do usuário não encontrado no token.', 400);
+        }
+
+        let avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters, unidade, unidadeSigla);
+        console.log('[CPA][disponiveis] apos filtro principal', {
+            total: avaliacoes.length,
+            ids: avaliacoes.map((a: any) => a.id),
+        });
+
+        // Fallback para perfis sem curso (docente/técnico):
+        // se não houver match por unidade, retorna por categoria no período.
+        if (!isDiscente && avaliacoes.length === 0) {
+            avaliacoes = await avaliacaoRepository.findDisponiveis(cursoUsuario, new Date(), categoriaFilters);
+            console.log('[CPA][disponiveis] apos fallback sem unidade', {
+                total: avaliacoes.length,
+                ids: avaliacoes.map((a: any) => a.id),
+            });
+        }
 
         if (avaliacoes.length === 0) return [];
 
@@ -291,6 +339,11 @@ class AvaliacoesService {
         const matriculaHash = hashMatricula(matricula);
         const respondidas = await avaliacaoRepository.findAvaliacoesRespondidasPeloAvaliador(matriculaHash, avaliacaoIds);
         const respondidasids = new Set(respondidas.map((r: any) => r.avaliacao_questao?.id_avaliacao).filter(Boolean));
+
+        console.log('[CPA][disponiveis] respondidas', {
+            totalRespondidas: respondidasids.size,
+            respondidasIds: Array.from(respondidasids),
+        });
 
         const avaliacoesNaoRespondidas = avaliacoes.filter((a: any) => !respondidasids.has(a.id));
 
@@ -488,7 +541,7 @@ class AvaliacoesService {
         const hasTecnico = this.hasCategory(user, 'TECNICO');
 
         if (hasDocente) {
-            return this.getDisciplinasDocente(ano, semestre, user.matricula, token);
+            return this.getDisciplinasDocente(ano, semestre, user.cpf || '', token);
         }
 
         if (hasDiscente) {
@@ -516,8 +569,11 @@ class AvaliacoesService {
         }
     }
 
-    private async getDisciplinasDocente(ano: string, semestre: string, func: string, token: string): Promise<any[]> {
-        const url = `https://api.uea.edu.br/lyceum/docente/listar/turmas/ano/${ano}/func/${func}/semestre/${semestre}`;
+    private async getDisciplinasDocente(ano: string, semestre: string, cpf: string, token: string): Promise<any[]> {
+        // URL: produção usa api.uea.edu.br, desenvolvimento/homolog usa homolog-api.uea.edu.br
+        const apiHost = isProduction ? 'https://api.uea.edu.br' : 'https://homolog-api.uea.edu.br';
+        const url = `${apiHost}/lyceum/docente/listar/turmas/cpfpessoal/ano/${ano}/semestre/${semestre}`;
+        
         try {
             const response = await axios.get(url, {
                 headers: { 'Authorization': `Bearer ${token}` },

@@ -115,16 +115,46 @@ const findByIdSimple = (id: number) => {
 };
 
 /**
- * Busca avaliações disponíveis para o curso e data informados (apenas ATIVA = status 3)
+ * Busca avaliações disponíveis por curso/categoria/unidade e data informados (apenas ATIVA = status 3)
  */
-const findDisponiveis = (cursoIdentificador: string, dataAtual: Date) => {
+const findDisponiveis = (
+    cursoIdentificador: string | undefined,
+    dataAtual: Date,
+    categoriasFiltro?: string[],
+    unidadeNome?: string,
+    unidadeSigla?: string,
+) => {
+    const where: Prisma.AvaliacaoWhereInput = {
+        status: 3,
+        data_inicio: { lte: dataAtual },
+        data_fim: { gte: dataAtual },
+    };
+
+    // Para perfis discentes, o filtro por curso deve ser aplicado.
+    if (cursoIdentificador) {
+        where.cursos = { some: { identificador_api_lyceum: cursoIdentificador } };
+    }
+
+    // Adiciona filtro de categoria(s) quando fornecidas
+    if (categoriasFiltro && categoriasFiltro.length > 0) {
+        where.categorias = { some: { nome: { in: categoriasFiltro, mode: 'insensitive' } } };
+    }
+
+    // Para perfis sem curso (ex.: docente/técnico), usa unidade quando disponível (nome ou sigla).
+    if (unidadeNome || unidadeSigla) {
+        const unidadeOr: Prisma.UnidadesWhereInput[] = [];
+        if (unidadeNome) {
+            unidadeOr.push({ nome: { equals: unidadeNome, mode: 'insensitive' } });
+        }
+        if (unidadeSigla) {
+            unidadeOr.push({ sigla: { equals: unidadeSigla, mode: 'insensitive' } });
+        }
+
+        where.unidade = { some: unidadeOr.length === 1 ? unidadeOr[0] : { OR: unidadeOr } };
+    }
+
     return prisma.avaliacao.findMany({
-        where: {
-            status: 3,
-            cursos: { some: { identificador_api_lyceum: cursoIdentificador } },
-            data_inicio: { lte: dataAtual },
-            data_fim: { gte: dataAtual },
-        },
+        where,
         include: {
             avaliacao_questoes: {
                 include: {

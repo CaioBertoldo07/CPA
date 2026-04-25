@@ -15,10 +15,12 @@ export interface UserResponseDTO {
     email: string;
     curso: string;
     unidade: string;
+    unidadeSigla?: string;
     categoria: string;
     oberonPerfilNome: string;
     OberonPerfilid?: string | number;
     usuarioNome: string;
+    cpf?: string;
     universityToken?: string;
     role: string;
     isAdmin: boolean;
