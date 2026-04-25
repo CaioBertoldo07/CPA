@@ -34,7 +34,7 @@ class AvaliacoesService {
 
         if (normalized.includes('DISCENTE')) categories.push('DISCENTE');
         if (normalized.includes('DOCENTE')) categories.push('DOCENTE');
-        if (normalized.includes('TECNICO')) categories.push('TECNICO');
+        if (normalized.includes('TECNICO')) categories.push('TÉCNICO');
 
         return categories;
     }
