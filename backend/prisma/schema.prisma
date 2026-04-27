@@ -19,6 +19,7 @@ model Eixos {
   numero    Int         @id
   nome      String      @db.VarChar(100)
   dimensoes Dimensoes[]
+  ativo     Boolean     @default(true)
 
 }
 
@@ -29,6 +30,7 @@ model Dimensoes {
   data_criacao DateTime?  @db.Date
   eixos        Eixos?     @relation(fields: [numero_eixos], references: [numero], onDelete: NoAction, onUpdate: NoAction)
   questoes     Questoes[]
+  ativo        Boolean    @default(true)
 
 }
 
@@ -76,6 +78,7 @@ model Padrao_resposta {
   sigla        String          @db.VarChar(20)
   alternativas Alternativas[]
   Questoes     Questoes[]
+  ativo        Boolean         @default(true)
 
 }
 
@@ -85,6 +88,7 @@ model Alternativas {
   id_padrao_resp        Int                     @db.Integer
   padrao_resp           Padrao_resposta?        @relation(fields: [id_padrao_resp], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Questoes_alternativas Questoes_alternativas[] @ignore
+  ativo                 Boolean                 @default(true)
 
 }
 
@@ -94,6 +98,7 @@ model Modalidades {
   mod_oferta   String?  @db.VarChar(50)
   data_criacao DateTime @default(now()) @db.Date
   num_questoes Int      @db.Integer
+  ativo        Boolean  @default(true)
 
   avaliacao            Avaliacao[]            @relation("AvaliacaoModalidades")
   Questoes_modalidades Questoes_modalidades[]
