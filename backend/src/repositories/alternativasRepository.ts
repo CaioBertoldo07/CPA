@@ -17,21 +17,40 @@ const findAll = () => {
 const getUsage = async (id: number) => {
     const alternativa = await prisma.alternativas.findUnique({
         where: { id },
-        include: {
-            Respostas: {
-                include: {
-                    avaliacao_questoes: { include: { avaliacao: { select: { status: true } } } }
-                }
-            }
+        select: {
+            descricao: true,
+            id_padrao_resp: true,
         }
     });
 
     if (!alternativa) return [];
 
+    const respostas = await prisma.respostas.findMany({
+        where: {
+            resposta: alternativa.descricao,
+            avaliacao_questao: {
+                questoes: {
+                    id_padrao_resposta: alternativa.id_padrao_resp,
+                },
+            },
+        },
+        select: {
+            avaliacao_questao: {
+                select: {
+                    avaliacao: {
+                        select: { status: true },
+                    },
+                },
+            },
+        },
+    });
+
     const statuses = new Set<number>();
-    alternativa.Respostas.forEach(r => {
-        if (r.avaliacao_questoes?.avaliacao?.status !== undefined) {
-            statuses.add(r.avaliacao_questoes.avaliacao.status);
+
+    respostas.forEach(r => {
+        const status = r.avaliacao_questao?.avaliacao?.status;
+        if (typeof status === 'number') {
+            statuses.add(status);
         }
     });
 
