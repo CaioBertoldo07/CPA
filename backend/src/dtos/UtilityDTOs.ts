@@ -21,4 +21,6 @@ export interface ModalidadeResponseDTO {
     mod_oferta?: string;
     num_questoes?: number;
     num_cursos?: number;
+    ativo?: boolean;
+    isUsed?: boolean;
 }

@@ -2,11 +2,12 @@ import { Prisma } from '@prisma/client';
 import prisma from './prismaClient';
 
 /**
- * Busca todas as modalidades
+ * Busca todas as modalidades (apenas as ativas)
  */
 const findAll = () => {
     return prisma.modalidades
         .findMany({
+            where: { ativo: true },
             orderBy: { id: 'asc' },
             include: {
                 Questoes_modalidades: {
@@ -63,11 +64,26 @@ const findById = (id: number) => {
 };
 
 /**
+ * Verifica o uso da modalidade em avaliações
+ */
+const getUsage = async (id: number) => {
+    const modalidade = await prisma.modalidades.findUnique({
+        where: { id },
+        include: {
+            avaliacao: { select: { status: true } }
+        }
+    });
+
+    if (!modalidade) return [];
+    return modalidade.avaliacao.map(a => a.status);
+};
+
+/**
  * Busca várias modalidades pelos IDs
  */
 const findByIds = (ids: number[]) => {
     return prisma.modalidades.findMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids }, ativo: true }
     });
 };
 
@@ -81,7 +97,10 @@ const create = (data: Prisma.ModalidadesCreateInput) => {
 /**
  * Atualiza uma modalidade
  */
-const update = (id: number, data: Prisma.ModalidadesUpdateInput) => {
+const update = (
+    id: number,
+    data: Prisma.ModalidadesUpdateInput | Prisma.ModalidadesUncheckedUpdateInput
+) => {
     return prisma.modalidades.update({
         where: { id },
         data
@@ -101,6 +120,7 @@ export {
     findAll,
     findById,
     findByIds,
+    getUsage,
     create,
     update,
     remove,

@@ -2,12 +2,59 @@ import { Prisma } from '@prisma/client';
 import prisma from './prismaClient';
 
 /**
- * Busca todas as alternativas
+ * Busca todas as alternativas (ativas)
  */
 const findAll = () => {
     return prisma.alternativas.findMany({
+        where: { ativo: true },
         orderBy: { id: 'asc' }
     });
+};
+
+/**
+ * Retorna os status de todas as avaliações vinculadas a esta alternativa (via respostas)
+ */
+const getUsage = async (id: number) => {
+    const alternativa = await prisma.alternativas.findUnique({
+        where: { id },
+        select: {
+            descricao: true,
+            id_padrao_resp: true,
+        }
+    });
+
+    if (!alternativa) return [];
+
+    const respostas = await prisma.respostas.findMany({
+        where: {
+            resposta: alternativa.descricao,
+            avaliacao_questao: {
+                questoes: {
+                    id_padrao_resposta: alternativa.id_padrao_resp,
+                },
+            },
+        },
+        select: {
+            avaliacao_questao: {
+                select: {
+                    avaliacao: {
+                        select: { status: true },
+                    },
+                },
+            },
+        },
+    });
+
+    const statuses = new Set<number>();
+
+    respostas.forEach(r => {
+        const status = r.avaliacao_questao?.avaliacao?.status;
+        if (typeof status === 'number') {
+            statuses.add(status);
+        }
+    });
+
+    return Array.from(statuses);
 };
 
 /**
@@ -24,7 +71,7 @@ const findById = (id: number) => {
  */
 const findByIds = (ids: number[]) => {
     return prisma.alternativas.findMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids }, ativo: true }
     });
 };
 
@@ -38,7 +85,10 @@ const create = (data: Prisma.AlternativasCreateInput) => {
 /**
  * Atualiza uma alternativa
  */
-const update = (id: number, data: Prisma.AlternativasUpdateInput) => {
+const update = (
+    id: number,
+    data: Prisma.AlternativasUpdateInput | Prisma.AlternativasUncheckedUpdateInput
+) => {
     return prisma.alternativas.update({
         where: { id },
         data
@@ -59,7 +109,7 @@ const remove = (id: number) => {
  */
 const findByPadraoResposta = (idPadraoResp: number) => {
     return prisma.alternativas.findMany({
-        where: { id_padrao_resp: idPadraoResp },
+        where: { id_padrao_resp: idPadraoResp, ativo: true },
         orderBy: { id: 'asc' }
     });
 };
@@ -68,6 +118,7 @@ export {
     findAll,
     findById,
     findByIds,
+    getUsage,
     create,
     update,
     remove,
