@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { useGetCategoriasQuery } from "../../hooks/queries/useCategoriaQueries";
 import { useGetModalidadesQuery } from "../../hooks/queries/useModalidadeQueries";
+import { displayCategoriaNome } from '../../utils/displayLabels';
 
 const CategoryCheckboxes = ({ categorias = {}, onChange }) => {
     const { data: dataCategorias = [] } = useGetCategoriasQuery();
@@ -36,7 +37,9 @@ const CategoryCheckboxes = ({ categorias = {}, onChange }) => {
                         }
                         label={
                             <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                                {capitalize(categoria.nome)}
+                                {displayCategoriaNome(categoria.nome) !== categoria.nome
+                                    ? displayCategoriaNome(categoria.nome)
+                                    : capitalize(categoria.nome)}
                             </Typography>
                         }
                     />

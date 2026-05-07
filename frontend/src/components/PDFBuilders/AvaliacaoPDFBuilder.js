@@ -13,6 +13,7 @@ import {
     C_RED,
     C_GRAY,
 } from '../../services/pdfGeneratorService';
+import { displayCategoriaNome } from '../../utils/displayLabels';
 
 const fmtDate = (value) => {
     if (!value) return '—';
@@ -77,7 +78,7 @@ export function buildAvaliacaoPDF({
             ['Fim', fmtDate(avaliacao?.data_fim)],
             ['Modalidades', (avaliacao?.modalidades || []).map(m => m.mod_ensino).join(', ') || '—'],
             ['Unidades', (avaliacao?.unidade || []).map(u => u.sigla || u.nome).join(', ') || '—'],
-            ['Categorias', (avaliacao?.categorias || []).map(c => c.nome).join(', ') || '—'],
+            ['Categorias Acadêmicas', (avaliacao?.categorias || []).map(c => displayCategoriaNome(c.nome)).join(', ') || '—'],
         ],
         y,
     );

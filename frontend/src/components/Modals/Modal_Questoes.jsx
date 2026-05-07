@@ -20,6 +20,7 @@ import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import { useGetEixosQuery } from '../../hooks/queries/useEixoQueries';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { useGetCategoriasQuery } from '../../hooks/queries/useCategoriaQueries';
+import { displayCategoriaNome } from '../../utils/displayLabels';
 import { useGetPadraoRespostaQuery } from '../../hooks/queries/usePadraoRespostaQueries';
 import { useGetDimensoesByEixoQuery } from '../../hooks/queries/useDimensaoQueries';
 import { useGetTiposQuestoesQuery } from '../../hooks/queries/useTipoQuestaoQueries';
@@ -57,7 +58,7 @@ function Modal_Questoes(props) {
         [modalidadesRaw]);
 
     const categoriasOptions = useMemo(() =>
-        categoriasRaw.map(c => ({ value: c.id, label: c.nome })),
+        categoriasRaw.map(c => ({ value: c.id, label: displayCategoriaNome(c.nome) })),
         [categoriasRaw]);
 
     useEffect(() => {
@@ -363,12 +364,12 @@ function Modal_Questoes(props) {
 
                         <Grid item xs={12} sm={6}>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
-                                Categorias Aplicáveis
+                                Categorias Acadêmicas Aplicáveis
                             </Typography>
                             <AnimatedMultiSelect
                                 options={categoriasOptions}
                                 onChange={handleCategoriasChange}
-                                placeholder="Selecione as categorias..."
+                                placeholder="Selecione as categorias acadêmicas..."
                                 value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
                             />
                         </Grid>

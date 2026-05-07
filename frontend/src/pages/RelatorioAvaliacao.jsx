@@ -7,6 +7,7 @@ import {
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorAvaliacaoQuery, useGetRespostasPorDisciplinaQuery } from '../hooks/queries/useRespostaQueries';
 import usePDFExport from '../hooks/usePDFExport';
+import { displayCategoriaNome } from '../utils/displayLabels';
 import { useNotification } from '../context/NotificationContext';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -702,11 +703,11 @@ const RelatorioAvaliacao = () => {
                             </div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', marginBottom: 6 }}>Categorias de Avaliadores</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#718096', marginBottom: 6 }}>Categorias Acadêmicas</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                 {(avaliacao?.categorias || []).length > 0
                                     ? avaliacao.categorias.map((c, i) => (
-                                        <span key={i} style={{ padding: '2px 9px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid #bfdbfe' }}>{c.nome}</span>
+                                        <span key={i} style={{ padding: '2px 9px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 9999, fontSize: 11, fontWeight: 500, border: '1px solid #bfdbfe' }}>{displayCategoriaNome(c.nome)}</span>
                                     ))
                                     : <span style={{ color: '#718096', fontSize: 13 }}>—</span>
                                 }

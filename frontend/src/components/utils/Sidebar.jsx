@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { path: '/eixos', icon: <MdOutlineAccountTree size={20} />, label: 'Eixos/Dimensões' },
         { path: '/modalidades', icon: <HiOutlineBuildingOffice2 size={20} />, label: 'Modalidades' },
         { path: '/cursos',      icon: <MdOutlineSchool size={20} />,          label: 'Cursos' },
-        { path: '/categorias', icon: <TbCategory size={20} />, label: 'Categorias' },
+        { path: '/categorias', icon: <TbCategory size={20} />, label: 'Categorias Acadêmicas' },
         { path: '/padraoresposta', icon: <MdOutlineListAlt size={20} />, label: 'Padrões de Resposta' },
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },

@@ -6,6 +6,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useGetEixosQuery } from '../hooks/queries/useEixoQueries';
 import { useGetDimensoesQuery } from '../hooks/queries/useDimensaoQueries';
 import { useGetCategoriasQuery } from '../hooks/queries/useCategoriaQueries';
+import { displayCategoriaNome } from '../utils/displayLabels';
 
 const filterLabelStyle = {
     fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block'
@@ -39,7 +40,7 @@ const Questoes = () => {
     }, [dimensoesData, selectedEixos]);
 
     const categoriasOptions = useMemo(() =>
-        categoriasData?.map(c => ({ value: c.id, label: c.nome })) ?? [],
+        categoriasData?.map(c => ({ value: c.id, label: displayCategoriaNome(c.nome) })) ?? [],
         [categoriasData]);
 
     // Limpar dimensões selecionadas se deixarem de pertencer aos eixos selecionados
@@ -118,8 +119,8 @@ const Questoes = () => {
                         <AnimatedMultiSelect placeholder={selectedEixos.length === 0 ? "Selecione um eixo primeiro" : "Selecione as dimensões"} options={dimensoesOptions} value={selectedDimensoes} onChange={setSelectedDimensoes} disabled={isLoadingDimensoes} />
                     </div>
                     <div>
-                        <label style={filterLabelStyle}>Categorias</label>
-                        <AnimatedMultiSelect placeholder="Selecione as categorias" options={categoriasOptions} value={selectedCategorias} onChange={setSelectedCategorias} disabled={isLoadingCategorias} />
+                        <label style={filterLabelStyle}>Categorias Acadêmicas</label>
+                        <AnimatedMultiSelect placeholder="Selecione as categorias acadêmicas" options={categoriasOptions} value={selectedCategorias} onChange={setSelectedCategorias} disabled={isLoadingCategorias} />
                     </div>
                 </div>
 
