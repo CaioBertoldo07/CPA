@@ -4,7 +4,8 @@ import {
     editarAvaliacao,
     deletarAvaliacao,
     enviarAvaliacao,
-    prorrogarAvaliacao
+    prorrogarAvaliacao,
+    solicitarCetic
 } from '../../api/avaliacoes';
 
 export const useAdicionarAvaliacaoMutation = () => {
@@ -54,5 +55,11 @@ export const useProrrogarAvaliacaoMutation = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['avaliacoes'] });
         },
+    });
+};
+
+export const useSolicitarCeticMutation = () => {
+    return useMutation({
+        mutationFn: (id) => solicitarCetic(id),
     });
 };

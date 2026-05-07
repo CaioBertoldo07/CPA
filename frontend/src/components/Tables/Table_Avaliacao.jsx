@@ -17,6 +17,7 @@ import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autoco
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { displayCategoriaNome } from '../../utils/displayLabels';
 import Modal_EmailTemplate from '../Modals/Modal_EmailTemplate';
+import { useSolicitarCeticMutation } from '../../hooks/mutations/useAvaliacaoMutations';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -187,6 +188,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
     const deleteMutation = useDeleteAvaliacaoMutation();
     const enviarMutation = useEnviarAvaliacaoMutation();
     const prorrogarMutation = useProrrogarAvaliacaoMutation();
+    const ceticMutation = useSolicitarCeticMutation();
     const showNotification = useNotification();
 
     const [showEnviar, setShowEnviar] = useState(false);
@@ -612,6 +614,8 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                 show={showEmailModal}
                 onHide={() => { setShowEmailModal(false); setEmailTemplate(null); }}
                 emailTemplate={emailTemplate}
+                avaliacaoId={avaliacaoAlvo?.id}
+                ceticMutation={ceticMutation}
             />
         </Box>
     );

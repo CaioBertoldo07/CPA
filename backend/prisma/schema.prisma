@@ -201,8 +201,26 @@ model Avaliacao {
   questoes    Questoes[] // Relacionamento com Questoes
   modalidades Modalidades[] @relation("AvaliacaoModalidades") // Relacionamento com Modalidades
 
-  avaliacao_questoes Avaliacao_questoes[] // Relacionamento com Avaliacao_questoes
+  avaliacao_questoes    Avaliacao_questoes[] // Relacionamento com Avaliacao_questoes
+  solicitacao_cetic_logs SolicitacaoCeticLog[]
 
+}
+
+model SolicitacaoCeticLog {
+  id            Int       @id @default(autoincrement())
+  avaliacao_id  Int
+  admin_email   String    @db.VarChar(100)
+  destinatario  String    @db.VarChar(100)
+  cc            String?   @db.VarChar(500)
+  assunto       String    @db.VarChar(300)
+  payload_hash  String?   @db.VarChar(64)
+  status        String    @db.VarChar(20)
+  erro_resumido String?   @db.VarChar(500)
+  created_at    DateTime  @default(now())
+  sent_at       DateTime?
+  avaliacao     Avaliacao @relation(fields: [avaliacao_id], references: [id], onDelete: Cascade)
+
+  @@map("solicitacao_cetic_log")
 }
 
 model Avaliacao_questoes {

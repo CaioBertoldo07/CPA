@@ -14,6 +14,17 @@ const envSchema = z.object({
     SWAGGER_SERVER_URL: z.string().optional(),
     LYCEUM_API_BASE_URL: z.string().url().optional(),
     APP_PUBLIC_URL: z.string().url().optional(),
+
+    // E-mail / CETIC — validados no momento do envio, não no startup
+    MAIL_FROM: z.string().optional(),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_SECURE: z.enum(['true', 'false']).optional().default('false'),
+    CETIC_EMAIL_TO: z.string().optional(),
+    CETIC_EMAIL_CC: z.string().optional(),
+    CETIC_REQUEST_IDEMPOTENCY_WINDOW_MINUTES: z.coerce.number().int().positive().optional().default(10),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -37,6 +48,16 @@ export const env = {
         : 'https://homolog-api.uea.edu.br'),
     APP_PUBLIC_URL: parsed.data.APP_PUBLIC_URL ||
         (parsed.data.NODE_ENV !== 'production' ? 'http://localhost:5173' : undefined),
+
+    MAIL_FROM: parsed.data.MAIL_FROM,
+    SMTP_HOST: parsed.data.SMTP_HOST,
+    SMTP_PORT: parsed.data.SMTP_PORT,
+    SMTP_USER: parsed.data.SMTP_USER,
+    SMTP_PASS: parsed.data.SMTP_PASS,
+    SMTP_SECURE: parsed.data.SMTP_SECURE === 'true',
+    CETIC_EMAIL_TO: parsed.data.CETIC_EMAIL_TO,
+    CETIC_EMAIL_CC: parsed.data.CETIC_EMAIL_CC,
+    CETIC_REQUEST_IDEMPOTENCY_WINDOW_MINUTES: parsed.data.CETIC_REQUEST_IDEMPOTENCY_WINDOW_MINUTES,
 };
 
 export const isProduction = env.NODE_ENV === 'production';

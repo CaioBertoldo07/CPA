@@ -33,9 +33,16 @@ const CopyField = ({ label, value, fieldKey, copiedField, onCopy }) => {
     );
 };
 
-const Modal_EmailTemplate = ({ show, onHide, emailTemplate }) => {
+const ceticStatusConfig = {
+    SENT: { bg: '#dcfce7', color: '#166534', border: '#22c55e' },
+    FAILED: { bg: '#fee2e2', color: '#b91c1c', border: '#ef4444' },
+    ALREADY_REQUESTED: { bg: '#fef9c3', color: '#854d0e', border: '#eab308' },
+};
+
+const Modal_EmailTemplate = ({ show, onHide, emailTemplate, avaliacaoId, ceticMutation }) => {
     const [copiedField, setCopiedField] = useState(null);
     const [copyError, setCopyError] = useState(false);
+    const [ceticResult, setCeticResult] = useState(null);
 
     if (!emailTemplate) return null;
 
@@ -55,6 +62,22 @@ const Modal_EmailTemplate = ({ show, onHide, emailTemplate }) => {
         handleCopy(full, 'all');
     };
 
+    const handleSolicitarCetic = () => {
+        if (!avaliacaoId || !ceticMutation) return;
+        setCeticResult(null);
+        ceticMutation.mutate(avaliacaoId, {
+            onSuccess: (data) => {
+                setCeticResult(data);
+            },
+            onError: () => {
+                setCeticResult({ status: 'FAILED', message: 'Erro de comunicação. Use o fallback manual para copiar o conteúdo.' });
+            },
+        });
+    };
+
+    const ceticStyle = ceticResult ? ceticStatusConfig[ceticResult.status] ?? ceticStatusConfig.FAILED : null;
+    const isPending = ceticMutation?.isPending;
+
     return (
         <Modal show={show} onHide={onHide} size="lg" centered>
             <Modal.Header closeButton style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
@@ -67,6 +90,7 @@ const Modal_EmailTemplate = ({ show, onHide, emailTemplate }) => {
                     Copie o conteúdo abaixo e envie manualmente por e-mail para os avaliadores.
                     Nenhum e-mail é enviado automaticamente.
                 </p>
+
                 {copyError && (
                     <p style={{ fontSize: 12, color: '#b91c1c', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 6, padding: '6px 12px', marginBottom: 16 }}>
                         Não foi possível copiar. Selecione o texto manualmente.
@@ -94,8 +118,32 @@ const Modal_EmailTemplate = ({ show, onHide, emailTemplate }) => {
                     copiedField={copiedField}
                     onCopy={handleCopy}
                 />
+
+                {ceticResult && ceticStyle && (
+                    <div style={{
+                        marginTop: 16, padding: '10px 14px', borderRadius: 8,
+                        background: ceticStyle.bg, border: `1px solid ${ceticStyle.border}`,
+                        color: ceticStyle.color, fontSize: 13, fontWeight: 600,
+                    }}>
+                        {ceticResult.status === 'SENT' && '✓ '}
+                        {ceticResult.status === 'ALREADY_REQUESTED' && '⚠ '}
+                        {ceticResult.status === 'FAILED' && '✗ '}
+                        {ceticResult.message}
+                    </div>
+                )}
             </Modal.Body>
             <Modal.Footer style={{ borderTop: '1px solid #e2e8f0', padding: '12px 24px', gap: 8 }}>
+                {avaliacaoId && ceticMutation && (
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleSolicitarCetic}
+                        disabled={isPending || ceticResult?.status === 'SENT'}
+                        style={{ fontWeight: 600 }}
+                    >
+                        {isPending ? 'Enviando...' : ceticResult?.status === 'SENT' ? 'Enviado ao CETIC' : 'Solicitar envio ao CETIC'}
+                    </Button>
+                )}
                 <Button
                     variant="success"
                     size="sm"

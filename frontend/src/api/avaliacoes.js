@@ -10,3 +10,4 @@ export const getAvaliacaoById = (id) => api.get(`/avaliacoes/${id}`);
 export const verificarSeUsuarioRespondeu = (idAvaliacao) => api.get(`/verificar-resposta/${idAvaliacao}`);
 export const enviarAvaliacao = (id) => api.put(`/avaliacoes/${id}/enviar`);
 export const prorrogarAvaliacao = (id, novaDataFim) => api.put(`/avaliacoes/${id}/prorrogar`, { data_fim: novaDataFim });
+export const solicitarCetic = (id) => api.post(`/avaliacoes/${id}/solicitar-cetic`);

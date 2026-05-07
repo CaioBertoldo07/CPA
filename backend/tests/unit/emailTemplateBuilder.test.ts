@@ -1,6 +1,13 @@
+const mockEnvConfig = { APP_PUBLIC_URL: 'http://localhost:5173' as string | undefined };
+jest.mock('../../src/config/env', () => ({ env: mockEnvConfig }));
+
 import { buildEnvioAvaliacaoEmailTemplate } from '../../src/utils/emailTemplateBuilder';
 
 describe('Unit - buildEnvioAvaliacaoEmailTemplate', () => {
+    beforeEach(() => {
+        mockEnvConfig.APP_PUBLIC_URL = 'http://localhost:5173';
+    });
+
     it('retorna os três campos com dados completos', () => {
         const template = buildEnvioAvaliacaoEmailTemplate({
             titulo: 'Avaliação CPA - 2025.1',
@@ -43,16 +50,7 @@ describe('Unit - buildEnvioAvaliacaoEmailTemplate', () => {
     });
 
     it('lança erro quando APP_PUBLIC_URL não está configurada', () => {
-        let fn: typeof buildEnvioAvaliacaoEmailTemplate | undefined;
-
-        jest.isolateModules(() => {
-            jest.mock('../../src/config/env', () => ({
-                env: { APP_PUBLIC_URL: undefined },
-            }));
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            fn = require('../../src/utils/emailTemplateBuilder').buildEnvioAvaliacaoEmailTemplate;
-        });
-
-        expect(() => fn!({ periodo_letivo: '2025.1' })).toThrow('APP_PUBLIC_URL');
+        mockEnvConfig.APP_PUBLIC_URL = undefined;
+        expect(() => buildEnvioAvaliacaoEmailTemplate({ periodo_letivo: '2025.1' })).toThrow('APP_PUBLIC_URL');
     });
 });

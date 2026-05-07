@@ -12,6 +12,7 @@ import {
     prorrogarAvaliacao,
     deleteAvaliacao,
 } from '../controllers/avaliacoesController';
+import { solicitarCeticController } from '../controllers/ceticController';
 import { authenticateToken, authorize } from '../middleware/authMiddleware';
 
 /**
@@ -287,5 +288,7 @@ router.put('/avaliacoes/:id/enviar', authenticateToken, authorize(['admin']), en
  *                   example: Avaliação prorrogada com sucesso
  */
 router.put('/avaliacoes/:id/prorrogar', authenticateToken, authorize(['admin']), prorrogarAvaliacao);
+
+router.post('/avaliacoes/:id/solicitar-cetic', authenticateToken, authorize(['admin']), solicitarCeticController);
 
 export default router;

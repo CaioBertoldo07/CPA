@@ -47,6 +47,11 @@ export const prismaMock = {
     modalidades: {
         findMany: jest.fn(),
     },
+    solicitacaoCeticLog: {
+        findFirst: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+    },
     $queryRaw: jest.fn(),
     $disconnect: jest.fn(),
 };
