@@ -24,6 +24,7 @@ import { useGetMunicipiosQuery } from '../../hooks/queries/useMunicipioQueries';
 import { useGetUnidadesByMunicipiosQuery } from '../../hooks/queries/useUnidadeQueries';
 import { useGetCategoriasQuery } from '../../hooks/queries/useCategoriaQueries';
 import { useGetAvaliacaoByIdQuery } from '../../hooks/queries/useAvaliacaoQueries';
+import { displayCategoriaNome } from '../../utils/displayLabels';
 import AnimatedMultiSelect from '../utils/AnimatedMultiSelect';
 import CursoSelectionModal from './CursoSelectionModal';
 import QuestaoSelectionModal from './QuestaoSelectionModal';
@@ -82,7 +83,7 @@ function Modal_Avaliacoes(props) {
     const unidadesOptions = useMemo(() =>
         unidadesData.map(u => ({ value: u.id, label: `${u.nome} - ${u.sigla}` })), [unidadesData]);
     const categoriasOptions = useMemo(() =>
-        categoriasData.map(c => ({ value: c.id, label: c.nome })), [categoriasData]);
+        categoriasData.map(c => ({ value: c.id, label: displayCategoriaNome(c.nome) })), [categoriasData]);
 
     const temCategoriaDiscente = useMemo(() => (
         categoriasData.some(
@@ -340,15 +341,15 @@ function Modal_Avaliacoes(props) {
                         />
                     </Grid>
 
-                    {/* Linha 3: Categorias e Modalidades */}
+                    {/* Linha 3: Categorias Acadêmicas e Modalidades */}
                     <Grid item xs={12} sm={6}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                            Público Alvo (Categorias)
+                            Público Alvo (Categorias Acadêmicas)
                         </Typography>
                         <AnimatedMultiSelect
                             options={categoriasOptions}
                             onChange={handleCategoriasChange}
-                            placeholder="Selecione uma categoria"
+                            placeholder="Selecione uma categoria acadêmica"
                             value={categoriasOptions.filter(o => categoriasSelecionadas.includes(o.value))}
                         />
                     </Grid>

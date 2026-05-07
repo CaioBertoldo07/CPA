@@ -20,8 +20,8 @@ const Categorias = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #e2e8f0' }}>
                     <div>
-                        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Categorias</h1>
-                        <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Gerencie as categorias de avaliadores</p>
+                        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a202c', margin: '0 0 3px' }}>Categorias Acadêmicas</h1>
+                        <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Gerencie as categorias acadêmicas de avaliadores</p>
                     </div>
                     <button
                         onClick={() => setModalShow(true)}
@@ -30,7 +30,7 @@ const Categorias = () => {
                         onMouseLeave={e => { e.currentTarget.style.background = '#1D5E24'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
-                        Nova Categoria
+                        Nova Categoria Acadêmica
                     </button>
                 </div>
 
@@ -42,7 +42,7 @@ const Categorias = () => {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
-                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Pesquisar categorias..."
+                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Pesquisar categorias acadêmicas..."
                             style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: '#1a202c', width: '100%', fontFamily: 'inherit' }} />
                         {searchQuery && (
                             <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex' }}>

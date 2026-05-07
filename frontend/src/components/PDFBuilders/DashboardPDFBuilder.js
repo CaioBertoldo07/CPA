@@ -145,14 +145,14 @@ export function buildDashboardPDF({ avaliacoes, categoriasData, exportedAt, file
         .filter(c => c.respondentes > 0);
     if (catFiltered.length > 0) {
         if (y > CONTENT_BOTTOM - 50) { doc.addPage(); y = MARGIN + 6; }
-        y = drawSectionTitle(doc, 'Respondentes por Categoria de Avaliador', y);
+        y = drawSectionTitle(doc, 'Respondentes por Categoria Acadêmica de Avaliador', y);
         y = drawBarChart(doc,
             catFiltered.map(c => ({ name: c.categoria, value: c.respondentes })),
             y,
             { color: [124, 58, 237], labelW: 60 }
         );
         y = drawTable(doc,
-            ['Categoria', 'Respondentes'],
+            ['Categoria Acadêmica', 'Respondentes'],
             catFiltered.map(c => [c.categoria, c.respondentes]), y,
             { columnStyles: { 1: { halign: 'center' } } }
         );

@@ -15,6 +15,7 @@ import { DataGrid, getGridStringOperators } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autocomplete, TextField, Popover } from '@mui/material';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
+import { displayCategoriaNome } from '../../utils/displayLabels';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -282,7 +283,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
         },
         {
             field: 'categorias',
-            headerName: 'Categorias',
+            headerName: 'Categorias Acadêmicas',
             type: 'string',
             flex: 1,
             minWidth: 180,
@@ -293,7 +294,7 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                     {(params.row.categorias || []).map((c, i) => (
                         <Chip
                             key={i}
-                            label={typeof c === 'object' ? c.nome : c}
+                            label={displayCategoriaNome(typeof c === 'object' ? c.nome : c)}
                             size="small"
                             variant="outlined"
                             sx={{ bgcolor: '#faf5ff', color: '#6d28d9', fontSize: '0.65rem', border: '1px solid #ddd6fe', height: 20, '& .MuiChip-label': { px: 1 } }}

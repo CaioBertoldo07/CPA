@@ -22,7 +22,7 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingCategoria, setDeletingCategoria] = useState(null);
 
-    useEffect(() => { if (isError) showNotification('Erro ao carregar categorias.', 'error'); }, [isError, showNotification]);
+    useEffect(() => { if (isError) showNotification('Erro ao carregar categorias acadêmicas.', 'error'); }, [isError, showNotification]);
 
     const handleUpdateCategoria = (categoria) => {
         setSelectedCategoria(categoria);
@@ -38,11 +38,11 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
         if (!deletingCategoria) return;
         deleteMutation.mutate(deletingCategoria.id, {
             onSuccess: () => {
-                if (onSuccess) onSuccess(`Categoria "${deletingCategoria.nome}" excluída com sucesso!`);
+                if (onSuccess) onSuccess(`Categoria acadêmica "${deletingCategoria.nome}" excluída com sucesso!`);
                 setShowDeleteModal(false);
                 setDeletingCategoria(null);
             },
-            onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir categoria. Tente novamente.', 'error')
+            onError: (err) => showNotification(err?.response?.data?.message || 'Erro ao excluir categoria acadêmica. Tente novamente.', 'error')
         });
     };
 
@@ -179,7 +179,7 @@ const Table_Categorias = ({ searchQuery = '', onSuccess }) => {
                 show={showDeleteModal}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => { setShowDeleteModal(false); setDeletingCategoria(null); }}
-                message={deletingCategoria ? `Tem certeza que deseja excluir a categoria "${deletingCategoria.nome}"?` : ""}
+                message={deletingCategoria ? `Tem certeza que deseja excluir a categoria acadêmica "${deletingCategoria.nome}"?` : ""}
                 loading={deleteMutation.isPending}
             />
         </Box>

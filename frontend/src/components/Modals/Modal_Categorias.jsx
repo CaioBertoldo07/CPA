@@ -25,7 +25,7 @@ function Modal_Categorias(props) {
 
     const handleSave = async () => {
         if (!nomecategoria.trim()) {
-            return setError('O nome da categoria não pode estar vazio.');
+            return setError('O nome da categoria acadêmica não pode estar vazio.');
         }
         setError('');
 
@@ -37,9 +37,9 @@ function Modal_Categorias(props) {
         mutation.mutate(payload, {
             onSuccess: (data) => {
                 onHide();
-                onSuccess?.(data?.message || 'Categoria salva com sucesso!');
+                onSuccess?.(data?.message || 'Categoria acadêmica salva com sucesso!');
             },
-            onError: (err) => setError(err.response?.data?.message || err.response?.data?.error || 'Erro ao salvar categoria.')
+            onError: (err) => setError(err.response?.data?.message || err.response?.data?.error || 'Erro ao salvar categoria acadêmica.')
         });
     };
 
@@ -72,7 +72,7 @@ function Modal_Categorias(props) {
         <MuiBaseModal
             open={show}
             onClose={onHide}
-            title={categoria ? 'Editar Categoria' : 'Nova Categoria'}
+            title={categoria ? 'Editar Categoria Acadêmica' : 'Nova Categoria Acadêmica'}
             actions={modalActions}
             isLoading={loading}
         >
@@ -88,7 +88,7 @@ function Modal_Categorias(props) {
                     required
                     fullWidth
                     id="nome-categoria"
-                    label="Nome da Categoria"
+                    label="Nome da Categoria Acadêmica"
                     name="nome"
                     autoFocus
                     value={nomecategoria}

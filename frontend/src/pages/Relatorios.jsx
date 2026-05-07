@@ -3,6 +3,7 @@ import { useNotification } from '../context/NotificationContext';
 import usePDFExport from '../hooks/usePDFExport';
 import { useGetAvaliacoesQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetDashboardCategoriasQuery } from '../hooks/queries/useRespostaQueries';
+import { displayCategoriaNome } from '../utils/displayLabels';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
@@ -275,7 +276,9 @@ const Relatorios = () => {
     /* ── Respondentes por categoria — GET /dashboard/estatisticas-categorias ── */
     const { data: dashboardCategorias } = useGetDashboardCategoriasQuery();
     const categoriasData = useMemo(
-        () => (Array.isArray(dashboardCategorias) ? dashboardCategorias : []).filter(c => c.respondentes > 0),
+        () => (Array.isArray(dashboardCategorias) ? dashboardCategorias : [])
+            .filter(c => c.respondentes > 0)
+            .map(c => ({ ...c, categoria: displayCategoriaNome(c.categoria) })),
         [dashboardCategorias],
     );
 

@@ -11,6 +11,7 @@ import ConfirmDeleteModal from '../utils/ConfirmDeleteModal';
 import { DataGrid } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip, Button, Autocomplete, TextField, Checkbox } from '@mui/material';
+import { displayCategoriaNome } from '../../utils/displayLabels';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 
@@ -207,7 +208,7 @@ const Table_Questoes = ({
         },
         {
             field: 'categorias',
-            headerName: 'Categorias',
+            headerName: 'Categorias Acadêmicas',
             width: 180,
             sortable: false,
             valueGetter: (value, row) => row.categorias?.map(c => c.id) || [],
@@ -218,7 +219,7 @@ const Table_Questoes = ({
                         params.row.categorias.map(c => (
                             <Chip
                                 key={c.id}
-                                label={c.nome}
+                                label={displayCategoriaNome(c.nome)}
                                 size="small"
                                 sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontSize: '0.65rem', fontWeight: 600, height: 20 }}
                             />

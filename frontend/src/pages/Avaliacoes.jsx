@@ -7,6 +7,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useGetModalidadesQuery } from '../hooks/queries/useModalidadeQueries';
 import { useGetUnidadesQuery } from '../hooks/queries/useUnidadeQueries';
 import { useGetCategoriasQuery } from '../hooks/queries/useCategoriaQueries';
+import { displayCategoriaNome } from '../utils/displayLabels';
 
 // Filtros de status
 const FILTROS = [
@@ -47,7 +48,7 @@ const Avaliacoes = () => {
 
     const { data: categoriasData = [] } = useGetCategoriasQuery();
     const categoriasOptions = useMemo(
-        () => categoriasData.filter(Boolean).map(c => ({ value: c.id, label: c.nome })),
+        () => categoriasData.filter(Boolean).map(c => ({ value: c.id, label: displayCategoriaNome(c.nome) })),
         [categoriasData]
     );
 
@@ -176,7 +177,7 @@ const Avaliacoes = () => {
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Categoria</label>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6, display: 'block' }}>Categoria Acadêmica</label>
                             <AnimatedMultiSelect
                                 placeholder="Selecione..."
                                 options={categoriasOptions}

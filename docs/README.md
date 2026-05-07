@@ -5,6 +5,7 @@ Esta pasta centraliza a documentacao tecnica do projeto.
 ## Conteudo
 
 - [Diagrama ER e modelo de dados](./database.md)
+- [Documentacao detalhada do sistema (estado atual)](./SISTEMA_ATUAL_DETALHADO.md)
 
 ## Escopo
 
