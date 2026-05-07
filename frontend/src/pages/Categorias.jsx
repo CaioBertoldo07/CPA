@@ -70,4 +70,3 @@ const Categorias = () => {
 };
 
 export default Categorias;
->>>>>>> origin/feat-avaliacoes-so-pra-uma-categoria

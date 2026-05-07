@@ -3,6 +3,7 @@ import avaliacoesService from '../services/avaliacoesService';
 import { asyncHandler } from '../middleware/errorMiddleware';
 import { createAvaliacaoSchema } from '../validators/avaliacoesValidator';
 import { normalizeQuestaoIds } from '../utils/normalizeQuestaoIds';
+import { buildEnvioAvaliacaoEmailTemplate } from '../utils/emailTemplateBuilder';
 
 /**
  * Controller para gerenciamento de Avaliações
@@ -54,7 +55,15 @@ const editarAvaliacao = asyncHandler(async (req: Request, res: Response) => {
 const enviarAvaliacao = asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
     const avaliacao = await avaliacoesService.switchStatus(id, 2);
-    res.status(200).json({ message: 'Avaliação enviada com sucesso.', avaliacao });
+
+    let emailTemplate = null;
+    try {
+        emailTemplate = buildEnvioAvaliacaoEmailTemplate(avaliacao);
+    } catch (templateError) {
+        console.error('[enviarAvaliacao] Falha ao gerar emailTemplate:', templateError);
+    }
+
+    res.status(200).json({ message: 'Avaliação enviada com sucesso.', avaliacao, emailTemplate });
 });
 
 const prorrogarAvaliacao = asyncHandler(async (req: Request, res: Response) => {

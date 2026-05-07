@@ -16,6 +16,7 @@ import { ptBR } from '@mui/x-data-grid/locales';
 import { Box, IconButton, Tooltip, Typography, Chip, Button as MuiButton, Autocomplete, TextField, Popover } from '@mui/material';
 import { useGetModalidadesQuery } from '../../hooks/queries/useModalidadeQueries';
 import { displayCategoriaNome } from '../../utils/displayLabels';
+import Modal_EmailTemplate from '../Modals/Modal_EmailTemplate';
 
 const STATUS_MAP = {
     1: { label: 'Rascunho',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
@@ -193,16 +194,23 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
     const [showProrrogar, setShowProrrogar] = useState(false);
     const [avaliacaoAlvo, setAvaliacaoAlvo] = useState(null);
     const [novaDataFim, setNovaDataFim] = useState('');
+    const [emailTemplate, setEmailTemplate] = useState(null);
+    const [showEmailModal, setShowEmailModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => { if (isError) showNotification('Erro ao carregar avaliações.', 'error'); }, [isError, showNotification]);
 
     const handleEnviarConfirm = async () => {
         enviarMutation.mutate(avaliacaoAlvo.id, {
-            onSuccess: () => {
+            onSuccess: (data) => {
                 showNotification('Avaliação enviada com sucesso!', 'success');
                 onSuccess?.('Avaliação enviada com sucesso!');
                 setShowEnviar(false);
+                const template = data?.emailTemplate;
+                if (template) {
+                    setEmailTemplate(template);
+                    setShowEmailModal(true);
+                }
             },
             onError: (err) => showNotification(err.response?.data?.message || err.response?.data?.error || 'Erro ao enviar.', 'error')
         });
@@ -599,6 +607,12 @@ const Table_Avaliacao = ({ filtroStatus, searchQuery = '', extraFilters = [], on
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            <Modal_EmailTemplate
+                show={showEmailModal}
+                onHide={() => { setShowEmailModal(false); setEmailTemplate(null); }}
+                emailTemplate={emailTemplate}
+            />
         </Box>
     );
 };

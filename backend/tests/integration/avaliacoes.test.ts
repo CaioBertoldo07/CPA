@@ -104,6 +104,104 @@ describe('Integracao - Avaliacoes', () => {
         expect(response.body.meta).toMatchObject({ total: 1, page: 0, limit: 10 });
     });
 
+    it('PUT /api/avaliacoes/:id/enviar -> 200 com emailTemplate', async () => {
+        const token = createAdminToken();
+        const dataFimFutura = new Date(Date.now() + 86400000 * 30);
+
+        prismaMock.avaliacao.findUnique.mockResolvedValue({
+            id: 1,
+            status: 1,
+            ano: '2025',
+            periodo_letivo: '2025.1',
+            data_inicio: new Date('2025-01-10'),
+            data_fim: dataFimFutura,
+            unidade: [{ id: 1, nome: 'EST' }],
+            cursos: [],
+            categorias: [{ id: 1, nome: 'TECNICO' }],
+            modalidades: [],
+            avaliacao_questoes: [{ id: 1 }],
+        });
+
+        prismaMock.avaliacao.update.mockResolvedValue({
+            id: 1,
+            status: 2,
+            ano: '2025',
+            periodo_letivo: '2025.1',
+            data_inicio: new Date('2025-01-10'),
+            data_fim: dataFimFutura,
+            avaliacao_questoes: [],
+            unidade: [],
+            cursos: [],
+            categorias: [],
+            modalidades: [],
+        });
+
+        const response = await request(app)
+            .put('/api/avaliacoes/1/enviar')
+            .set('Cookie', `cpa_auth=${token}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('message', 'Avaliação enviada com sucesso.');
+        expect(response.body).toHaveProperty('avaliacao');
+        expect(response.body).toHaveProperty('emailTemplate');
+        expect(response.body.emailTemplate).toHaveProperty('subject');
+        expect(response.body.emailTemplate).toHaveProperty('body');
+        expect(response.body.emailTemplate).toHaveProperty('systemUrl');
+        expect(typeof response.body.emailTemplate.subject).toBe('string');
+        expect(typeof response.body.emailTemplate.body).toBe('string');
+        expect(typeof response.body.emailTemplate.systemUrl).toBe('string');
+    });
+
+    it('PUT /api/avaliacoes/:id/enviar sem token -> 401', async () => {
+        const response = await request(app).put('/api/avaliacoes/1/enviar');
+        expect(response.status).toBe(401);
+    });
+
+    it('PUT /api/avaliacoes/:id/enviar com role user -> 403', async () => {
+        const token = createUserToken();
+        const response = await request(app)
+            .put('/api/avaliacoes/1/enviar')
+            .set('Cookie', `cpa_auth=${token}`);
+        expect(response.status).toBe(403);
+    });
+
+    it('PUT /api/avaliacoes/:id/enviar com status diferente de rascunho -> 400', async () => {
+        const token = createAdminToken();
+
+        prismaMock.avaliacao.findUnique.mockResolvedValue({
+            id: 1,
+            status: 2,
+            ano: '2025',
+            periodo_letivo: '2025.1',
+            data_inicio: new Date('2025-01-10'),
+            data_fim: new Date(Date.now() + 86400000),
+            unidade: [{ id: 1 }],
+            cursos: [],
+            categorias: [{ id: 1, nome: 'TECNICO' }],
+            modalidades: [],
+            avaliacao_questoes: [{ id: 1 }],
+        });
+
+        const response = await request(app)
+            .put('/api/avaliacoes/2/enviar')
+            .set('Cookie', `cpa_auth=${token}`);
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toMatch(/rascunho/i);
+    });
+
+    it('PUT /api/avaliacoes/:id/enviar com avaliacao inexistente -> 404', async () => {
+        const token = createAdminToken();
+
+        prismaMock.avaliacao.findUnique.mockResolvedValue(null);
+
+        const response = await request(app)
+            .put('/api/avaliacoes/999/enviar')
+            .set('Cookie', `cpa_auth=${token}`);
+
+        expect(response.status).toBe(404);
+    });
+
     it('DELETE /api/avaliacoes/:id -> 200', async () => {
         const token = createAdminToken();
 

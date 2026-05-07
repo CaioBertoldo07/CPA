@@ -13,6 +13,7 @@ const envSchema = z.object({
     ENABLE_SWAGGER: z.enum(['true', 'false']).optional().default('true'),
     SWAGGER_SERVER_URL: z.string().optional(),
     LYCEUM_API_BASE_URL: z.string().url().optional(),
+    APP_PUBLIC_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -34,6 +35,8 @@ export const env = {
     LYCEUM_API_BASE_URL: parsed.data.LYCEUM_API_BASE_URL || (parsed.data.NODE_ENV === 'production'
         ? 'https://api.uea.edu.br'
         : 'https://homolog-api.uea.edu.br'),
+    APP_PUBLIC_URL: parsed.data.APP_PUBLIC_URL ||
+        (parsed.data.NODE_ENV !== 'production' ? 'http://localhost:5173' : undefined),
 };
 
 export const isProduction = env.NODE_ENV === 'production';
