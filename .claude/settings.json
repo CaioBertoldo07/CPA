@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx prisma *)",
+      "Bash(Get-ChildItem -Recurse -Filter \"*.test.ts\")",
+      "Bash(Select-Object FullName)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('nodemailer'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e \"const nm = require\\('nodemailer'\\); console.log\\(nm.createTransport ? 'has types' : 'no'\\)\")",
+      "Bash(npx jest *)"
+    ]
+  }
+}

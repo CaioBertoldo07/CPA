@@ -1,0 +1,54 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Prisma Migrate Deploy Backend",
+			"type": "shell",
+			"command": "Set-Location backend; npx prisma migrate deploy",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Prisma Migrate Deploy Backend Localhost",
+			"type": "shell",
+			"command": "$env:DATABASE_URL='postgresql://postgres:12345@localhost:5432/cpa?schema=public'; Set-Location backend; npx prisma migrate deploy",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check Prisma Tables In Container",
+			"type": "shell",
+			"command": "docker compose exec backend node -e \"const { Client } = require('pg'); (async () => { const c = new Client({ connectionString: process.env.DATABASE_URL }); await c.connect(); const r = await c.query(\\\"SELECT to_regclass('public.solicitacao_cetic_log') AS solicitacao_cetic_log, to_regclass('public._prisma_migrations') AS prisma_migrations\\\"); console.log(r.rows[0]); await c.end(); })().catch(e => { console.error(e.message); process.exit(1); });\"",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check Tables Via Psql",
+			"type": "shell",
+			"command": "docker compose exec -T db psql -U postgres -d cpa -Atc \"SELECT to_regclass('public.solicitacao_cetic_log'), to_regclass('public._prisma_migrations');\"",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check Tables Via Psql Escaped",
+			"type": "shell",
+			"command": "docker compose exec -T db psql -U postgres -d cpa -Atc 'SELECT to_regclass(''public.solicitacao_cetic_log''), to_regclass(''public._prisma_migrations'');'",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Prisma Baseline Resolve Cetic Migration",
+			"type": "shell",
+			"command": "docker compose exec backend npx prisma migrate resolve --applied 20260511130000_add_solicitacao_cetic_log",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Prisma Migrate Deploy In Backend Container",
+			"type": "shell",
+			"command": "docker compose exec backend npx prisma migrate deploy",
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

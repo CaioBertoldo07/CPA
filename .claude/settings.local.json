@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('nodemailer'\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const { PrismaClient } = require\\('@prisma/client'\\); const p = new PrismaClient\\(\\); console.log\\(typeof p.solicitacaoCeticLog\\);\")",
+      "Bash(docker-compose build *)",
+      "Bash(docker-compose up *)",
+      "Bash(docker exec backend-cpa *)"
+    ]
+  }
+}
