@@ -6,7 +6,15 @@
       "Bash(node -e \"const { PrismaClient } = require\\('@prisma/client'\\); const p = new PrismaClient\\(\\); console.log\\(typeof p.solicitacaoCeticLog\\);\")",
       "Bash(docker-compose build *)",
       "Bash(docker-compose up *)",
-      "Bash(docker exec backend-cpa *)"
+      "Bash(docker exec backend-cpa *)",
+      "Bash(docker network *)",
+      "Bash(docker restart *)",
+      "Bash(docker exec db-cpa *)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose ps *)",
+      "Bash(sudo lsof -i :5432 -n -P)",
+      "Bash(docker exec frontend-cpa *)",
+      "Bash(docker cp *)"
     ]
   }
 }
