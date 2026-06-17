@@ -11,8 +11,7 @@ import {
     MdOutlineQuiz,
     MdOutlineAssignment,
     MdOutlineListAlt,
-    MdOutlineSchool,
-    MdOutlineFactCheck
+    MdOutlineSchool
 } from 'react-icons/md';
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import { TbCategory } from 'react-icons/tb';
@@ -41,7 +40,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { path: '/questoes', icon: <MdOutlineQuiz size={20} />, label: 'Questões' },
         { path: '/avaliacoes', icon: <MdOutlineAssignment size={20} />, label: 'Avaliações' },
         { path: '/agenda', icon: <RiCalendarLine size={20} />, label: 'Agenda' },
-        { path: '/autoavaliacao-institucional', icon: <MdOutlineFactCheck size={20} />, label: 'Autoavaliação Institucional' },
         { path: '/admin', icon: <RiAdminLine size={20} />, label: 'Admins' },
     ];
 
