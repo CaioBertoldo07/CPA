@@ -35,7 +35,7 @@ class RespostasService {
 
         if (universityToken) {
             try {
-                const alunoInfo = await lyceumService.getAlunoInfo(universityToken);
+                const alunoInfo = await lyceumService.getAlunoMatricula(universityToken);
                 if (alunoInfo) {
                     curso = alunoInfo.CURSO_NOME;
                     unidade = alunoInfo.UNIDADE_NOME;

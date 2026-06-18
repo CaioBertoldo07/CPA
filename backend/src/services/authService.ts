@@ -1,16 +1,12 @@
 import jwt from 'jsonwebtoken';
-import axios from 'axios';
-import https from 'https';
 import * as adminRepository from '../repositories/adminRepository';
 import { AuthLoginDTO, UserResponseDTO } from '../dtos/AuthDTO';
 import { AppError } from '../middleware/errorMiddleware';
-import { env, isProduction } from '../config/env';
+import { env } from '../config/env';
 import { setUniversityToken } from './universityTokenStore';
+import LyceumService from './lyceumService';
 
-// Agente HTTPS que ignora certificados (necessário para APIs legadas da UEA)
-const httpsAgent = new https.Agent({
-    rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
-});
+const lyceumService = new LyceumService();
 
 type LoginResponseDTO = {
     token: string;
@@ -21,92 +17,61 @@ class AuthService {
     private normalizeText(value?: string): string {
         return (value || '')
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[̀-ͯ]/g, '')
             .toUpperCase();
     }
 
-    /**
-     * Login Real usando as APIs da UEA (Lyceum/Oberon)
-     */
     async login(data: AuthLoginDTO): Promise<LoginResponseDTO> {
         const { email, senha } = data;
         const normalizedEmail = email.trim().toLowerCase();
-        const lyceumBaseUrl = env.LYCEUM_API_BASE_URL;
-        const loginPath = isProduction ? '/lyceum/login' : '/lyceum/loginteste';
+
         try {
-            // 1. Autenticação na API do Lyceum
-            const response = await axios.post(
-                `${lyceumBaseUrl}${loginPath}`,
-                { email, senha },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    httpsAgent,
-                }
-            );
+            // 1. Autenticação via LyceumService
+            const apiLyceum = await lyceumService.loginUser(email, senha);
 
-            const authData = response.data;
-
-            if (response.status !== 200 || !authData.APILYCEUM || authData.APILYCEUM.status === false) {
-                throw new AppError('Falha na autenticação da universidade.', 401);
-            }
-
-            const universityToken = authData.APILYCEUM.token;
+            const universityToken = apiLyceum.token;
             if (!universityToken) {
                 throw new AppError('Token da universidade não encontrado.', 403);
             }
 
-            // O token da universidade fica apenas em memória no backend para reduzir exposição no cliente.
+            // Token universitário fica apenas em memória no backend.
             setUniversityToken(normalizedEmail, universityToken);
 
-            const usuarioLyceum = authData.APILYCEUM.usuario || {};
-            const oberonPerfilNome = usuarioLyceum.OberonPerfilNome || 'DISCENTE';
-            const OberonPerfilid = usuarioLyceum.OberonPerfilid;
-            const usuarioNome = usuarioLyceum.UsuarioNome || normalizedEmail;
-            const cpf = usuarioLyceum.Cpf || undefined;
-            let matricula = usuarioLyceum.Matricula || '';
-            let unidade = usuarioLyceum.UnidadeNome || '';
-            const unidadeSigla = usuarioLyceum.UnidadeSigla || undefined;
+            const usuarioLyceum = (apiLyceum.usuario ?? {}) as Record<string, unknown>;
+            const oberonPerfilNome = String(usuarioLyceum.OberonPerfilNome ?? 'DISCENTE');
+            const OberonPerfilid = usuarioLyceum.OberonPerfilid as string | number | undefined;
+            const usuarioNome = String(usuarioLyceum.UsuarioNome ?? normalizedEmail);
+            const cpf = usuarioLyceum.Cpf ? String(usuarioLyceum.Cpf) : undefined;
+            let matricula = String(usuarioLyceum.Matricula ?? '');
+            let unidade = String(usuarioLyceum.UnidadeNome ?? '');
+            const unidadeSigla = usuarioLyceum.UnidadeSigla
+                ? String(usuarioLyceum.UnidadeSigla)
+                : undefined;
             let curso = '';
 
             const isDiscente = this.normalizeText(oberonPerfilNome).includes('DISCENTE');
 
-            // 2. Complementa dados acadêmicos apenas para perfis com DISCENTE
+            // 2. Complementa dados acadêmicos para discentes via LyceumService
             if (isDiscente) {
-                const alunoResponse = await axios.get(
-                    `${lyceumBaseUrl}/lyceum/aluno/listar/matriculapessoal`,
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${universityToken}`,
-                        },
-                        httpsAgent,
-                    }
-                );
-
-                if (alunoResponse.status !== 200 || !alunoResponse.data.status) {
-                    throw new AppError('Erro ao obter informações detalhadas do aluno.', 500);
-                }
-
-                const alunoData = (alunoResponse.data.message || [])[0] || {};
-                curso = alunoData.CURSO || curso;
-                unidade = alunoData.UNIDADE_NOME || unidade;
-                matricula = alunoData.ALUNO || matricula;
+                const alunoData = await lyceumService.getAlunoMatricula(universityToken);
+                curso = String(alunoData.CURSO ?? curso);
+                unidade = String(alunoData.UNIDADE_NOME ?? unidade);
+                matricula = String(alunoData.ALUNO ?? matricula);
             }
 
-            // 3. Verificar se é Admin no banco local
+            // 3. Verifica se é Admin no banco local
             const admin = await adminRepository.findByEmail(normalizedEmail);
             const isAdmin = !!admin;
             const role = isAdmin ? 'admin' : 'user';
 
             const user: UserResponseDTO = {
-                // id: 1,
                 nome: usuarioNome,
                 email: normalizedEmail,
                 matricula,
                 curso,
                 unidade,
                 unidadeSigla,
-                categoria: oberonPerfilNome || 'DISCENTE',
+                categoria: oberonPerfilNome,
                 oberonPerfilNome,
                 OberonPerfilid,
                 usuarioNome,
@@ -115,37 +80,37 @@ class AuthService {
                 isAdmin,
             };
 
-            // 4. Gerar Token JWT do Backend
-            const tokenPayload = {
-                nome: user.nome,
-                email: user.email,
-                matricula: user.matricula,
-                curso: user.curso,
-                unidade: user.unidade,
-                unidadeSigla: user.unidadeSigla,
-                categoria: user.categoria,
-                oberonPerfilNome: user.oberonPerfilNome,
-                oberonPerfilId: user.OberonPerfilid,
-                usuarioNome: user.usuarioNome,
-                cpf: user.cpf,
-                role: user.role,
-                isAdmin: user.isAdmin,
-            };
-
-            const token = jwt.sign(tokenPayload, env.JWT_SECRET, { expiresIn: '24h' });
+            // 4. Gera Token JWT do backend
+            const token = jwt.sign(
+                {
+                    nome: user.nome,
+                    email: user.email,
+                    matricula: user.matricula,
+                    curso: user.curso,
+                    unidade: user.unidade,
+                    unidadeSigla: user.unidadeSigla,
+                    categoria: user.categoria,
+                    oberonPerfilNome: user.oberonPerfilNome,
+                    oberonPerfilId: user.OberonPerfilid,
+                    usuarioNome: user.usuarioNome,
+                    cpf: user.cpf,
+                    role: user.role,
+                    isAdmin: user.isAdmin,
+                },
+                env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
 
             return { token, user };
 
-        } catch (error: any) {
-            console.error('Erro no login oficial UEA:', error.message);
+        } catch (error: unknown) {
             if (error instanceof AppError) throw error;
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error('[AuthService] Erro no login UEA:', msg);
             throw new AppError('Erro interno ao processar login na universidade.', 500);
         }
     }
 
-    /**
-     * Verifica e atualiza os dados do usuário a partir do seu token JWT
-     */
     async verifyUser(user: any): Promise<UserResponseDTO> {
         const admin = await adminRepository.findByEmail(user.email.trim().toLowerCase());
         const isAdmin = !!admin;

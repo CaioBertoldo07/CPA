@@ -1,43 +1,62 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import https from 'https';
 import { LyceumCursoDTO } from '../dtos/LyceumDTO';
 import { env, isProduction } from '../config/env';
 
-interface LyceumUnidadesResponse {
+// ─── DTOs internos ────────────────────────────────────────────────────────────
+
+export interface LyceumUnidadesResponse {
     UNIDADECURSOS: LyceumCursoDTO[];
 }
+
+export interface LyceumApiLoginPayload {
+    token: string;
+    status: boolean;
+    usuario?: Record<string, unknown>;
+}
+
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+const LYCEUM_TIMEOUT_MS = 15_000;
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: isProduction && !env.DISABLE_SSL_VALIDATION,
 });
 
+// ─── LyceumService ────────────────────────────────────────────────────────────
+
 class LyceumService {
-    private axiosInstance: AxiosInstance;
-    private lyceumBaseUrl = 'https://api.uea.edu.br/lyceum/';
-    private lyceumConsumerEmail: string;
-    private lyceumConsumerPassword: string;
+    /** Base URL inclui /lyceum/ para que caminhos relativos funcionem corretamente. */
+    private readonly baseUrl: string;
+    private readonly consumerEmail: string;
+    private readonly consumerPassword: string;
+
+    /** Instância sem token — usada para login e chamadas com token do usuário. */
+    private readonly baseAxios: AxiosInstance;
+
+    /** Instância com interceptor que injeta o token do consumer (cron/import). */
+    private readonly consumerAxios: AxiosInstance;
 
     constructor() {
-        this.lyceumConsumerEmail = process.env.LYCEUM_CONSUMER_EMAIL || '';
-        this.lyceumConsumerPassword = process.env.LYCEUM_CONSUMER_PASSWORD || '';
+        this.baseUrl = `${env.LYCEUM_API_BASE_URL}/lyceum/`;
+        this.consumerEmail = env.LYCEUM_CONSUMER_EMAIL ?? '';
+        this.consumerPassword = env.LYCEUM_CONSUMER_PASSWORD ?? '';
 
-        if (!this.lyceumConsumerEmail || !this.lyceumConsumerPassword) {
-            throw new Error('Lyceum consumer credentials are not set in the environment variables.');
-        }
-
-        // Configurando o Axios para suportar grandes respostas
-        this.axiosInstance = axios.create({
-            baseURL: this.lyceumBaseUrl,
-            timeout: 10000,
+        const axiosDefaults = {
+            baseURL: this.baseUrl,
+            timeout: LYCEUM_TIMEOUT_MS,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             httpsAgent,
-        });
+        };
 
-        // Interceptor para adicionar o token nas requisições
-        this.axiosInstance.interceptors.request.use(
+        this.baseAxios = axios.create(axiosDefaults);
+        this.consumerAxios = axios.create(axiosDefaults);
+
+        // Injeta o token do consumer em todas as requisições da instância dedicada.
+        this.consumerAxios.interceptors.request.use(
             async (config) => {
-                const token = await this.getConsumerJwtToken();
+                const token = await this.getConsumerToken();
                 if (token && config.headers) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
@@ -47,64 +66,110 @@ class LyceumService {
         );
     }
 
-    async getUnidadeCursos(): Promise<LyceumUnidadesResponse> {
+    // ─── Método base de tratamento de erro ────────────────────────────────────
+
+    private handleError(method: string, error: unknown): never {
+        if (error instanceof AxiosError) {
+            const status = error.response?.status ?? 'timeout/network';
+            console.error(
+                `[LyceumService] ${method} — HTTP ${status}: ${error.message}`,
+                { url: error.config?.url, data: error.response?.data }
+            );
+        } else {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error(`[LyceumService] ${method} — erro inesperado: ${msg}`);
+        }
+        throw error;
+    }
+
+    // ─── Autenticação ─────────────────────────────────────────────────────────
+
+    /**
+     * Obtém o token JWT do consumer (conta de serviço usada pelo cron de importação).
+     * Usa baseAxios para evitar recursão com o interceptor de consumerAxios.
+     */
+    async getConsumerToken(): Promise<string> {
+        if (!this.consumerEmail || !this.consumerPassword) {
+            throw new Error(
+                '[LyceumService] Credenciais do consumer não configuradas ' +
+                '(LYCEUM_CONSUMER_EMAIL / LYCEUM_CONSUMER_PASSWORD).'
+            );
+        }
         try {
-            const response = await this.axiosInstance.get<LyceumUnidadesResponse>('unidadecurso/listar');
-            return response.data;
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('Erro ao obter unidades de curso:', errorMessage);
-            throw error;
+            const response = await this.baseAxios.post<{ APILYCEUM: LyceumApiLoginPayload }>(
+                'login',
+                { email: this.consumerEmail, senha: this.consumerPassword }
+            );
+            const token = response.data?.APILYCEUM?.token;
+            if (!token) throw new Error('Token do consumer ausente na resposta.');
+            return token;
+        } catch (error) {
+            return this.handleError('getConsumerToken', error);
         }
     }
 
-    async getAlunoInfo(universityToken: string): Promise<any> {
+    /**
+     * Autentica um usuário (discente/docente/técnico) via credenciais UEA.
+     * Em produção usa /login; em homolog usa /loginteste.
+     */
+    async loginUser(email: string, senha?: string): Promise<LyceumApiLoginPayload> {
+        const path = isProduction ? 'login' : 'loginteste';
         try {
-            const response = await axios.get(
-                `${this.lyceumBaseUrl}aluno/listar/matriculapessoal`,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${universityToken}`,
-                    },
-                    httpsAgent,
-                }
+            const response = await this.baseAxios.post<{ APILYCEUM: LyceumApiLoginPayload }>(
+                path,
+                { email, senha }
             );
+            const payload = response.data?.APILYCEUM;
+            if (!payload || payload.status === false) {
+                throw new Error('Falha na autenticação da universidade.');
+            }
+            return payload;
+        } catch (error) {
+            return this.handleError('loginUser', error);
+        }
+    }
 
-            if (response.status !== 200 || !response.data.status) {
+    // ─── Endpoints de aluno ───────────────────────────────────────────────────
+
+    /**
+     * Busca dados de matrícula pessoal do aluno usando o token universitário
+     * emitido pelo Lyceum no momento do login do usuário.
+     */
+    async getAlunoMatricula(universityToken: string): Promise<Record<string, unknown>> {
+        try {
+            const response = await this.baseAxios.get<{
+                status: boolean;
+                message: Array<Record<string, unknown>>;
+            }>('aluno/listar/matriculapessoal', {
+                headers: { Authorization: `Bearer ${universityToken}` },
+            });
+
+            if (!response.data?.status) {
                 throw new Error('Erro ao obter informações detalhadas do aluno.');
             }
 
-            return response.data.message[0];
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('Erro ao obter informações do aluno no Lyceum:', errorMessage);
-            throw error;
+            return (response.data.message ?? [])[0] ?? {};
+        } catch (error) {
+            return this.handleError('getAlunoMatricula', error);
         }
     }
 
+    // ─── Endpoints de importação (consumer) ───────────────────────────────────
 
-    async getConsumerJwtToken(): Promise<string> {
+    /**
+     * Busca lista de unidades/cursos para importação.
+     * Requer LYCEUM_CONSUMER_EMAIL e LYCEUM_CONSUMER_PASSWORD configurados.
+     */
+    async getUnidadeCursos(): Promise<LyceumUnidadesResponse> {
         try {
-            // Consumer sempre autentica na API de produção (api.uea.edu.br/lyceum/login).
-            // Esse serviço é exclusivo do cron de importação de cursos e não usa homolog.
-            const response = await axios.post<{ APILYCEUM: { token: string } }>(`${this.lyceumBaseUrl}login`, {
-                email: this.lyceumConsumerEmail,
-                senha: this.lyceumConsumerPassword
-            });
-
-            if (response.status !== 200) {
-                throw new Error('Falha ao buscar token!');
-            }
-
-            return response.data.APILYCEUM.token;
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('Erro ao autenticar no Lyceum:', errorMessage);
-            throw error;
+            const response = await this.consumerAxios.get<LyceumUnidadesResponse>(
+                'unidadecurso/listar'
+            );
+            return response.data;
+        } catch (error) {
+            return this.handleError('getUnidadeCursos', error);
         }
     }
-
 }
 
 export default LyceumService;
