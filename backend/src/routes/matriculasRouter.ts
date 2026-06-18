@@ -46,17 +46,9 @@ router.post('/matriculados/sincronizar', authenticateToken, authorize(['admin'])
  *         required: true
  *         schema:
  *           type: integer
- *       - in: query
- *         name: ano
- *         schema:
- *           type: string
- *       - in: query
- *         name: semestre
- *         schema:
- *           type: string
  *     responses:
  *       200:
- *         description: Participacao por curso e totais
+ *         description: Participacao por curso e totais (periodo derivado da avaliacao)
  */
 router.get('/avaliacoes/:id/participacao', authenticateToken, authorize(['admin']), matriculasController.getParticipacao);
 

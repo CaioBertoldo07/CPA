@@ -34,11 +34,7 @@ const sincronizar = asyncHandler(async (req: Request, res: Response) => {
 const getParticipacao = asyncHandler(async (req: Request, res: Response) => {
     const idAvaliacao = parseInt(req.params.id as string, 10);
     if (Number.isNaN(idAvaliacao)) throw new AppError('id de avaliacao invalido.', 400);
-    const { ano, semestre } = req.query;
-    const result = await matriculasService.getParticipacaoPorCurso(idAvaliacao, {
-        ano: ano ? String(ano) : undefined,
-        semestre: semestre ? String(semestre) : undefined,
-    });
+    const result = await matriculasService.getParticipacaoPorCurso(idAvaliacao);
     res.json(result);
 });
 

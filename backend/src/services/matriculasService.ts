@@ -66,18 +66,13 @@ class MatriculasService {
     /**
      * Taxa de participacao por curso para uma avaliacao:
      * respondentes (das respostas) / matriculados (do snapshot) * 100.
-     * `ano`/`semestre` podem sobrescrever o periodo derivado da avaliacao.
+     * O periodo (ano/semestre) e derivado da propria avaliacao.
      */
-    async getParticipacaoPorCurso(
-        idAvaliacao: number,
-        override: { ano?: string; semestre?: string } = {},
-    ) {
+    async getParticipacaoPorCurso(idAvaliacao: number) {
         const avaliacao = await prisma.avaliacao.findUnique({ where: { id: idAvaliacao } });
         if (!avaliacao) throw new AppError('Avaliacao nao encontrada.', 404);
 
-        const derivado = periodoDaAvaliacao(avaliacao);
-        const ano = override.ano || derivado.ano;
-        const semestre = override.semestre || derivado.semestre;
+        const { ano, semestre } = periodoDaAvaliacao(avaliacao);
 
         // Denominador: snapshot de matriculados agregado por curso (soma das unidades).
         const snapshot = await matriculasRepository.findByPeriodo(ano, semestre);

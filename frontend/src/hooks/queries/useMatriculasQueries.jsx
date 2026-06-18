@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { getParticipacaoPorCurso, sincronizarMatriculados } from '../../api/matriculados';
 
-export const useGetParticipacaoQuery = (idAvaliacao, params = {}) => {
+export const useGetParticipacaoQuery = (idAvaliacao) => {
     return useQuery({
-        queryKey: ['participacao', 'avaliacao', idAvaliacao, params],
-        queryFn: () => getParticipacaoPorCurso(idAvaliacao, params),
+        queryKey: ['participacao', 'avaliacao', idAvaliacao],
+        queryFn: () => getParticipacaoPorCurso(idAvaliacao),
         enabled: !!idAvaliacao,
         retry: false,
     });
