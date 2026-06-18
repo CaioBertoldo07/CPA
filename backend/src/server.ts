@@ -40,6 +40,7 @@ import unidadesRouter from './routes/unidadesRouter';
 import municipiosRouter from './routes/municipiosRouter';
 import cursosRouter from './routes/cursosRouter';
 import respostasRouter from './routes/respostasRouter';
+import matriculasRouter from './routes/matriculasRouter';
 import tipoQuestoesRouter from './routes/tipoQuestoesRouter';
 import { errorHandler } from './middleware/errorMiddleware';
 
@@ -107,6 +108,7 @@ app.use('/api/auth', authRouter);
 // Rotas protegidas — avaliador (usuário comum) e admin
 app.use('/api/', authenticateToken, avaliacoesRouter);
 app.use('/api/', authenticateToken, respostasRouter);
+app.use('/api/', authenticateToken, authorize(['admin']), matriculasRouter);
 
 // Rotas exclusivas para admin
 app.use('/api/', authenticateToken, authorize(['admin']), padraoRespostaRouter);

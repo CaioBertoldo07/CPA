@@ -172,6 +172,28 @@ model Municipios {
 
 }
 
+// Snapshot do total de matriculados por curso/unidade/periodo.
+// Origem: Lyceum POST /matriculados/listar/filtro (campo QT_MATRICULA).
+// Usado como denominador da taxa de participacao (respondentes / matriculados).
+model MatriculasSnapshot {
+  id            Int      @id @default(autoincrement())
+  ano           String   @db.VarChar(4)
+  semestre      String   @db.VarChar(2)
+  und           String   @default("") @db.VarChar(20)
+  und_tipo      String?  @db.VarChar(20)
+  und_municipio String?  @db.VarChar(100)
+  curso_codigo  String   @db.VarChar(30)
+  curso_nome    String   @db.VarChar(500)
+  curso_tipo    String?  @db.VarChar(50)
+  qt_matricula  Int      @default(0)
+  fonte         String   @default("LYCEUM") @db.VarChar(30)
+  capturado_em  DateTime @default(now())
+
+  @@unique([ano, semestre, curso_codigo, und], name: "matricula_periodo_curso_und")
+  @@index([ano, semestre])
+  @@map("matriculas_snapshot")
+}
+
 model Avaliadores {
   matricula             String                  @id @db.Char(10)
   nome                  String                  @db.VarChar(100)

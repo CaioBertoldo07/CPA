@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { useGetAvaliacaoByIdQuery } from '../hooks/queries/useAvaliacaoQueries';
 import { useGetRespostasPorAvaliacaoQuery, useGetRespostasPorDisciplinaQuery } from '../hooks/queries/useRespostaQueries';
+import { useGetParticipacaoQuery, useSincronizarMatriculadosMutation } from '../hooks/queries/useMatriculasQueries';
 import usePDFExport from '../hooks/usePDFExport';
 import { displayCategoriaNome } from '../utils/displayLabels';
 import { useNotification } from '../context/NotificationContext';
@@ -407,6 +408,24 @@ const RelatorioAvaliacao = () => {
         curso: filtros.curso,
     });
 
+    const semestreAvaliacao = useMemo(() => {
+        const pl = String(avaliacao?.periodo_letivo || '');
+        const m = pl.match(/([12])\s*$/);
+        return m ? m[1] : undefined;
+    }, [avaliacao]);
+
+    const { data: participacaoCurso, isLoading: loadingParticipacao } = useGetParticipacaoQuery(id);
+    const sincronizarMut = useSincronizarMatriculadosMutation();
+
+    const handleSincronizar = async () => {
+        try {
+            const res = await sincronizarMut.mutateAsync({ ano: avaliacao?.ano, semestre: semestreAvaliacao });
+            showNotification(`Matriculados sincronizados: ${res?.gravados ?? 0} cursos (${res?.ano || ''}${res?.semestre ? '/' + res.semestre : ''}).`, 'success');
+        } catch (e) {
+            showNotification('Não foi possível sincronizar os matriculados no Lyceum.', 'error');
+        }
+    };
+
     const handleFiltroChange = (key, value) => {
         setFiltros(prev => ({ ...prev, [key]: value }));
     };
@@ -512,6 +531,9 @@ const RelatorioAvaliacao = () => {
         { icon: '👥', label: 'Total de Avaliadores', value: reportData?.totalAvaliadores || 0, topColor: '#2e7d32', iconBg: '#e8f5e9', delay: 0 },
         ...(totalQuestoesAvaliacao !== null
             ? [{ icon: '📋', label: 'Total de Questões', value: totalQuestoesAvaliacao, topColor: '#94a3b8', iconBg: '#f1f5f9', delay: 140 }]
+            : []),
+        ...(participacaoCurso?.totais?.participacao != null
+            ? [{ icon: '🎯', label: 'Participação Geral (respondentes / matriculados)', value: `${participacaoCurso.totais.participacao}%`, topColor: '#7c3aed', iconBg: '#f5f3ff', delay: 200 }]
             : []),
     ];
 
@@ -847,6 +869,79 @@ const RelatorioAvaliacao = () => {
                                 </ResponsiveContainer>
                             )}
                         </ChartCard>
+                    </div>
+                </div>
+
+                {/* ── Taxa de Participação por Curso ── */}
+                <div style={{ marginBottom: 32 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed' }}>
+                                🎯
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a202c' }}>Taxa de Participação por Curso</div>
+                                <div style={{ fontSize: 12, color: '#718096' }}>
+                                    Respondentes sobre matriculados (Lyceum)
+                                    {participacaoCurso?.ano ? ` · ${participacaoCurso.ano}${participacaoCurso.semestre ? '/' + participacaoCurso.semestre : ''}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleSincronizar}
+                            disabled={sincronizarMut.isPending}
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 14px', background: '#fff', color: '#7c3aed',
+                                border: '1.5px solid #7c3aed', borderRadius: 10,
+                                fontSize: 13, fontWeight: 700,
+                                cursor: sincronizarMut.isPending ? 'not-allowed' : 'pointer',
+                                opacity: sincronizarMut.isPending ? 0.7 : 1,
+                            }}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+                            {sincronizarMut.isPending ? 'Sincronizando...' : 'Sincronizar matriculados'}
+                        </button>
+                    </div>
+
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 200px', gap: 8, padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                            <div>Curso</div>
+                            <div style={{ textAlign: 'center' }}>Matriculados</div>
+                            <div style={{ textAlign: 'center' }}>Respondentes</div>
+                            <div style={{ textAlign: 'right' }}>Participação</div>
+                        </div>
+
+                        {loadingParticipacao ? (
+                            <div style={{ padding: '14px 16px' }}><SkeletonBlock h={16} /></div>
+                        ) : !participacaoCurso?.possuiSnapshot ? (
+                            <div style={{ padding: '20px 16px', color: '#718096', fontSize: 13 }}>
+                                Ainda não há snapshot de matriculados para {participacaoCurso?.ano || 'este período'}{participacaoCurso?.semestre ? '/' + participacaoCurso.semestre : ''}.
+                                Clique em <strong>Sincronizar matriculados</strong> para buscar do Lyceum.
+                            </div>
+                        ) : (participacaoCurso?.cursos || []).length === 0 ? (
+                            <div style={{ padding: '20px 16px', color: '#718096', fontSize: 13 }}>Sem cursos para exibir.</div>
+                        ) : (
+                            participacaoCurso.cursos.map((c, idx) => {
+                                const pct = c.participacao;
+                                const cor = pct == null ? '#94a3b8' : (pct >= 60 ? '#166534' : (pct >= 30 ? '#b45309' : '#b91c1c'));
+                                return (
+                                    <div key={`${c.curso}-${idx}`} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 200px', gap: 8, padding: '11px 16px', borderBottom: idx === participacaoCurso.cursos.length - 1 ? 'none' : '1px solid #f1f5f9', alignItems: 'center' }}>
+                                        <div style={{ fontSize: 13, color: '#1f2937', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.curso}</div>
+                                        <div style={{ textAlign: 'center', fontSize: 13, color: '#475569' }}>{c.matriculados || '—'}</div>
+                                        <div style={{ textAlign: 'center', fontSize: 13, color: '#475569' }}>{c.respondentes}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
+                                            <div style={{ flex: 1, maxWidth: 110, height: 8, background: '#f1f5f9', borderRadius: 9999, overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', borderRadius: 9999, width: `${Math.min(pct ?? 0, 100)}%`, background: cor, transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
+                                            </div>
+                                            <span style={{ fontSize: 13, fontWeight: 700, color: cor, minWidth: 52, textAlign: 'right' }}>
+                                                {pct == null ? 's/ base' : `${pct}%`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
 

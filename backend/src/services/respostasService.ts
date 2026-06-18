@@ -1,5 +1,6 @@
 import * as respostasRepository from '../repositories/respostasRepository';
 import * as avaliacaoRepository from '../repositories/avaliacaoRepository';
+import * as matriculasRepository from '../repositories/matriculasRepository';
 import { RespostaInputDTO, SalvarRespostasDTO, RelatorioFiltrosDTO } from '../dtos/RespostaDTO';
 import { AppError } from '../middleware/errorMiddleware';
 import prisma from '../repositories/prismaClient';
@@ -469,16 +470,27 @@ class RespostasService {
 
         const totalRespondentes = uniqueMatriculas.size;
 
+        // Populacao real de discentes = total de matriculados do snapshot mais recente
+        // (Lyceum). Enquanto nao houver snapshot, populacao/participacao ficam nulas
+        // em vez de usar valor fixo ficticio.
+        const periodo = await matriculasRepository.getLatestPeriodoTotal();
+        const populacaoDiscente = periodo?.total ?? null;
+
         return categorias.map(c => {
             const isDiscente = c.nome.toUpperCase().includes('DISCENTE') || c.nome.toUpperCase().includes('ALUNO');
             const respondentes = isDiscente ? totalRespondentes : 0;
-            const populacao = isDiscente ? 1000 : 100;
-            
+            const populacao = isDiscente ? populacaoDiscente : null;
+
             return {
                 categoria: c.nome,
                 respondentes,
                 populacao,
-                participacao: populacao > 0 ? Number(((respondentes / populacao) * 100).toFixed(2)) : 0
+                participacao: populacao && populacao > 0
+                    ? Number(((respondentes / populacao) * 100).toFixed(2))
+                    : null,
+                periodo_referencia: isDiscente && periodo
+                    ? `${periodo.ano}/${periodo.semestre}`
+                    : null,
             };
         });
     }

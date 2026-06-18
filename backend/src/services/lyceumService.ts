@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import https from 'https';
-import { LyceumCursoDTO } from '../dtos/LyceumDTO';
+import { LyceumCursoDTO, LyceumMatriculadoDTO, LyceumMatriculadosFiltro, LyceumMatriculadosResponse } from '../dtos/LyceumDTO';
 import { env, isProduction } from '../config/env';
 
 interface LyceumUnidadesResponse {
@@ -54,6 +54,40 @@ class LyceumService {
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error('Erro ao obter unidades de curso:', errorMessage);
+            throw error;
+        }
+    }
+
+    /**
+     * Lista o total de matriculados por curso/unidade/periodo.
+     * Lyceum: POST /lyceum/matriculados/listar/filtro (campo `ano` obrigatorio).
+     * Usa a base configurada por ambiente (homolog em dev) e o token do usuario
+     * logado (mesmo fluxo validado na coleção Bruno). NAO usar o axiosInstance
+     * do consumer, que aponta para producao e retorna 405 nessa rota.
+     */
+    async getMatriculados(filtro: LyceumMatriculadosFiltro, universityToken: string): Promise<LyceumMatriculadoDTO[]> {
+        if (!filtro?.ano) {
+            throw new Error('Parametro "ano" e obrigatorio para consultar matriculados.');
+        }
+        if (!universityToken) {
+            throw new Error('Token da universidade ausente para consultar matriculados.');
+        }
+        try {
+            const response = await axios.post<LyceumMatriculadosResponse>(
+                `${env.LYCEUM_API_BASE_URL}/lyceum/matriculados/listar/filtro`,
+                filtro,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${universityToken}`,
+                    },
+                    httpsAgent,
+                },
+            );
+            return response.data?.DADOS ?? [];
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('Erro ao obter matriculados no Lyceum:', errorMessage);
             throw error;
         }
     }
